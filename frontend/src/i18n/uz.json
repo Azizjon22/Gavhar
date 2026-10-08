@@ -1,0 +1,1764 @@
+{
+  "common": {
+    "appName": "Gavhar boshqaruv tizimi",
+    "brandCaption": "To‘yxona · Studio",
+    "loading": "Yuklanmoqda…",
+    "retry": "Qayta urinish",
+    "close": "Yopish",
+    "cancel": "Bekor qilish",
+    "save": "Saqlash",
+    "create": "Yaratish",
+    "edit": "Tahrirlash",
+    "delete": "O‘chirish",
+    "continue": "Davom etish",
+    "copy": "Nusxalash",
+    "copied": "Nusxalandi",
+    "copyFailed": "Nusxalab bo‘lmadi. Qo‘lda belgilab nusxalang",
+    "download": "Yuklab olish",
+    "clear": "Tozalash",
+    "optional": "ixtiyoriy",
+    "actions": "Amallar",
+    "showPassword": "Parolni ko‘rsatish",
+    "hidePassword": "Parolni yashirish",
+    "duration": {
+      "minutes_one": "{{count}} daqiqa",
+      "minutes_other": "{{count}} daqiqa",
+      "seconds_one": "{{count}} soniya",
+      "seconds_other": "{{count}} soniya"
+    },
+    "pagination": {
+      "label": "Sahifalar",
+      "range": "{{from}}–{{to}} / jami {{total}}",
+      "prev": "Oldingi",
+      "next": "Keyingi"
+    },
+    "noResults": {
+      "title": "Hech narsa topilmadi",
+      "text": "Qidiruv so‘zini yoki filtrlarni o‘zgartirib ko‘ring."
+    },
+    "currency": "so‘m"
+  },
+  "theme": {
+    "label": "Mavzu",
+    "light": "Yorug‘",
+    "dark": "Tungi",
+    "system": "Tizim bo‘yicha"
+  },
+  "language": {
+    "label": "Til",
+    "uz": "O‘zbekcha",
+    "ru": "Русский"
+  },
+  "nav": {
+    "main": "Asosiy menyu",
+    "home": "Bosh sahifa",
+    "management": "Boshqaruv",
+    "users": "Foydalanuvchilar",
+    "roles": "Rollar",
+    "auditLogs": "Audit jurnali",
+    "profile": "Profil",
+    "account": "Hisob menyusi",
+    "logout": "Chiqish",
+    "collapse": "Menyuni yig‘ish",
+    "expand": "Menyuni yoyish",
+    "openMenu": "Menyuni ochish",
+    "skipToContent": "Asosiy kontentga o‘tish",
+    "work": "Kundalik ish",
+    "clients": "Mijozlar",
+    "halls": "Zallar",
+    "events": "Bronlar",
+    "extraServices": "Qo‘shimcha xizmatlar",
+    "menu": "Menyu",
+    "gallery": "Galereya",
+    "showcase": "Taqdimot",
+    "clientFacing": "Mijoz uchun",
+    "accounting": "Hisob va ombor",
+    "finance": "Hisob-kitob",
+    "warehouse": "Ombor",
+    "shopping": "Bozorlik",
+    "workers": "Ishchilar"
+  },
+  "auth": {
+    "login": {
+      "title": "Xush kelibsiz",
+      "subtitle": "Davom etish uchun hisobingizga kiring",
+      "email": "Email",
+      "password": "Parol",
+      "submit": "Kirish",
+      "secureNote": "Ulanish himoyalangan · har bir kirish qayd etiladi"
+    },
+    "twoFactor": {
+      "title": "Ikki bosqichli tasdiqlash",
+      "subtitle": "Authenticator ilovasidagi 6 xonali kodni kiriting",
+      "code": "Tasdiqlash kodi",
+      "backupHint": "Telefon yoningizda bo‘lmasa, zaxira kodni kiriting",
+      "submit": "Tasdiqlash",
+      "back": "Boshqa hisob bilan kirish"
+    },
+    "hero": {
+      "eyebrow": "To‘yxona · Studio",
+      "headline": "Har bir tantana",
+      "headlineAccent": "gavhardek bebaho",
+      "text": "Bronlar, moliya, menyu, ombor va studio — barchasi bitta xavfsiz tizimda.",
+      "features": {
+        "security": "Ikki bosqichli himoya va shifrlangan ma’lumotlar",
+        "roles": "Har bir xodimga faqat kerakli ruxsatlar",
+        "audit": "Har bir o‘zgarish audit jurnalida saqlanadi"
+      }
+    },
+    "lockedCountdown": "Juda ko‘p xato urinish. {{time}} dan keyin qayta urinib ko‘ring.",
+    "footer": "Ichki boshqaruv tizimi"
+  },
+  "password": {
+    "current": "Joriy parol",
+    "new": "Yangi parol",
+    "confirm": "Yangi parolni takrorlang",
+    "changed": "Parol o‘zgartirildi",
+    "rules": {
+      "title": "Parol talablari",
+      "length": "Kamida 12 ta belgi",
+      "upper": "Katta harf",
+      "lower": "Kichik harf",
+      "digit": "Raqam",
+      "special": "Maxsus belgi (!@#…)"
+    }
+  },
+  "twoFactor": {
+    "intro": {
+      "install": "Telefoningizga Google Authenticator, Microsoft Authenticator yoki shunga o‘xshash ilovani o‘rnating.",
+      "scan": "Ilovada ekrandagi QR kodni skanerlang.",
+      "confirm": "Ilova ko‘rsatgan 6 xonali kodni kiritib, ulanishni tasdiqlang."
+    },
+    "start": "Ulashni boshlash",
+    "qrAlt": "Authenticator ilovasi uchun QR kod",
+    "scanText": "Authenticator ilovasida QR kodni skanerlang. Kamera ishlamasa, quyidagi kalitni qo‘lda kiriting.",
+    "manualKey": "Qo‘lda kiritish uchun kalit",
+    "codeLabel": "Ilovadagi 6 xonali kod",
+    "verify": "Tasdiqlash",
+    "backup": {
+      "text": "Ikki bosqichli himoya yoqildi. Quyidagi zaxira kodlarni xavfsiz joyga saqlang: telefon yo‘qolsa, faqat shu kodlar bilan kira olasiz. Har bir kod bir marta ishlaydi va ular boshqa ko‘rsatilmaydi.",
+      "saved": "Zaxira kodlarni xavfsiz joyga saqlab qo‘ydim",
+      "fileHeader": "Gavhar — ikki bosqichli himoya zaxira kodlari. Har bir kod faqat bir marta ishlaydi."
+    }
+  },
+  "setup": {
+    "eyebrow": "Hisobni himoyalash",
+    "password": {
+      "title": "Yangi parol o‘rnating",
+      "description": "Sizga vaqtinchalik parol berilgan. Tizimdan foydalanish uchun uni faqat o‘zingiz biladigan parolga almashtiring.",
+      "submit": "Parolni saqlash"
+    },
+    "twoFactor": {
+      "title": "Ikki bosqichli himoyani ulang",
+      "description": "Sizning rolingiz tizimga to‘liq ruxsat beradi, shuning uchun parolga qo‘shimcha ravishda telefoningizdagi kod bilan tasdiqlash majburiy."
+    }
+  },
+  "sessions": {
+    "unknownDevice": "Noma’lum qurilma",
+    "current": "Joriy sessiya",
+    "lastActive": "oxirgi faollik {{time}}",
+    "revoke": "Uzish",
+    "revoked": "Sessiya yopildi",
+    "allRevoked": "Sessiyalar yopildi"
+  },
+  "home": {
+    "greeting": {
+      "morning": "Xayrli tong",
+      "day": "Xayrli kun",
+      "evening": "Xayrli kech",
+      "night": "Xayrli tun"
+    },
+    "subtitle": "Gavhar to‘yxonasi va studiyasining ichki boshqaruv tizimi. Kerakli bo‘limni chap menyudan yoki quyidagi havolalardan tanlang.",
+    "role": {
+      "label": "Sizning rolingiz",
+      "fullAccess": "To‘liq ruxsat",
+      "superAdminText": "Tizimning barcha bo‘limlariga, jumladan foydalanuvchilar, rollar va audit jurnaliga ruxsatingiz bor.",
+      "permissionsText_one": "Sizga {{count}} ta ruxsat berilgan. Menyuda faqat ruxsat etilgan bo‘limlar ko‘rinadi.",
+      "permissionsText_other": "Sizga {{count}} ta ruxsat berilgan. Menyuda faqat ruxsat etilgan bo‘limlar ko‘rinadi."
+    },
+    "security": {
+      "label": "Hisob xavfsizligi",
+      "enabled": "Ikki bosqichli himoya yoqilgan",
+      "disabled": "Ikki bosqichli himoya o‘chirilgan",
+      "enabledText": "Kirishda parol bilan birga telefoningizdagi kod ham so‘raladi. Zaxira kodlarni profilda yangilashingiz mumkin.",
+      "disabledText": "Parolingiz o‘g‘irlansa ham hisobingiz himoyada qolishi uchun ikki bosqichli himoyani ulashni tavsiya qilamiz.",
+      "enable": "Himoyani ulash"
+    },
+    "links": {
+      "title": "Tezkor havolalar",
+      "users": "Xodimlarga hisob oching, bloklang yoki parolini tiklang.",
+      "roles": "Rollar yarating va ularga aniq ruxsatlar bering.",
+      "audit": "Kim, qachon, nimani o‘zgartirganini ko‘ring.",
+      "profile": "Parol, ikki bosqichli himoya va faol sessiyalar.",
+      "clients": "Mijozlar ro‘yxati: telefon bo‘yicha qidiring, yangisini qo‘shing.",
+      "halls": "Zallar, ularning sig‘imi va rasmlari.",
+      "events": "Bronlar ro‘yxati va kalendari, to‘lovlar va shartnomalar.",
+      "menu": "Menyu paketlari: narxi, tarkibi va bo‘limlari.",
+      "gallery": "To‘yxona rasmlari va videolari — albomlar bo‘yicha.",
+      "showcase": "Mijozga ko‘rsatish uchun: zallar, menyu va galereya to‘liq ekranda.",
+      "finance": "Tushum, xarajat va sof foyda — hafta, oy va yil bo‘yicha.",
+      "warehouse": "Idish-tovoq va oziq-ovqat qoldig‘i, kirim va chiqim.",
+      "shopping": "To‘ylar uchun bozorlik ro‘yxatlari: yozish, tekshirish, xarid va tasdiqlash.",
+      "workers": "Ofitsiant va oshpazlar ro‘yxati, ularni to‘ylarga biriktirish."
+    }
+  },
+  "users": {
+    "title": "Foydalanuvchilar",
+    "description": "Tizimga kira oladigan xodimlar. Har biriga rol biriktiriladi; ruxsatlar rol orqali beriladi.",
+    "new": "Yangi foydalanuvchi",
+    "searchPlaceholder": "Ism, email yoki telefon bo‘yicha qidirish",
+    "you": "Siz",
+    "mustChangePassword": "Vaqtinchalik parol hali almashtirilmagan",
+    "neverLoggedIn": "Hali kirmagan",
+    "filters": {
+      "role": "Rol bo‘yicha filtr",
+      "status": "Holat bo‘yicha filtr",
+      "allRoles": "Barcha rollar",
+      "allStatuses": "Barcha holatlar"
+    },
+    "columns": {
+      "user": "Foydalanuvchi",
+      "role": "Rol",
+      "status": "Holat",
+      "twoFactor": "2FA",
+      "lastLogin": "Oxirgi kirish"
+    },
+    "status": {
+      "ACTIVE": "Faol",
+      "BLOCKED": "Bloklangan"
+    },
+    "twoFactor": {
+      "on": "Yoqilgan",
+      "off": "Yo‘q"
+    },
+    "actions": {
+      "label": "{{name}} uchun amallar",
+      "edit": "Tahrirlash",
+      "sessions": "Faol sessiyalar",
+      "resetPassword": "Parolni tiklash",
+      "resetTwoFactor": "2FA ni tiklash",
+      "block": "Bloklash",
+      "unblock": "Blokdan chiqarish",
+      "delete": "O‘chirish"
+    },
+    "form": {
+      "createTitle": "Yangi foydalanuvchi",
+      "editTitle": "Foydalanuvchini tahrirlash",
+      "createDescription": "Xodim birinchi kirishda vaqtinchalik parolni o‘zi almashtiradi.",
+      "editDescription": "Rol o‘zgarsa, foydalanuvchi barcha qurilmalarda qaytadan kirishi kerak bo‘ladi.",
+      "fullName": "Ism va familiya",
+      "email": "Email",
+      "phone": "Telefon",
+      "role": "Rol",
+      "rolePlaceholder": "Rolni tanlang",
+      "password": "Vaqtinchalik parol",
+      "passwordHint": "Bu parolni xodimga shaxsan yetkazing. U birinchi kirishda almashtiradi; parol boshqa ko‘rsatilmaydi.",
+      "generate": "Yangi parol generatsiya qilish"
+    },
+    "resetPassword": {
+      "title": "Parolni tiklash",
+      "description": "{{name}} parolini unutgan bo‘lsa, unga yangi vaqtinchalik parol o‘rnating. Barcha faol sessiyalari yopiladi, xato urinishlar sababli qo‘yilgan blok ham olib tashlanadi.",
+      "newPassword": "Yangi vaqtinchalik parol",
+      "submit": "Parolni tiklash",
+      "doneTitle": "Yangi parol o‘rnatildi",
+      "login": "Login (email)",
+      "doneText": "Bu parolni xodimga shaxsan yetkazing. U shu parol bilan kiradi va birinchi kirishda o‘zi yangisiga almashtiradi. Oyna yopilgach parol boshqa ko‘rsatilmaydi.",
+      "copy": "Parolni nusxalash",
+      "done": "Tayyor"
+    },
+    "sessions": {
+      "title": "Faol sessiyalar",
+      "description": "{{name}} hozir kirgan qurilmalar.",
+      "empty": "Faol sessiyalar yo‘q.",
+      "revokeAll": "Hammasini yopish"
+    },
+    "confirm": {
+      "block": {
+        "title": "Foydalanuvchini bloklash",
+        "text": "{{name}} darhol tizimdan chiqariladi va blokdan chiqarilmaguncha kira olmaydi.",
+        "confirm": "Bloklash"
+      },
+      "unblock": {
+        "title": "Blokdan chiqarish",
+        "text": "{{name}} yana tizimga kira oladi.",
+        "confirm": "Blokdan chiqarish"
+      },
+      "delete": {
+        "title": "Foydalanuvchini o‘chirish",
+        "text": "{{name}} tizimga kira olmaydi va ro‘yxatdan olib tashlanadi. U bajargan amallar audit jurnalida saqlanib qoladi.",
+        "confirm": "O‘chirish"
+      },
+      "resetTwoFactor": {
+        "title": "Ikki bosqichli himoyani tiklash",
+        "text": "{{name}} ning authenticator ulanishi va zaxira kodlari bekor qilinadi, barcha sessiyalari yopiladi. Buni faqat u telefonini yo‘qotgan bo‘lsa qiling.",
+        "confirm": "2FA ni tiklash"
+      }
+    },
+    "toast": {
+      "created": "Foydalanuvchi yaratildi",
+      "updated": "O‘zgarishlar saqlandi",
+      "passwordReset": "Parol tiklandi",
+      "block": "Foydalanuvchi bloklandi",
+      "unblock": "Foydalanuvchi blokdan chiqarildi",
+      "delete": "Foydalanuvchi o‘chirildi",
+      "resetTwoFactor": "Ikki bosqichli himoya tiklandi"
+    },
+    "empty": {
+      "title": "Hali foydalanuvchilar yo‘q",
+      "text": "Birinchi xodimga hisob ochish uchun «Yangi foydalanuvchi» tugmasini bosing."
+    }
+  },
+  "roles": {
+    "title": "Rollar va ruxsatlar",
+    "description": "Rol — ruxsatlar to‘plami. Lavozimga mos rol yarating va uni xodimlarga biriktiring.",
+    "new": "Yangi rol",
+    "system": "Tizim roli",
+    "custom": "Maxsus rol",
+    "noDescription": "Tavsif kiritilmagan",
+    "users": "Foydalanuvchilar",
+    "permissions": "Ruxsatlar",
+    "allPermissions": "Barchasi",
+    "superAdminLocked": "Bu rol har doim to‘liq ruxsatga ega va o‘zgartirilmaydi.",
+    "inUseHint": "Rolga foydalanuvchilar biriktirilgan — avval ularning rolini o‘zgartiring.",
+    "form": {
+      "createTitle": "Yangi rol",
+      "editTitle": "Rolni tahrirlash",
+      "description": "Belgilangan ruxsatlar shu roldagi barcha foydalanuvchilarga darhol qo‘llanadi.",
+      "name": "Rol nomi",
+      "namePlaceholder": "Masalan: Kassir",
+      "systemNameHint": "Tizim rolining nomi o‘zgarmaydi.",
+      "roleDescription": "Tavsif",
+      "descriptionPlaceholder": "Bu rol nima ish qiladi",
+      "permissions": "Ruxsatlar",
+      "selected_one": "{{count}} ta tanlandi",
+      "selected_other": "{{count}} ta tanlandi"
+    },
+    "confirm": {
+      "deleteTitle": "Rolni o‘chirish",
+      "deleteText": "«{{name}}» roli butunlay o‘chiriladi. Bu amalni qaytarib bo‘lmaydi."
+    },
+    "toast": {
+      "created": "Rol yaratildi",
+      "updated": "Rol saqlandi",
+      "deleted": "Rol o‘chirildi"
+    }
+  },
+  "permissions": {
+    "resources": {
+      "dashboard": "Dashboard",
+      "events": "Bronlar va to‘ylar",
+      "halls": "Zallar",
+      "clients": "Mijozlar",
+      "finance": "Moliya",
+      "menu": "Menyu",
+      "warehouse": "Ombor",
+      "studio": "Studio",
+      "media": "Foto va video",
+      "staff": "Xodimlar",
+      "settings": "Sozlamalar",
+      "notifications": "Bildirishnomalar",
+      "shopping": "Bozorlik"
+    },
+    "actions": {
+      "read": "Ko‘rish",
+      "create": "Qo‘shish",
+      "update": "Tahrirlash",
+      "delete": "O‘chirish",
+      "export": "Hisobotlarni eksport qilish",
+      "manage-categories": "Kategoriyalarni boshqarish",
+      "upload": "Yuklash",
+      "share": "Mijozga ulashish",
+      "purchase": "Xarid qilish va narx kiritish"
+    }
+  },
+  "audit": {
+    "title": "Audit jurnali",
+    "description": "Tizimdagi har bir muhim amal: kim, qachon, qaysi qurilmadan va nimani o‘zgartirgan. Yozuvlarni tahrirlab yoki o‘chirib bo‘lmaydi.",
+    "searchPlaceholder": "Email, amal yoki IP bo‘yicha qidirish",
+    "unknownActor": "Noma’lum",
+    "columns": {
+      "time": "Vaqt",
+      "actor": "Kim",
+      "action": "Amal",
+      "resource": "Obyekt",
+      "ip": "IP manzil"
+    },
+    "filters": {
+      "category": "Amal turi bo‘yicha filtr",
+      "allCategories": "Barcha amallar",
+      "from": "Boshlanish sanasi",
+      "to": "Tugash sanasi"
+    },
+    "categories": {
+      "auth": "Kirish va xavfsizlik",
+      "user": "Foydalanuvchilar",
+      "role": "Rollar",
+      "session": "Sessiyalar",
+      "client": "Mijozlar",
+      "hall": "Zallar",
+      "event": "Bronlar",
+      "payment": "To‘lovlar",
+      "menu": "Menyu",
+      "gallery": "Galereya",
+      "expense": "Xarajatlar",
+      "warehouse": "Ombor",
+      "shopping": "Bozorlik",
+      "worker": "Ishchilar"
+    },
+    "detail": {
+      "empty": "Ma’lumot yo‘q",
+      "device": "Qurilma",
+      "requestId": "So‘rov ID",
+      "before": "Oldingi qiymat",
+      "after": "Yangi qiymat"
+    },
+    "empty": {
+      "title": "Jurnal bo‘sh",
+      "text": "Tizimda amallar bajarilgach, ular shu yerda ko‘rinadi."
+    },
+    "actions": {
+      "auth": {
+        "login": "Tizimga kirdi",
+        "login_failed": "Kirish muvaffaqiyatsiz",
+        "logout": "Tizimdan chiqdi",
+        "password_changed": "Parolni o‘zgartirdi",
+        "2fa_enabled": "2FA ni yoqdi",
+        "2fa_disabled": "2FA ni o‘chirdi",
+        "2fa_backup_codes_regenerated": "Zaxira kodlarni yangiladi",
+        "token_reuse": "Token o‘g‘irligi aniqlandi"
+      },
+      "user": {
+        "create": "Foydalanuvchi yaratdi",
+        "update": "Foydalanuvchini tahrirladi",
+        "block": "Foydalanuvchini blokladi",
+        "unblock": "Blokdan chiqardi",
+        "reset_password": "Parolni tikladi",
+        "reset_2fa": "2FA ni tikladi",
+        "delete": "Foydalanuvchini o‘chirdi"
+      },
+      "role": {
+        "create": "Rol yaratdi",
+        "update": "Rolni tahrirladi",
+        "delete": "Rolni o‘chirdi"
+      },
+      "session": {
+        "revoke": "Sessiyani yopdi",
+        "revoke_others": "Boshqa sessiyalarni yopdi",
+        "revoke_by_admin": "Admin sessiyani yopdi",
+        "revoke_all_by_admin": "Admin barcha sessiyalarni yopdi"
+      },
+      "client": {
+        "create": "Mijoz qo‘shdi",
+        "update": "Mijozni tahrirladi",
+        "delete": "Mijozni o‘chirdi"
+      },
+      "hall": {
+        "create": "Zal yaratdi",
+        "update": "Zalni tahrirladi",
+        "delete": "Zalni o‘chirdi",
+        "image_add": "Zalga rasm qo‘shdi",
+        "image_remove": "Zal rasmini o‘chirdi"
+      },
+      "event": {
+        "create": "Bron ochdi",
+        "update": "Bronni tahrirladi",
+        "delete": "Bronni o‘chirdi",
+        "confirm": "Bronni tasdiqladi",
+        "hold": "Tadbir o‘tkazildi",
+        "complete": "Bronni yakunladi",
+        "cancel": "Bronni bekor qildi"
+      },
+      "payment": {
+        "create": "To‘lov qabul qildi",
+        "refund": "Pul qaytardi",
+        "void": "To‘lovni bekor qildi"
+      },
+      "extra_service": {
+        "create": "Xizmat qo‘shdi",
+        "update": "Xizmatni tahrirladi",
+        "delete": "Xizmatni o‘chirdi"
+      },
+      "settings": {
+        "update": "Sozlamani o‘zgartirdi"
+      },
+      "menu": {
+        "category_create": "Menyu bo‘limini qo‘shdi",
+        "category_update": "Menyu bo‘limini tahrirladi",
+        "category_delete": "Menyu bo‘limini o‘chirdi",
+        "package_create": "Menyu paketini yaratdi",
+        "package_update": "Menyu paketini tahrirladi",
+        "package_delete": "Menyu paketini o‘chirdi",
+        "dish_update": "Taom tavsifini o‘zgartirdi",
+        "package_cover": "Paket muqovasini o‘zgartirdi"
+      },
+      "gallery": {
+        "album_create": "Albom yaratdi",
+        "album_update": "Albomni tahrirladi",
+        "album_delete": "Albomni o‘chirdi",
+        "item_add": "Galereyaga fayl qo‘shdi",
+        "item_remove": "Galereyadan faylni o‘chirdi"
+      },
+      "expense": {
+        "create": "Xarajat yozdi",
+        "update": "Xarajatni tuzatdi",
+        "delete": "Xarajatni o‘chirdi",
+        "category_create": "Xarajat turini qo‘shdi",
+        "category_update": "Xarajat turini qayta nomladi",
+        "category_delete": "Xarajat turini o‘chirdi"
+      },
+      "warehouse": {
+        "create": "Omborga mahsulot qo‘shdi",
+        "update": "Mahsulotni tahrirladi",
+        "delete": "Mahsulotni o‘chirdi",
+        "stock_in": "Omborga kirim qildi",
+        "stock_out": "Ombordan chiqim qildi",
+        "stock_count": "Inventarizatsiya qildi"
+      },
+      "shopping": {
+        "create": "Bozorlik ro‘yxatini yozdi",
+        "update": "Bozorlik ro‘yxatini o‘zgartirdi",
+        "approve": "Bozorlikni adminga yubordi",
+        "purchase": "Bozorlik qildi va narx kiritdi",
+        "prices_update": "Bozorlik narxlarini tuzatdi",
+        "confirm": "Bozorlikni tasdiqladi",
+        "unconfirm": "Bozorlik tasdig‘ini bekor qildi",
+        "delete": "Bozorlik ro‘yxatini o‘chirdi"
+      },
+      "worker": {
+        "create": "Ishchi qo‘shdi",
+        "update": "Ishchini tahrirladi",
+        "delete": "Ishchini o‘chirdi",
+        "assign": "Ishchini to‘yga biriktirdi",
+        "unassign": "Ishchini to‘ydan olib tashladi"
+      }
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "description": "Hisobingiz, xavfsizlik sozlamalari va faol sessiyalar.",
+    "tabs": {
+      "account": "Hisob",
+      "security": "Xavfsizlik",
+      "sessions": "Sessiyalar",
+      "brand": "Brend"
+    },
+    "account": {
+      "email": "Email",
+      "phone": "Telefon",
+      "noPhone": "Kiritilmagan",
+      "role": "Rol",
+      "permissions": "Ruxsatlar",
+      "allPermissions": "To‘liq ruxsat",
+      "permissionCount_one": "{{count}} ta ruxsat",
+      "permissionCount_other": "{{count}} ta ruxsat",
+      "note": "Ism, email, telefon yoki rolni o‘zgartirish uchun super administratorga murojaat qiling."
+    },
+    "password": {
+      "title": "Parol",
+      "description": "Parol o‘zgargach, boshqa qurilmalardagi sessiyalaringiz yopiladi.",
+      "submit": "Parolni o‘zgartirish"
+    },
+    "twoFactor": {
+      "title": "Ikki bosqichli himoya",
+      "enabled": "Yoqilgan",
+      "disabled": "O‘chirilgan",
+      "enabledText": "Kirishda parol bilan birga authenticator ilovasidagi kod so‘raladi.",
+      "disabledText": "Parolga qo‘shimcha ravishda telefoningizdagi kod bilan tasdiqlash. Parol o‘g‘irlansa ham hisobingiz himoyada qoladi.",
+      "enable": "Ulash",
+      "disable": "O‘chirish",
+      "regenerate": "Zaxira kodlarni yangilash",
+      "backupRemaining_one": "Ishlatilmagan zaxira kodlar: {{count}} ta",
+      "backupRemaining_other": "Ishlatilmagan zaxira kodlar: {{count}} ta",
+      "requiredForRole": "Sizning rolingiz uchun ikki bosqichli himoya majburiy — uni o‘chirib bo‘lmaydi.",
+      "setupTitle": "Ikki bosqichli himoyani ulash",
+      "setupDescription": "Ulanish tugagach, boshqa qurilmalardagi sessiyalaringiz yopiladi.",
+      "enabledToast": "Ikki bosqichli himoya yoqildi",
+      "disableTitle": "Ikki bosqichli himoyani o‘chirish",
+      "disableText": "Tasdiqlash uchun parolingizni va authenticator ilovasidagi kodni (yoki zaxira kodni) kiriting.",
+      "password": "Parol",
+      "code": "6 xonali kod yoki zaxira kod",
+      "disabledToast": "Ikki bosqichli himoya o‘chirildi",
+      "regenerateTitle": "Zaxira kodlarni yangilash",
+      "regenerateText": "Eski zaxira kodlarning barchasi bekor bo‘ladi. Tasdiqlash uchun ilovadagi kodni kiriting.",
+      "newCodesTitle": "Yangi zaxira kodlar",
+      "newCodesText": "Ularni xavfsiz joyga saqlang — bu kodlar boshqa ko‘rsatilmaydi."
+    },
+    "sessions": {
+      "title": "Faol sessiyalar",
+      "description": "Hisobingizga hozir kirilgan qurilmalar. Tanimagan qurilmani ko‘rsangiz, uni uzing va parolni o‘zgartiring.",
+      "revokeOthers": "Boshqa qurilmalarni uzish",
+      "confirmTitle": "Boshqa qurilmalarni uzish",
+      "confirmText": "Shu qurilmadan tashqari barcha qurilmalarda hisobingizdan chiqiladi.",
+      "empty": "Faol sessiyalar yo‘q."
+    }
+  },
+  "errors": {
+    "loadFailed": "Ma’lumotni yuklab bo‘lmadi",
+    "codes": {
+      "NETWORK": "Server bilan aloqa yo‘q. Internet ulanishini tekshiring.",
+      "TIMEOUT": "Server javob bermadi. Birozdan keyin urinib ko‘ring.",
+      "UNKNOWN": "Kutilmagan xato yuz berdi. Qayta urinib ko‘ring.",
+      "INTERNAL_SERVER_ERROR": "Serverda xato yuz berdi. Birozdan keyin urinib ko‘ring.",
+      "SERVICE_UNAVAILABLE": "Xizmat vaqtincha ishlamayapti.",
+      "NOT_FOUND": "So‘ralgan ma’lumot topilmadi.",
+      "VALIDATION_ERROR": "Kiritilgan ma’lumotlarni tekshiring.",
+      "FORBIDDEN": "Bu amal uchun ruxsatingiz yo‘q.",
+      "UNAUTHENTICATED": "Tizimga kirish talab qilinadi.",
+      "INVALID_CREDENTIALS": "Email yoki parol noto‘g‘ri.",
+      "ACCOUNT_LOCKED": "Juda ko‘p xato urinish. {{time}} dan keyin qayta urinib ko‘ring.",
+      "RATE_LIMITED": "Juda ko‘p so‘rov. {{time}} dan keyin qayta urinib ko‘ring.",
+      "ACCOUNT_BLOCKED": "Hisobingiz bloklangan. Administratorga murojaat qiling.",
+      "ACCOUNT_UNAVAILABLE": "Hisob faol emas.",
+      "INVALID_2FA_CODE": "Tasdiqlash kodi noto‘g‘ri yoki allaqachon ishlatilgan.",
+      "TWO_FACTOR_CHALLENGE_EXPIRED": "Tasdiqlash muddati tugadi. Qaytadan kiring.",
+      "SESSION_REVOKED": "Sessiya yopilgan. Qaytadan kiring.",
+      "TOKEN_REUSE_DETECTED": "Xavfsizlik sababli barcha sessiyalar yopildi. Qaytadan kiring.",
+      "PASSWORD_CHANGE_REQUIRED": "Davom etish uchun parolni o‘zgartiring.",
+      "TWO_FACTOR_SETUP_REQUIRED": "Davom etish uchun ikki bosqichli himoyani ulang.",
+      "INVALID_PASSWORD": "Parol noto‘g‘ri.",
+      "PASSWORD_UNCHANGED": "Yangi parol joriy paroldan farq qilishi kerak.",
+      "TWO_FACTOR_REQUIRED_FOR_ROLE": "Sizning rolingiz uchun ikki bosqichli himoya majburiy.",
+      "TWO_FACTOR_ALREADY_ENABLED": "Ikki bosqichli himoya allaqachon yoqilgan.",
+      "TWO_FACTOR_NOT_ENABLED": "Ikki bosqichli himoya yoqilmagan.",
+      "TWO_FACTOR_SETUP_NOT_STARTED": "Avval ulashni qaytadan boshlang.",
+      "EMAIL_TAKEN": "Bu email bilan foydalanuvchi mavjud.",
+      "USER_NOT_FOUND": "Foydalanuvchi topilmadi.",
+      "ROLE_NOT_FOUND": "Rol topilmadi.",
+      "ROLE_NAME_TAKEN": "Bunday nomli rol mavjud.",
+      "ROLE_IN_USE": "Rolga foydalanuvchilar biriktirilgan. Avval ularning rolini o‘zgartiring.",
+      "SYSTEM_ROLE_IMMUTABLE": "Tizim rolini bu tarzda o‘zgartirib bo‘lmaydi.",
+      "SESSION_NOT_FOUND": "Sessiya topilmadi yoki allaqachon yopilgan.",
+      "LAST_SUPER_ADMIN": "Tizimda kamida bitta faol super administrator qolishi shart.",
+      "CANNOT_MODIFY_SELF": "Bu amalni o‘z hisobingizga qo‘llab bo‘lmaydi.",
+      "HALL_NOT_FOUND": "Zal topilmadi.",
+      "HALL_NAME_TAKEN": "Bunday nomli zal mavjud.",
+      "HALL_IMAGE_LIMIT": "Bitta zalga ko‘pi bilan {{limit}} ta rasm yuklash mumkin.",
+      "HALL_IMAGE_NOT_FOUND": "Rasm topilmadi.",
+      "HALL_IMAGE_ORDER_INVALID": "Rasmlar tartibini saqlab bo‘lmadi. Sahifani yangilab ko‘ring.",
+      "INVALID_IMAGE": "Fayl rasm emas yoki buzilgan. JPEG, PNG, WebP yoki AVIF yuklang.",
+      "FILE_REQUIRED": "Fayl tanlanmagan.",
+      "PAYLOAD_TOO_LARGE": "Fayl juda katta.",
+      "CLIENT_NOT_FOUND": "Mijoz topilmadi.",
+      "CLIENT_PHONE_TAKEN": "Bu raqam bilan mijoz mavjud: {{fullName}}.",
+      "EVENT_NOT_FOUND": "Bron topilmadi.",
+      "EVENT_NOT_EDITABLE": "Yakunlangan yoki bekor qilingan bronni o‘zgartirib bo‘lmaydi.",
+      "EVENT_ALREADY_HELD": "O‘tkazilgan tadbirning zali yoki vaqtini o‘zgartirib bo‘lmaydi.",
+      "EVENT_DELETE_FORBIDDEN": "To‘lovi bor yoki tasdiqlangan bronni o‘chirib bo‘lmaydi — uni bekor qiling.",
+      "EVENT_NOT_STARTED": "Tadbir hali boshlanmagan.",
+      "EVENT_HAS_DEBT": "Bronni yakunlash uchun avval qarzni to‘liq yoping.",
+      "EVENT_CLOSED": "Yakunlangan bronning to‘lovlarini o‘zgartirib bo‘lmaydi.",
+      "EVENT_CANCELLED": "Bekor qilingan bron uchun faqat pul qaytarish mumkin.",
+      "DEPOSIT_REQUIRED": "Tasdiqlash uchun avval zaklad to‘lanishi kerak.",
+      "INVALID_STATUS_TRANSITION": "Bronning joriy holatida bu amalni bajarib bo‘lmaydi.",
+      "HALL_BUSY": "Bu vaqtda zal band. Boshqa vaqt yoki zalni tanlang.",
+      "HALL_UNAVAILABLE": "Zal ta’mirda — unga bron ochib bo‘lmaydi.",
+      "HALL_HAS_EVENTS": "Bu zalda yopilmagan bronlar bor. Avval ularni yakunlang yoki bekor qiling.",
+      "CLIENT_HAS_EVENTS": "Bu mijozning yopilmagan bronlari bor. Avval ularni yakunlang yoki bekor qiling.",
+      "GUEST_COUNT_EXCEEDS_CAPACITY": "Mehmonlar soni zal sig‘imidan ({{capacity}}) oshib ketdi.",
+      "DISCOUNT_EXCEEDS_TOTAL": "Chegirma bron summasidan katta bo‘lishi mumkin emas.",
+      "TOTAL_BELOW_PAID": "Yangi summa to‘langan summadan kam. Avval ortiqcha to‘lovni qaytaring.",
+      "INVALID_TIME_RANGE": "Tadbir vaqti noto‘g‘ri: tugashi boshlanishdan keyin va 48 soatdan oshmasin.",
+      "INVALID_DATE_RANGE": "Sana oralig‘i noto‘g‘ri.",
+      "EXTRA_SERVICE_NOT_FOUND": "Tanlangan xizmat topilmadi yoki o‘chirib qo‘yilgan.",
+      "EXTRA_SERVICE_NAME_TAKEN": "Bunday nomli xizmat mavjud.",
+      "PAYMENT_NOT_FOUND": "To‘lov topilmadi.",
+      "PAYMENT_EXCEEDS_DEBT": "To‘lov qolgan qarzdan ko‘p.",
+      "REFUND_EXCEEDS_PAID": "Qaytariladigan summa to‘langandan ko‘p.",
+      "PAYMENT_VOID_INVALID": "Bu to‘lovni bekor qilib bo‘lmaydi: qaytarilgan summa to‘langandan oshib ketadi.",
+      "EXCHANGE_RATE_REQUIRED": "Dollar uchun kursni kiriting.",
+      "INVALID_AMOUNT": "Summa noldan katta bo‘lishi kerak.",
+      "MENU_CATEGORY_NOT_FOUND": "Menyu bo‘limi topilmadi.",
+      "MENU_PACKAGE_NOT_FOUND": "Menyu paketi topilmadi yoki faol emas.",
+      "MENU_CATEGORY_NAME_TAKEN": "Bunday nomli bo‘lim mavjud.",
+      "MENU_PACKAGE_NAME_TAKEN": "Bunday nomli paket mavjud.",
+      "REORDER_INVALID": "Tartibni saqlab bo‘lmadi. Sahifani yangilab ko‘ring.",
+      "ALBUM_NOT_FOUND": "Albom topilmadi.",
+      "ALBUM_FULL": "Bitta albomga ko‘pi bilan {{limit}} ta fayl yuklash mumkin.",
+      "GALLERY_ITEM_NOT_FOUND": "Fayl topilmadi.",
+      "UPLOAD_KEY_INVALID": "Yuklash manzili noto‘g‘ri. Faylni qaytadan yuklang.",
+      "UPLOAD_NOT_FOUND": "Video serverga yetib kelmadi. Qaytadan yuklab ko‘ring.",
+      "INVALID_VIDEO": "Fayl video emas yoki buzilgan. MP4, MOV yoki WebM yuklang.",
+      "UPLOAD_ALREADY_COMPLETED": "Bu video allaqachon qo‘shilgan.",
+      "EXPENSE_NOT_FOUND": "Xarajat topilmadi.",
+      "EXPENSE_CATEGORY_NOT_FOUND": "Xarajat turi topilmadi.",
+      "EXPENSE_CATEGORY_NAME_TAKEN": "Bunday nomli xarajat turi mavjud.",
+      "EXPENSE_CATEGORY_SYSTEM": "Bu tizim turi — tasdiqlangan bozorlik shu yerga yoziladi, uni o‘chirib bo‘lmaydi.",
+      "EXPENSE_DATE_IN_FUTURE": "Xarajat sanasi bugundan kech bo‘lishi mumkin emas.",
+      "WAREHOUSE_ITEM_NOT_FOUND": "Mahsulot topilmadi.",
+      "WAREHOUSE_ITEM_NAME_TAKEN": "Bu bo‘limda bunday nomli mahsulot mavjud.",
+      "INSUFFICIENT_STOCK": "Omborda buncha yo‘q. Mavjud qoldiq: {{available}}.",
+      "QUANTITY_MUST_BE_WHOLE": "Bu birlikda miqdor butun son bo‘lishi kerak.",
+      "INVALID_QUANTITY": "Miqdor noldan katta bo‘lishi kerak.",
+      "COST_ONLY_FOR_STOCK_IN": "Xarid summasi faqat kirimda kiritiladi.",
+      "SHOPPING_LIST_NOT_FOUND": "Bozorlik ro‘yxati topilmadi.",
+      "SHOPPING_LIST_WRONG_STATUS": "Ro‘yxat holati o‘zgargan. Sahifani yangilab ko‘ring.",
+      "SHOPPING_LIST_LOCKED": "Ro‘yxat ko‘rib chiqilgan — endi o‘zgartirib yoki o‘chirib bo‘lmaydi.",
+      "SHOPPING_ITEM_NOT_FOUND": "Ro‘yxatda bunday qator yo‘q. Sahifani yangilab ko‘ring.",
+      "SHOPPING_ITEM_DUPLICATE": "«{{name}}» ro‘yxatda ikki marta yozilgan.",
+      "SHOPPING_TOO_EARLY": "Bozorlik to‘y kuni qilinadi — narxlarni shu kundan boshlab kiritish mumkin.",
+      "SHOPPING_PRICES_MISSING": "Har bir mahsulot narxini kiriting yoki «olinmadi» deb belgilang.",
+      "SHOPPING_NOTHING_PURCHASED": "Hech narsa sotib olinmagan — kamida bitta mahsulot narxini kiriting.",
+      "EXPENSE_LINKED": "Bu xarajat bozorlik ro‘yxatidan yozilgan. Uni Bozorlik bo‘limida tasdiqni bekor qilib o‘zgartiring.",
+      "DISHES_SUPER_ADMIN_ONLY": "1-ovqat va 2-ovqatni faqat super admin belgilaydi.",
+      "EXPENSE_EVENT_DATE_FIXED": "To‘y xarajati to‘y kuniga yoziladi — sanasini o‘zgartirib bo‘lmaydi.",
+      "SHOPPING_CLOSED": "Bu to‘yning bozorligi qilib bo‘lingan — yangi ro‘yxat yozib bo‘lmaydi.",
+      "UNIT_CHANGE_WITH_STOCK": "Qoldig‘i bor mahsulotning o‘lchov birligini o‘zgartirib bo‘lmaydi — avval qoldiqni 0 ga tushiring.",
+      "MENU_PACKAGE_REQUIRED": "Menyu paketini tanlang — narx shu paketdan olinadi.",
+      "WORKER_NOT_FOUND": "Ishchi topilmadi.",
+      "WORKER_PHONE_TAKEN": "Bu telefon raqam «{{name}}» ishchisiga tegishli.",
+      "WORKER_INACTIVE": "Bu ishchi faol emas — avval uni faollashtiring.",
+      "WORKER_ALREADY_ASSIGNED": "Bu ishchi allaqachon shu to‘yga biriktirilgan.",
+      "ASSIGNMENT_NOT_FOUND": "Bu ishchi shu to‘yga biriktirilmagan.",
+      "BRAND_LOGO_NOT_FOUND": "Logotip yuklanmagan.",
+      "DISH_PHOTO_NOT_FOUND": "Bu taomga rasm yuklanmagan.",
+      "VIDEO_REPROCESS_NOT_NEEDED": "Bu faylni qayta ishlash kerak emas."
+    }
+  },
+  "validation": {
+    "required": "Bu maydonni to‘ldiring",
+    "email": "Email manzilni to‘g‘ri kiriting",
+    "code": "Kodni to‘liq kiriting",
+    "totp": "6 ta raqamdan iborat kodni kiriting",
+    "passwordPolicy": "Parol barcha talablarga javob berishi kerak",
+    "passwordMismatch": "Parollar bir xil emas",
+    "passwordSame": "Yangi parol joriy paroldan farq qilishi kerak",
+    "fullName": "Ism 2 tadan 100 tagacha belgidan iborat bo‘lsin",
+    "roleRequired": "Rolni tanlang",
+    "roleName": "Rol nomi 2 tadan 50 tagacha belgidan iborat bo‘lsin",
+    "descriptionMax": "Tavsif 200 belgidan oshmasin",
+    "phoneIncomplete": "Telefon raqamini to‘liq kiriting (9 ta raqam)",
+    "noteMax": "Matn 1000 belgidan oshmasin",
+    "hallName": "Zal nomi 2 tadan 80 tagacha belgidan iborat bo‘lsin",
+    "capacity": "Sig‘imni 1 dan 10 000 gacha kiriting",
+    "amount": "Summani kiriting",
+    "clientRequired": "Mijozni tanlang",
+    "hallRequired": "Zalni tanlang",
+    "titleMax": "Nom 120 belgidan oshmasin",
+    "dateRequired": "Sanani tanlang",
+    "timeRequired": "Vaqtni kiriting",
+    "guestCount": "Mehmonlar sonini kiriting",
+    "timeRange": "Tugash vaqti boshlanishdan farq qilsin",
+    "serviceName": "Nom 2 tadan 80 tagacha belgidan iborat bo‘lsin",
+    "packageName": "Paket nomi 2 tadan 80 tagacha belgidan iborat bo‘lsin",
+    "expenseCategory": "Xarajat turini tanlang",
+    "expenseDate": "Sanani kiriting — bugundan kech bo‘lmasin",
+    "itemName": "Nom 2 tadan 80 tagacha belgidan iborat bo‘lsin",
+    "quantity": "Miqdorni kiriting",
+    "menuPackageRequired": "Menyu paketini tanlang — narx shu paketdan olinadi"
+  },
+  "pages": {
+    "backHome": "Bosh sahifaga",
+    "notFound": {
+      "title": "Sahifa topilmadi",
+      "text": "Manzil noto‘g‘ri kiritilgan yoki sahifa ko‘chirilgan bo‘lishi mumkin."
+    },
+    "forbidden": {
+      "title": "Ruxsat yo‘q",
+      "text": "Bu bo‘limni ko‘rish uchun rolingizda ruxsat yo‘q. Kerak bo‘lsa, super administratorga murojaat qiling."
+    },
+    "error": {
+      "title": "Nimadir noto‘g‘ri ketdi",
+      "text": "Sahifani yuklashda kutilmagan xato yuz berdi. Sahifani yangilab ko‘ring.",
+      "reload": "Sahifani yangilash"
+    }
+  },
+  "clients": {
+    "title": "Mijozlar",
+    "description": "To‘y va tadbir buyurtmachilari. Bitta telefon raqami — bitta mijoz: uning barcha bronlari bir joyda yig‘iladi.",
+    "new": "Yangi mijoz",
+    "searchPlaceholder": "Ism yoki telefon bo‘yicha qidirish",
+    "actionsLabel": "{{name}} uchun amallar",
+    "columns": {
+      "client": "Mijoz",
+      "phone": "Telefon",
+      "createdAt": "Qo‘shilgan"
+    },
+    "form": {
+      "createTitle": "Yangi mijoz",
+      "editTitle": "Mijozni tahrirlash",
+      "description": "Asosiy telefon raqami mijozni topish uchun ishlatiladi va takrorlanmaydi.",
+      "fullName": "Ism va familiya",
+      "phone": "Telefon",
+      "phoneExtra": "Qo‘shimcha raqam",
+      "note": "Izoh",
+      "notePlaceholder": "Masalan: kelin tomonning akasi, kechki payt qo‘ng‘iroq qilish"
+    },
+    "confirm": {
+      "deleteTitle": "Mijozni o‘chirish",
+      "deleteText": "{{name}} ro‘yxatdan olib tashlanadi. Bu amal audit jurnalida saqlanadi."
+    },
+    "toast": {
+      "created": "Mijoz qo‘shildi",
+      "updated": "O‘zgarishlar saqlandi",
+      "deleted": "Mijoz o‘chirildi"
+    },
+    "empty": {
+      "title": "Hali mijozlar yo‘q",
+      "text": "Birinchi mijozni qo‘shing — keyin unga bron ochishingiz mumkin bo‘ladi."
+    }
+  },
+  "halls": {
+    "title": "Zallar",
+    "description": "To‘yxona zallari: sig‘imi va rasmlari. Ta’mirdagi zalga bron ochilmaydi.",
+    "new": "Yangi zal",
+    "noDescription": "Tavsif kiritilmagan",
+    "capacity": "Sig‘imi",
+    "guests_one": "{{count}} kishi",
+    "guests_other": "{{count}} kishi",
+    "status": {
+      "ACTIVE": "Faol",
+      "MAINTENANCE": "Ta’mirda"
+    },
+    "form": {
+      "createTitle": "Yangi zal",
+      "editTitle": "Zalni tahrirlash",
+      "createDescription": "Avval asosiy ma’lumotlarni kiriting — rasmlarni keyingi qadamda qo‘shasiz.",
+      "editDescription": "Rasmlar darhol saqlanadi; qolgan o‘zgarishlar «Saqlash» bosilganda.",
+      "images": "Rasmlar",
+      "name": "Zal nomi",
+      "namePlaceholder": "Masalan: Oltin zal",
+      "status": "Holati",
+      "capacity": "Sig‘imi (kishi)",
+      "description": "Tavsif",
+      "descriptionPlaceholder": "Zalning o‘ziga xos jihatlari",
+      "createAndContinue": "Yaratish va rasm qo‘shish"
+    },
+    "images": {
+      "wrongType": "«{{name}}» rasm emas. JPEG, PNG, WebP yoki AVIF yuklang.",
+      "tooLarge": "«{{name}}» juda katta. Bitta rasm 10 MB dan oshmasin.",
+      "limit": "Bitta zalga ko‘pi bilan {{limit}} ta rasm yuklash mumkin.",
+      "alt": "Zal rasmi {{number}}",
+      "cover": "Muqova",
+      "makeCover": "Muqova qilish",
+      "remove": "Rasmni o‘chirish",
+      "uploading": "Rasm yuklanmoqda",
+      "add": "Rasm qo‘shish",
+      "hint": "JPEG, PNG, WebP yoki AVIF, har biri 10 MB gacha, ko‘pi bilan {{limit}} ta. Birinchi rasm — muqova."
+    },
+    "confirm": {
+      "deleteTitle": "Zalni o‘chirish",
+      "deleteText": "«{{name}}» zali ro‘yxatdan olib tashlanadi va unga yangi bron ochib bo‘lmaydi."
+    },
+    "toast": {
+      "created": "Zal yaratildi. Endi rasmlarini qo‘shing",
+      "updated": "Zal saqlandi",
+      "deleted": "Zal o‘chirildi"
+    },
+    "empty": {
+      "title": "Hali zallar yo‘q",
+      "text": "Birinchi zalni qo‘shing: nomi, sig‘imi, narxi va rasmlari."
+    }
+  },
+  "events": {
+    "title": "Bronlar",
+    "description": "To‘y va tadbirlar: zal, vaqt, hisob-kitob va to‘lovlar. Bir zalda bir vaqtda ikki bron bo‘lishiga tizim yo‘l qo‘ymaydi.",
+    "new": "Yangi bron",
+    "searchPlaceholder": "Mijoz, telefon, nom yoki № bo‘yicha qidirish",
+    "backToList": "Bronlar ro‘yxati",
+    "debt": "Qarz: {{amount}}",
+    "views": {
+      "list": "Ro‘yxat",
+      "calendar": "Kalendar"
+    },
+    "columns": {
+      "event": "Bron",
+      "date": "Sana va vaqt",
+      "guests": "Mehmonlar",
+      "amount": "Summa, so‘m",
+      "status": "Holat"
+    },
+    "filters": {
+      "debtOnly": "Faqat qarzdorlar",
+      "status": "Holat bo‘yicha filtr",
+      "allStatuses": "Barcha holatlar"
+    },
+    "status": {
+      "REQUEST": "So‘rov",
+      "CONFIRMED": "Tasdiqlangan",
+      "HELD": "O‘tkazildi",
+      "COMPLETED": "Yakunlandi",
+      "CANCELLED": "Bekor qilindi"
+    },
+    "type": {
+      "WEDDING": "To‘y",
+      "NIKOH": "Nikoh",
+      "OSH": "Nahor oshi",
+      "SUNNAT": "Sunnat to‘yi",
+      "BIRTHDAY": "Tug‘ilgan kun",
+      "ANNIVERSARY": "Yubiley",
+      "CORPORATE": "Korporativ",
+      "OTHER": "Boshqa tadbir"
+    },
+    "empty": {
+      "title": "Hali bronlar yo‘q",
+      "text": "Birinchi bronni oching: mijoz, zal, sana va mehmonlar soni — summani tizim o‘zi hisoblaydi."
+    },
+    "form": {
+      "createTitle": "Yangi bron",
+      "editTitle": "Bron № {{number}} ni tahrirlash",
+      "description": "Summa avtomatik hisoblanadi: mehmonlar × 1 kishilik narx + xizmatlar − chegirma. Zal uchun alohida haq olinmaydi.",
+      "client": "Mijoz",
+      "clientPlaceholder": "Mijozni tanlang",
+      "clientNotFound": "Mijoz topilmadi. O‘ngdagi tugma bilan yangisini qo‘shing.",
+      "type": "Tadbir turi",
+      "title": "Nomi",
+      "titlePlaceholder": "Masalan: Anvar va Nodira to‘yi",
+      "hall": "Zal",
+      "hallPlaceholder": "Zalni tanlang",
+      "guestCount": "Mehmonlar soni",
+      "overCapacity": "Zal sig‘imi {{capacity}} kishi — bu sondan ko‘p bo‘lsa bron saqlanmaydi.",
+      "date": "Sana",
+      "startTime": "Boshlanishi",
+      "endTime": "Tugashi",
+      "nextDay": "Ertasi kuni tugaydi",
+      "hallBusyDetails": "Bu vaqtda zal band: bron № {{number}}, {{client}}, {{from}}–{{to}}.",
+      "pricePerGuest": "1 kishilik narx",
+      "discount": "Chegirma",
+      "services": "Qo‘shimcha xizmatlar",
+      "noServices": "Katalogda faol xizmatlar yo‘q. Ularni «Qo‘shimcha xizmatlar» bo‘limida qo‘shing.",
+      "quantity": "{{name}} soni",
+      "note": "Izoh",
+      "notePlaceholder": "Maxsus talablar, bezak, dastur…",
+      "submit": "Bronni saqlash",
+      "menuPackage": "Menyu paketi",
+      "noMenuPackage": "Paketsiz (narx qo‘lda kiritiladi)",
+      "menuPackageHint": "Paket tanlansa, 1 kishilik narx avtomatik qo‘yiladi — kelishuv bo‘lsa, uni o‘zgartirishingiz mumkin.",
+      "tableCapacity": "Stol turi",
+      "tableAny": "Ko‘rsatilmagan",
+      "firstDish": "1-ovqat",
+      "secondDish": "2-ovqat",
+      "dishPlaceholder": "Masalan: Osh",
+      "dishHint": "1- va 2-ovqatni faqat super admin belgilaydi.",
+      "descriptionByPackage": "Bron narxi tanlangan menyu paketidan avtomatik olinadi.",
+      "menuPackagePlaceholder": "Paketni tanlang"
+    },
+    "summary": {
+      "title": "Hisob-kitob",
+      "guests": "{{count}} kishi × {{price}}",
+      "extras": "Qo‘shimcha xizmatlar",
+      "discount": "Chegirma",
+      "total": "Jami",
+      "paid": "To‘langan",
+      "debt": "Qoldiq",
+      "depositHint": "Bron tasdiqlanishi uchun kamida {{amount}} so‘m ({{percent}}%) zaklad to‘lanishi kerak."
+    },
+    "settings": {
+      "title": "Bron sozlamalari",
+      "description": "Bron «Tasdiqlangan» holatiga o‘tishi uchun to‘lanishi shart bo‘lgan minimal zaklad.",
+      "minDeposit": "Minimal zaklad",
+      "hint": "Jami summadan foizda. 0 — zakladsiz ham tasdiqlash mumkin.",
+      "saved": "Sozlamalar saqlandi"
+    },
+    "cancel": {
+      "title": "Bronni bekor qilish",
+      "text": "Bron bekor qilinadi va zal shu vaqtga bo‘shaydi. Bu amalni qaytarib bo‘lmaydi.",
+      "textWithPayments": "Bron bekor qilinadi va zal bo‘shaydi. To‘langan pul o‘zi qaytmaydi — uni «To‘lovlar» bo‘limida «Qaytarish» orqali rasmiylashtiring.",
+      "reason": "Bekor qilish sababi",
+      "reasonPlaceholder": "Masalan: mijoz sanani o‘zgartirdi"
+    },
+    "actions": {
+      "cancel": "Bekor qilish",
+      "contract": "Shartnoma (PDF)",
+      "confirm": "Tasdiqlash",
+      "hold": "O‘tkazildi",
+      "complete": "Yakunlash"
+    },
+    "toast": {
+      "created": "Bron saqlandi",
+      "updated": "Bron yangilandi",
+      "cancelled": "Bron bekor qilindi",
+      "deleted": "Bron o‘chirildi",
+      "confirm": "Bron tasdiqlandi",
+      "hold": "Tadbir o‘tkazildi deb belgilandi",
+      "complete": "Bron yakunlandi"
+    },
+    "detail": {
+      "title": "Bron № {{number}}",
+      "depositNeeded": "Tasdiqlash uchun yana {{amount}} so‘m zaklad kerak (jami summaning {{percent}}%).",
+      "cancelReason": "Bekor qilish sababi",
+      "info": "Tadbir",
+      "when": "Sana va vaqt",
+      "hallAndGuests": "Zal va mehmonlar",
+      "dishes": "1- va 2-ovqat"
+    },
+    "confirm": {
+      "deleteTitle": "Bronni o‘chirish",
+      "deleteText": "Bron № {{number}} ro‘yxatdan olib tashlanadi. Bu amal audit jurnalida saqlanadi."
+    },
+    "calendar": {
+      "prev": "Oldingi",
+      "next": "Keyingi",
+      "today": "Bugun",
+      "month": "Oy",
+      "week": "Hafta",
+      "day": "Kun",
+      "addOn": "{{date}} ga bron qo‘shish",
+      "more_one": "yana {{count}} ta",
+      "more_other": "yana {{count}} ta",
+      "freeDay": "Bu kunga bron yo‘q"
+    },
+    "tableSeats_one": "{{count}} kishilik stol",
+    "tableSeats_other": "{{count}} kishilik stol"
+  },
+  "payments": {
+    "title": "To‘lovlar",
+    "add": "To‘lov qabul qilish",
+    "empty": "Hali to‘lov qabul qilinmagan.",
+    "actionsLabel": "To‘lov amallari",
+    "receipt": "Kvitansiya (PDF)",
+    "void": "To‘lovni bekor qilish",
+    "amount": "Summa",
+    "currency": "Valyuta",
+    "rate": "Kurs",
+    "ratePlaceholder": "Kurs: 1 $ = … so‘m",
+    "note": "Izoh",
+    "overDebt": "Summa qolgan qarzdan ({{limit}} so‘m) oshmasin.",
+    "overPaid": "Summa to‘langan miqdordan ({{limit}} so‘m) oshmasin.",
+    "submit": "Qabul qilish",
+    "submitRefund": "Pulni qaytarish",
+    "dialog": {
+      "title": "To‘lov",
+      "description": "Qoldiq: {{debt}} so‘m · to‘langan: {{paid}} so‘m."
+    },
+    "kind": {
+      "label": "Turi",
+      "DEPOSIT": "Zaklad",
+      "PAYMENT": "To‘lov",
+      "REFUND": "Qaytarish"
+    },
+    "method": {
+      "label": "Usul",
+      "CASH": "Naqd",
+      "CARD": "Karta",
+      "TRANSFER": "O‘tkazma"
+    },
+    "fill": {
+      "allPaid": "Hammasi",
+      "deposit": "Zaklad",
+      "fullDebt": "To‘liq qarz"
+    },
+    "toast": {
+      "accepted": "To‘lov qabul qilindi",
+      "refunded": "Pul qaytarildi",
+      "voided": "To‘lov bekor qilindi"
+    },
+    "confirm": {
+      "voidTitle": "To‘lovni bekor qilish",
+      "voidText": "{{amount}} so‘mlik to‘lov hisobdan chiqariladi. Yozuv tarixda saqlanib qoladi."
+    }
+  },
+  "services": {
+    "title": "Qo‘shimcha xizmatlar",
+    "description": "Bronga qo‘shiladigan xizmatlar katalogi: bezak, karnay-surnay, tort va boshqalar. Narx o‘zgarsa, eski bronlar eski narxda qoladi.",
+    "new": "Yangi xizmat",
+    "active": "Faol",
+    "inactive": "O‘chirilgan",
+    "activate": "Yoqish",
+    "deactivate": "O‘chirib qo‘yish",
+    "actionsLabel": "{{name}} uchun amallar",
+    "columns": {
+      "name": "Xizmat",
+      "unit": "Hisoblanishi",
+      "price": "Narxi",
+      "status": "Holat"
+    },
+    "unit": {
+      "PER_EVENT": "bir tadbir uchun",
+      "PER_GUEST": "bir mehmon uchun"
+    },
+    "form": {
+      "createTitle": "Yangi xizmat",
+      "editTitle": "Xizmatni tahrirlash",
+      "description": "«Bir mehmon uchun» xizmat narxi bronda mehmonlar soniga ko‘paytiriladi.",
+      "name": "Nomi",
+      "namePlaceholder": "Masalan: Zal bezagi",
+      "unit": "Hisoblanishi",
+      "price": "Narxi"
+    },
+    "confirm": {
+      "deleteTitle": "Xizmatni o‘chirish",
+      "deleteText": "«{{name}}» katalogdan olib tashlanadi. Mavjud bronlardagi nusxalari o‘zgarmaydi."
+    },
+    "toast": {
+      "created": "Xizmat qo‘shildi",
+      "updated": "Xizmat saqlandi",
+      "deleted": "Xizmat o‘chirildi"
+    },
+    "empty": {
+      "title": "Katalog bo‘sh",
+      "text": "Bronlarga qo‘shish uchun birinchi xizmatni yarating."
+    }
+  },
+  "menu": {
+    "title": "Menyu",
+    "description": "To‘y menyusi paketlari: 1 kishilik narx va tarkib. Bu paketlar bron ochishda va mijozga taqdimotda ko‘rinadi.",
+    "newPackage": "Yangi paket",
+    "inactive": "Faol emas",
+    "perGuest": "so‘m / 1 kishi",
+    "kinds_one": "{{count}} xil",
+    "kinds_other": "{{count}} xil",
+    "noSections": "Tarkib kiritilmagan",
+    "tabs": {
+      "packages": "Paketlar",
+      "categories": "Bo‘limlar",
+      "dishes": "Taomlar"
+    },
+    "empty": {
+      "title": "Hali paketlar yo‘q",
+      "text": "Birinchi menyu paketini yarating — u bron formasida va taqdimotda paydo bo‘ladi."
+    },
+    "confirm": {
+      "deleteTitle": "Paketni o‘chirasizmi?",
+      "deleteText": "«{{name}}» paketi o‘chiriladi. Shu paket bilan ochilgan bronlarda nomi va narxi saqlanib qoladi."
+    },
+    "toast": {
+      "packageCreated": "Paket yaratildi",
+      "packageUpdated": "Paket saqlandi",
+      "packageDeleted": "Paket o‘chirildi",
+      "categorySaved": "Bo‘lim saqlandi",
+      "categoryDeleted": "Bo‘lim o‘chirildi"
+    },
+    "packageForm": {
+      "createTitle": "Yangi menyu paketi",
+      "editTitle": "Paketni tahrirlash",
+      "description": "Narxni o‘zgartirsangiz, avval ochilgan bronlar eski narxida qoladi.",
+      "name": "Paket nomi",
+      "price": "1 kishilik narx",
+      "badge": "Belgi",
+      "badgePlaceholder": "Masalan: VIP",
+      "descriptionLabel": "Qisqa tavsif",
+      "sections": "Paket tarkibi",
+      "kindsLabel": "{{name}}: necha xil",
+      "kindsUnit": "xil",
+      "itemsLabel": "{{name}}: taom nomlari",
+      "itemsPlaceholder": "Taom nomlari, vergul bilan (ixtiyoriy)",
+      "active": "Faol — bron formasida va taqdimotda ko‘rinadi"
+    },
+    "categories": {
+      "description": "Menyu bo‘limlari barcha paketlar uchun umumiy. Tartibi paket tarkibida va taqdimotda shunday ko‘rinadi.",
+      "new": "Yangi bo‘lim",
+      "moveUp": "{{name}}: yuqoriga",
+      "moveDown": "{{name}}: pastga",
+      "createTitle": "Yangi bo‘lim",
+      "editTitle": "Bo‘limni tahrirlash",
+      "formDescription": "Nom ikki tilda kiritiladi — taqdimot tanlangan tilda ko‘rsatiladi.",
+      "nameUz": "Nomi (o‘zbekcha)",
+      "nameRu": "Nomi (ruscha)",
+      "deleteTitle": "Bo‘limni o‘chirasizmi?",
+      "deleteText": "«{{name}}» bo‘limi barcha paketlar tarkibidan ham olib tashlanadi."
+    },
+    "dishes": {
+      "description": "Paketlarda yozilgan har bir taomga rasm va qisqa tavsif qo‘shing — ular mijozga taqdimotda ko‘rinadi. Yangi taom paket tarkibiga nomi yozilganda shu yerda paydo bo‘ladi.",
+      "emptyTitle": "Hali taomlar yo‘q",
+      "emptyText": "Paketni tahrirlab, bo‘lim ostiga taom nomlarini yozing — ular shu yerda chiqadi.",
+      "inPackages_one": "{{count}} ta paketda",
+      "inPackages_other": "{{count}} ta paketda",
+      "unused": "Hech bir paketda yo‘q",
+      "uploadPhoto": "Rasm yuklash",
+      "replacePhoto": "Almashtirish",
+      "removePhoto": "{{name}}: rasmni olib tashlash",
+      "editDescription": "{{name}}: tavsifni tahrirlash",
+      "descriptionHint": "Qisqa tavsif: nimalardan tayyorlanadi.",
+      "descriptionLabel": "Tavsif",
+      "descriptionPlaceholder": "Masalan: mol go‘shti, kartoshka, ziravorlar",
+      "saved": "Taom saqlandi",
+      "photoSaved": "Rasm yangilandi"
+    },
+    "cover": {
+      "upload": "Muqova yuklash",
+      "replace": "Muqovani almashtirish",
+      "remove": "Muqovani olib tashlash",
+      "empty": "Muqova rasmi yo‘q",
+      "hint": "Mijozga taqdimotda paket kartasining foni bo‘ladi",
+      "saved": "Muqova saqlandi",
+      "removed": "Muqova olib tashlandi"
+    }
+  },
+  "gallery": {
+    "title": "Galereya",
+    "description": "To‘yxona rasmlari va videolari. Albomlar mijozga taqdimotda — menyu paketi sahifasida ko‘rsatiladi.",
+    "newAlbum": "Yangi albom",
+    "upload": "Rasm yoki video yuklash",
+    "albums": "Albomlar",
+    "albumActions": "Albom amallari",
+    "deleteAlbum": "Albomni o‘chirish",
+    "uploading": "Yuklanayotgan fayllar",
+    "processing": "Qayta ishlanmoqda…",
+    "openItem": "{{number}}-faylni ochish",
+    "deleteItem": "Faylni o‘chirish",
+    "empty": {
+      "albumsTitle": "Hali albomlar yo‘q",
+      "albumsText": "Birinchi albomni yarating: masalan, «Umumiy zal» yoki «Stol bezatilishi».",
+      "itemsTitle": "Albom bo‘sh",
+      "itemsText": "Rasm (JPEG, PNG, WebP, AVIF — 10 MB gacha) yoki video (MP4, MOV, WebM — 2 GB gacha) yuklang. Video hamma qurilmada silliq o‘ynashi uchun avtomatik tayyorlanadi."
+    },
+    "errors": {
+      "type": "{{name}}: bu turdagi fayl qabul qilinmaydi. Rasm yoki MP4/MOV/WebM video yuklang.",
+      "imageSize": "{{name}}: rasm 10 MB dan oshmasin.",
+      "videoSize": "{{name}}: video 2 GB dan oshmasin."
+    },
+    "toast": {
+      "albumSaved": "Albom saqlandi",
+      "albumDeleted": "Albom o‘chirildi",
+      "itemDeleted": "Fayl o‘chirildi",
+      "reprocess": "Video qayta ishlash navbatiga qo‘yildi"
+    },
+    "albumForm": {
+      "createTitle": "Yangi albom",
+      "editTitle": "Albomni tahrirlash",
+      "description": "Albom nomi va tavsifi taqdimotda mijozga ko‘rinadi.",
+      "title": "Albom nomi",
+      "titlePlaceholder": "Masalan: Kortej",
+      "descriptionLabel": "Tavsif",
+      "package": "Qaysi paketda ko‘rinadi",
+      "allPackages": "Barcha paketlarda",
+      "packageHint": "Masalan, VIP stol bezagi faqat VIP paket sahifasida chiqsin."
+    },
+    "confirm": {
+      "albumTitle": "Albomni o‘chirasizmi?",
+      "albumText_one": "«{{name}}» albomi va undagi {{count}} ta fayl butunlay o‘chiriladi.",
+      "albumText_other": "«{{name}}» albomi va undagi {{count}} ta fayl butunlay o‘chiriladi.",
+      "itemTitle": "Faylni o‘chirasizmi?",
+      "itemText": "Fayl galereyadan butunlay o‘chiriladi."
+    },
+    "video": {
+      "processing": "Qayta ishlanmoqda",
+      "processingHint": "Video hamma qurilmada silliq o‘ynashi uchun tayyorlanmoqda. Hozir ham ko‘rish mumkin.",
+      "failed": "Tayyorlanmadi",
+      "failedHint": "Videoni qayta ishlab bo‘lmadi — u yuklangan holicha saqlandi va ba’zi qurilmalarda o‘ynamasligi mumkin.",
+      "retry": "Qayta ishlashga yana urinish"
+    },
+    "shownIn": "Taqdimotda: faqat «{{name}}» paketida",
+    "shownInAll": "Taqdimotda: barcha paketlarda"
+  },
+  "showcase": {
+    "title": "Taqdimot",
+    "close": "Taqdimotni yopish",
+    "empty": "Taqdimot uchun hali ma’lumot yo‘q. Zallar va menyu paketlarini qo‘shing.",
+    "nav": {
+      "halls": "Zallar",
+      "menu": "Menyu",
+      "gallery": "Galereya"
+    },
+    "hero": {
+      "eyebrow": "To‘yxona · Wedding Studio",
+      "tagline": "Hayotingizning eng yorqin kuni — gavhardek bezavol."
+    },
+    "halls": {
+      "eyebrow": "Makon",
+      "title": "Bizning zallar",
+      "openPhotos": "{{name}} rasmlarini ochish"
+    },
+    "menu": {
+      "eyebrow": "Dasturxon",
+      "title": "To‘y menyusi",
+      "text": "Paketni tanlang — ichida nimalar borligini ko‘rasiz. Narxlar bir kishi uchun, so‘mda.",
+      "guests": "Mehmonlar soni",
+      "fewerGuests": "Mehmonlarni kamaytirish",
+      "moreGuests": "Mehmonlarni ko‘paytirish",
+      "perGuest": "so‘m · 1 kishi uchun",
+      "totalFor_one": "{{count}} mehmon uchun",
+      "totalFor_other": "{{count}} mehmon uchun",
+      "dishCount_one": "{{count}} xil taom",
+      "dishCount_other": "{{count}} xil taom",
+      "view": "Menyuni ko‘rish"
+    },
+    "gallery": {
+      "eyebrow": "Lahzalar",
+      "title": "Galereya"
+    },
+    "package": {
+      "eyebrow": "Menyu paketi",
+      "all": "Barcha paketlar",
+      "sections_one": "{{count}} bo‘lim",
+      "sections_other": "{{count}} bo‘lim",
+      "cardTitle": "Menyu",
+      "cardSubtitle": "Dasturxoningizga tortiladigan taomlar",
+      "openDish": "{{name}} rasmini ochish",
+      "photosEyebrow": "Lazzat",
+      "photosTitle": "Taomlarimiz",
+      "othersEyebrow": "Tanlov",
+      "othersTitle": "Boshqa paketlar",
+      "alsoTitle": "Shuningdek dasturxonda"
+    },
+    "closing": {
+      "title": "Sizning kuningiz — bizning mas’uliyatimiz",
+      "text": "Paket tarkibini xohishingizga moslab beramiz. Bron qilish uchun administratorimizga murojaat qiling."
+    }
+  },
+  "finance": {
+    "title": "Hisob-kitob",
+    "description": "To‘yxonaning tushumi, xarajati va sof foydasi. Davrni tanlang: hafta, oy yoki yil.",
+    "addExpense": "Xarajat qo‘shish",
+    "income": "Tushum",
+    "expenses": "Xarajatlar",
+    "profit": "Sof foyda",
+    "debt": "Qarzdorlik",
+    "today": "Bugun",
+    "prevPeriod": "Oldingi davr",
+    "nextPeriod": "Keyingi davr",
+    "rule": "Hisob {{date}} gacha yuritilgan: faqat kuni kelgan to‘ylar va yozilgan xarajatlar kiradi. Kelajakdagi bronlar bekor bo‘lishi mumkin — shuning uchun ularning zakladi foydaga qo‘shilmaydi.",
+    "ruleFuture": "Bu davr hali boshlanmagan — hisobga kiradigan to‘y va xarajat yo‘q.",
+    "profitHint": "Tushum − xarajatlar",
+    "incomeHint_one": "{{count}} ta o‘tgan to‘y, {{guests}} mehmon",
+    "incomeHint_other": "{{count}} ta o‘tgan to‘y, {{guests}} mehmon",
+    "incomeHintRetained_one": "{{count}} ta to‘y; shundan {{amount}} — bekor qilingan to‘ylardan qolgan zaklad",
+    "incomeHintRetained_other": "{{count}} ta to‘y; shundan {{amount}} — bekor qilingan to‘ylardan qolgan zaklad",
+    "expensesHint_one": "{{count}} ta yozuv",
+    "expensesHint_other": "{{count}} ta yozuv",
+    "debtHint": "O‘tgan to‘ylar shartnomasi: {{amount}}",
+    "byCategory": "Xarajatlar turi bo‘yicha",
+    "noExpenses": "Bu davrda xarajat yozilmagan.",
+    "expensesTitle": "Xarajatlar ro‘yxati",
+    "period": {
+      "week": "Hafta",
+      "month": "Oy",
+      "year": "Yil"
+    },
+    "chart": {
+      "title": "Tushum va xarajat",
+      "future": "Hali kelmagan — hisobga kirmaydi",
+      "max": "Eng baland ustun: {{amount}} so‘m"
+    },
+    "upcoming": {
+      "title": "Kelajakdagi to‘ylar",
+      "count": "Bronlar soni",
+      "total": "Shartnoma summasi",
+      "paid": "Olingan zaklad",
+      "note": "Bu summalar yuqoridagi hisobga kirmagan. To‘y bo‘lib o‘tgan kuni tushumga qo‘shiladi."
+    },
+    "events": {
+      "title": "Bo‘lib o‘tgan to‘ylar",
+      "date": "Sana",
+      "event": "Tadbir",
+      "total": "Shartnoma",
+      "paid": "Olingan, so‘m",
+      "debt": "qarz: {{amount}}",
+      "truncated": "Oxirgi {{shown}} tasi ko‘rsatilgan (jami {{count}} ta). Yuqoridagi summalar hammasini qamraydi.",
+      "expenses": "Xarajat",
+      "profit": "Sof foyda"
+    },
+    "expenseColumns": {
+      "date": "Sana",
+      "category": "Turi",
+      "author": "Kim yozgan",
+      "amount": "Summa, so‘m"
+    },
+    "empty": {
+      "expensesTitle": "Bu davrda xarajat yo‘q",
+      "expensesText": "Ish haqi, kommunal to‘lov, bozorlik kabi xarajatlarni yozib boring — sof foyda shunga qarab hisoblanadi.",
+      "eventsTitle": "Bu davrda o‘tgan to‘y yo‘q",
+      "eventsText": "To‘y bo‘lib o‘tgach, u shu yerda va tushumda paydo bo‘ladi."
+    },
+    "toast": {
+      "expenseCreated": "Xarajat yozildi",
+      "expenseUpdated": "Xarajat saqlandi",
+      "expenseDeleted": "Xarajat o‘chirildi"
+    },
+    "confirm": {
+      "deleteTitle": "Xarajatni o‘chirasizmi?",
+      "deleteText": "«{{category}}» — {{amount}} so‘m xarajat o‘chiriladi va sof foyda qayta hisoblanadi."
+    },
+    "expenseForm": {
+      "createTitle": "Yangi xarajat",
+      "editTitle": "Xarajatni tuzatish",
+      "description": "Xarajat bo‘lib o‘tgan kunga yoziladi — kelajak sanasi qabul qilinmaydi.",
+      "category": "Xarajat turi",
+      "categoryPlaceholder": "Turini tanlang",
+      "amount": "Summa",
+      "date": "Sana",
+      "note": "Izoh",
+      "notePlaceholder": "Masalan: sentabr oyi uchun gaz",
+      "eventDescription": "To‘y xarajati: {{event}}. To‘y kuniga yoziladi va shu to‘yning sof foydasidan ayiriladi."
+    },
+    "categories": {
+      "title": "Xarajat turlari",
+      "description": "Xarajatlar shu turlar bo‘yicha guruhlanadi. O‘chirilgan tur eski xarajatlarda saqlanib qoladi.",
+      "newPlaceholder": "Yangi tur nomi",
+      "rename": "{{name}}: qayta nomlash",
+      "remove": "{{name}}: o‘chirish",
+      "system": "Tizim turi: tasdiqlangan bozorlik shu yerga yoziladi, o‘chirib bo‘lmaydi.",
+      "empty": "Hali xarajat turlari yo‘q."
+    },
+    "fromShopping": "Bozorlik",
+    "pendingShopping_one": "Tasdiqlanmagan bozorlik: {{count}} ta ro‘yxat, {{amount}} so‘m. Siz tasdiqlamaguningizcha bu summa sof foydadan ayirilmaydi.",
+    "pendingShopping_other": "Tasdiqlanmagan bozorlik: {{count}} ta ro‘yxat, {{amount}} so‘m. Siz tasdiqlamaguningizcha bu summa sof foydadan ayirilmaydi.",
+    "eventCard": {
+      "title": "To‘y xarajatlari va sof foyda",
+      "empty": "Bu to‘yga hali xarajat yozilmagan. Kamerachi, san’atkor, oshpazga to‘lov kabi xarajatlarni shu yerga yozing.",
+      "paid": "Olingan pul"
+    }
+  },
+  "warehouse": {
+    "title": "Ombor",
+    "description": "Idish-tovoq va oziq-ovqat qoldig‘i. Kirim qo‘shadi, chiqim kamaytiradi — har bir harakat tarixda saqlanadi.",
+    "new": "Yangi mahsulot",
+    "low": "Kam qoldi",
+    "lowCount_one": "Kam qolgan: {{count}} ta",
+    "lowCount_other": "Kam qolgan: {{count}} ta",
+    "minimum": "chegara: {{quantity}}",
+    "stockIn": "Kirim",
+    "stockOut": "Chiqim",
+    "stockInFor": "{{name}}: kirim",
+    "stockOutFor": "{{name}}: chiqim",
+    "actionsLabel": "{{name}}: amallar",
+    "searchPlaceholder": "Nom bo‘yicha qidirish",
+    "columns": {
+      "name": "Nomi",
+      "quantity": "Qoldiq",
+      "status": "Holat"
+    },
+    "section": {
+      "TABLEWARE": "Idish-tovoq",
+      "FOOD": "Oziq-ovqat"
+    },
+    "unit": {
+      "PIECE": "dona",
+      "KG": "kg",
+      "LITER": "l",
+      "PACK": "qadoq",
+      "BOX": "quti",
+      "SET": "to‘plam"
+    },
+    "unitName": {
+      "PIECE": "Dona",
+      "KG": "Kilogramm",
+      "LITER": "Litr",
+      "PACK": "Qadoq",
+      "BOX": "Quti",
+      "SET": "To‘plam"
+    },
+    "empty": {
+      "title": "Bu bo‘lim hali bo‘sh",
+      "tableware": "Likopcha, piyola, qoshiq, dasturxon kabi idish-tovoq va jihozlarni qo‘shing.",
+      "food": "Guruch, go‘sht, yog‘, un kabi mahsulotlarni qo‘shing."
+    },
+    "toast": {
+      "created": "Mahsulot qo‘shildi",
+      "updated": "Mahsulot saqlandi",
+      "deleted": "Mahsulot o‘chirildi",
+      "stockIn": "Kirim qilindi",
+      "stockOut": "Chiqim qilindi",
+      "counted": "Inventarizatsiya saqlandi",
+      "photoSaved": "Rasm saqlandi",
+      "photoRemoved": "Rasm olib tashlandi"
+    },
+    "confirm": {
+      "deleteTitle": "Mahsulotni o‘chirasizmi?",
+      "deleteText": "«{{name}}» ombordan olib tashlanadi. Kirim-chiqim tarixi audit jurnalida qoladi."
+    },
+    "itemForm": {
+      "createTitle": {
+        "tableware": "Yangi idish-tovoq",
+        "food": "Yangi oziq-ovqat mahsuloti"
+      },
+      "editTitle": "Mahsulotni tahrirlash",
+      "description": "Qoldiq faqat kirim va chiqim orqali o‘zgaradi.",
+      "name": "Nomi",
+      "namePlaceholder": {
+        "tableware": "Masalan: Chuqur likopcha",
+        "food": "Masalan: Guruch (lazer)"
+      },
+      "unit": "O‘lchov birligi",
+      "initial": "Hozirgi qoldiq",
+      "minimum": "Kam qoldi chegarasi",
+      "minimumHint": "Qoldiq shu miqdorga tushsa, tizim ogohlantiradi.",
+      "note": "Izoh",
+      "notePlaceholder": "Masalan: 2-javonda, oq rangli",
+      "category": "Mahsulot turi",
+      "noCategory": "Ko‘rsatilmagan"
+    },
+    "movement": {
+      "inTitle": "Kirim — omborga qo‘shish",
+      "outTitle": "Chiqim — ombordan kamaytirish",
+      "inQuantity": "Qancha qo‘shildi",
+      "outQuantity": "Qancha kamaydi",
+      "cost": "Xarid summasi",
+      "costHint": "Faqat ombor tarixida saqlanadi — hisob-kitobga qo‘shilmaydi.",
+      "note": "Izoh",
+      "inNotePlaceholder": "Masalan: bozordan olindi",
+      "outNotePlaceholder": "Masalan: shanba kungi to‘y uchun; sindi",
+      "inSubmit": "Qo‘shish",
+      "outSubmit": "Kamaytirish"
+    },
+    "history": {
+      "title": "Kirim-chiqim tarixi",
+      "balance": "hozirgi qoldiq: {{quantity}}",
+      "empty": "Bu mahsulot bo‘yicha hali harakat yo‘q.",
+      "after": "qoldiq: {{quantity}}",
+      "cost": "Xarid: {{amount}} so‘m"
+    },
+    "productCategory": {
+      "VEGETABLE": "Sabzavot",
+      "FRUIT": "Meva",
+      "MEAT": "Go‘sht",
+      "DAIRY": "Sut mahsulotlari",
+      "GREENS": "Ko‘katlar",
+      "GRAIN": "Don va un",
+      "OIL": "Yog‘",
+      "SPICE": "Ziravor",
+      "DRINK": "Ichimlik",
+      "OTHER": "Boshqa"
+    },
+    "stocktake": {
+      "title": "Inventarizatsiya",
+      "actual": "Sanab chiqilgan haqiqiy miqdor",
+      "same": "Yozuvdagi qoldiq bilan bir xil",
+      "surplus": "Ortiqcha: +{{quantity}} — kirim qilib yoziladi",
+      "shortage": "Kamomad: −{{quantity}} — chiqim qilib yoziladi",
+      "notePlaceholder": "Masalan: oy oxiri sanog‘i"
+    },
+    "recent": {
+      "title": "So‘nggi harakatlar",
+      "description": "Butun ombor bo‘yicha oxirgi kirim va chiqimlar.",
+      "empty": "Hali harakat yo‘q."
+    },
+    "photo": {
+      "upload": "Rasm yuklash",
+      "replace": "Rasmni almashtirish",
+      "remove": "Rasmni olib tashlash"
+    }
+  },
+  "shopping": {
+    "title": "Bozorlik",
+    "description": "Har bir to‘y uchun bozorlik: oshpaz yozadi, super admin tekshiradi, admin sotib olib narx kiritadi. Super admin tasdiqlagach summa xarajatlarga o‘tadi.",
+    "today": "Bugun",
+    "write": "Bozorlik yozish",
+    "menu": "Menyu",
+    "noMenu": "Bu to‘yga menyu paketi tanlanmagan.",
+    "lists": "Bozorlik ro‘yxatlari",
+    "noLists": "Bu to‘y uchun hali bozorlik yozilmagan.",
+    "total": "Bozorlik jami",
+    "skipped": "olinmadi",
+    "itemsCount_one": "{{count}} ta mahsulot",
+    "itemsCount_other": "{{count}} ta mahsulot",
+    "purchasedBy": "Xarid: {{name}}, {{date}}",
+    "tooEarly": "Bozorlik to‘y kuni qilinadi — narx kiritish {{date}} kuni ochiladi.",
+    "tabs": {
+      "today": "Bugun",
+      "upcoming": "Kelgusi",
+      "past": "O‘tgan",
+      "general": "Umumiy"
+    },
+    "status": {
+      "SUBMITTED": "Tekshiruvda",
+      "APPROVED": "Xarid kutilmoqda",
+      "PURCHASED": "Sotib olingan",
+      "CONFIRMED": "Tasdiqlangan"
+    },
+    "tasks": {
+      "review_one": "Tekshirish kerak: {{count}} ta",
+      "review_other": "Tekshirish kerak: {{count}} ta",
+      "confirm_one": "Tasdiqlash kerak: {{count}} ta",
+      "confirm_other": "Tasdiqlash kerak: {{count}} ta",
+      "purchase_one": "Xarid qilish kerak: {{count}} ta",
+      "purchase_other": "Xarid qilish kerak: {{count}} ta"
+    },
+    "actions": {
+      "review": "Tekshirish",
+      "approve": "Adminga yuborish",
+      "purchase": "Narx kiritish",
+      "fixPrices": "Narxlarni tuzatish",
+      "confirm": "Tasdiqlash",
+      "unconfirm": "Tasdiqni bekor qilish",
+      "delete": "Ro‘yxatni o‘chirish"
+    },
+    "empty": {
+      "today": {
+        "title": "Bugun to‘y yo‘q",
+        "text": "Bugungi to‘ylar shu yerda karta bo‘lib ko‘rinadi. Kelgusi to‘ylarni «Kelgusi» bo‘limidan ko‘ring."
+      },
+      "upcoming": {
+        "title": "Kelgusi to‘ylar yo‘q",
+        "text": "Yangi bron ochilgach, u shu yerda paydo bo‘ladi."
+      },
+      "past": {
+        "title": "Yaqinda o‘tgan to‘y yo‘q",
+        "text": "Oxirgi uch hafta ichida o‘tgan to‘ylar shu yerda turadi."
+      }
+    },
+    "toast": {
+      "created": "Ro‘yxat super adminga yuborildi",
+      "saved": "Ro‘yxat saqlandi",
+      "approved": "Ro‘yxat adminga yuborildi",
+      "progressSaved": "Kiritilgan narxlar saqlandi",
+      "purchased": "Xarid yakunlandi — tasdiq kutilmoqda",
+      "confirm": "Tasdiqlandi — summa xarajatlarga yozildi",
+      "unconfirm": "Tasdiq bekor qilindi",
+      "delete": "Ro‘yxat o‘chirildi"
+    },
+    "confirmDialog": {
+      "confirm": {
+        "title": "Bozorlikni tasdiqlaysizmi?",
+        "text": "{{name}} ro‘yxati bo‘yicha {{amount}} so‘m xarajatlarga yoziladi va sof foydadan ayiriladi.",
+        "submit": "Tasdiqlash"
+      },
+      "unconfirm": {
+        "title": "Tasdiqni bekor qilasizmi?",
+        "text": "{{amount}} so‘m xarajatlardan chiqariladi. Narxlarni tuzatib, qayta tasdiqlashingiz mumkin.",
+        "submit": "Bekor qilish"
+      },
+      "delete": {
+        "title": "Ro‘yxatni o‘chirasizmi?",
+        "text": "{{name}} yozgan bozorlik ro‘yxati o‘chiriladi.",
+        "submit": "O‘chirish"
+      }
+    },
+    "editor": {
+      "title": {
+        "create": "Bozorlik yozish",
+        "edit": "Ro‘yxatni tuzatish",
+        "review": "Ro‘yxatni tekshirish"
+      },
+      "items": "Mahsulotlar",
+      "name": "{{number}}-qator: mahsulot nomi",
+      "namePlaceholder": "Mahsulot nomi",
+      "quantity": "{{number}}-qator: miqdor",
+      "unit": "{{number}}-qator: birlik",
+      "removeRow": "{{number}}-qatorni o‘chirish",
+      "addRow": "Qator qo‘shish",
+      "empty": "Kamida bitta mahsulot yozing.",
+      "invalid": "Har bir qatorda nom va miqdor to‘ldirilgan bo‘lsin.",
+      "note": "Izoh",
+      "notePlaceholder": "Masalan: go‘sht yangi so‘yilgan bo‘lsin",
+      "submit": "Super adminga yuborish",
+      "rowNote": "{{number}}-qator: izoh",
+      "rowNotePlaceholder": "Izoh: masalan, qizil va yirik bo‘lsin"
+    },
+    "purchase": {
+      "title": "Narxlarni kiritish",
+      "fixTitle": "Narxlarni tuzatish",
+      "description": "Narx — shu qator uchun to‘langan jami summa.",
+      "skipped": "Olinmadi",
+      "quantityFor": "{{name}}: olingan miqdor",
+      "priceFor": "{{name}}: narxi",
+      "saveProgress": "Saqlab qo‘yish",
+      "complete": "Xarid tugadi",
+      "priceMode": "Narx qanday kiritiladi",
+      "modeTotal": "Jami summa",
+      "modeUnit": "1 birlik narxi",
+      "unitPriceFor": "{{name}}: 1 birlik narxi"
+    },
+    "firstDish": "1-ovqat",
+    "secondDish": "2-ovqat",
+    "general": {
+      "title": "Umumiy bozorlik",
+      "subtitle": "To‘yga bog‘lanmagan xaridlar: tuz, salfetka, yuvish vositalari kabi doimiy narsalar.",
+      "empty": "Hali umumiy ro‘yxat yozilmagan."
+    }
+  },
+  "workers": {
+    "title": "Ishchilar",
+    "description": "Ofitsiantlar, oshpazlar va boshqa ishchilar ro‘yxati. Ularni to‘yga bron sahifasida biriktirasiz.",
+    "new": "Yangi ishchi",
+    "all": "Hammasi",
+    "active": "Faol",
+    "inactive": "Faol emas",
+    "activate": "Faollashtirish",
+    "deactivate": "Faol emas qilish",
+    "actionsLabel": "{{name}} uchun amallar",
+    "searchPlaceholder": "Ism yoki telefon bo‘yicha qidirish",
+    "columns": {
+      "worker": "Ishchi",
+      "position": "Lavozim",
+      "phone": "Telefon",
+      "upcoming": "Oldindagi to‘ylar",
+      "status": "Holat"
+    },
+    "position": {
+      "WAITER_MALE": "Ofitsiant (yigit)",
+      "WAITER_FEMALE": "Ofitsiant (qiz)",
+      "CHEF": "Oshpaz",
+      "OTHER": "Boshqa"
+    },
+    "positionPlural": {
+      "WAITER_MALE": "Yigitlar",
+      "WAITER_FEMALE": "Qizlar",
+      "CHEF": "Oshpazlar",
+      "OTHER": "Boshqalar"
+    },
+    "empty": {
+      "title": "Hali ishchilar yo‘q",
+      "text": "Ofitsiant va oshpazlarni qo‘shing — keyin ularni to‘ylarga biriktirasiz."
+    },
+    "toast": {
+      "created": "Ishchi qo‘shildi",
+      "updated": "Ishchi saqlandi",
+      "deleted": "Ishchi o‘chirildi",
+      "assigned": "Ishchi to‘yga biriktirildi",
+      "unassigned": "Ishchi to‘ydan olib tashlandi"
+    },
+    "confirm": {
+      "deleteTitle": "Ishchini o‘chirasizmi?",
+      "deleteText": "«{{name}}» ro‘yxatdan olib tashlanadi. O‘tgan to‘ylardagi yozuvlari saqlanib qoladi."
+    },
+    "form": {
+      "createTitle": "Yangi ishchi",
+      "editTitle": "Ishchini tahrirlash",
+      "description": "Ishchi tizimga kirmaydi — bu ro‘yxat uni to‘ylarga biriktirish uchun.",
+      "fullName": "Ism familiya",
+      "phone": "Telefon",
+      "position": "Lavozim",
+      "note": "Izoh",
+      "notePlaceholder": "Masalan: tajribali, faqat kechki to‘ylarga"
+    },
+    "eventCard": {
+      "title": "Ishchilar",
+      "assign": "Ishchi biriktirish",
+      "empty": "Bu to‘yga hali ishchi biriktirilmagan.",
+      "remove": "{{name}}ni to‘ydan olib tashlash",
+      "assignDescription": "Faqat faol ishchilar ko‘rinadi.",
+      "worker": "Ishchi",
+      "workerPlaceholder": "Ishchini tanlang",
+      "noneLeft": "Biriktirish mumkin bo‘lgan faol ishchi qolmadi.",
+      "role": "Shu to‘ydagi vazifasi",
+      "rolePlaceholder": "Masalan: bosh ofitsiant"
+    }
+  },
+  "dashboard": {
+    "today": "Bugungi to‘ylar",
+    "tomorrow": "Ertangi to‘ylar",
+    "noToday": "Bugun to‘y yo‘q.",
+    "noTomorrow": "Ertaga to‘y yo‘q.",
+    "week": "Shu hafta",
+    "lowStock": "Kam qolgan mahsulotlar",
+    "noLowStock": "Hammasi yetarli.",
+    "openWarehouse": "Omborni ochish",
+    "workers_one": "{{count}} ta ishchi",
+    "workers_other": "{{count}} ta ishchi",
+    "noWorkers": "Ishchi biriktirilmagan",
+    "stats": {
+      "today": "Bugun",
+      "tomorrow": "Ertaga",
+      "week": "Shu hafta",
+      "active": "Oldindagi bronlar",
+      "weekGuests_one": "{{count}} mehmon",
+      "weekGuests_other": "{{count}} mehmon",
+      "thisMonth_one": "shu oyda {{count}} ta",
+      "thisMonth_other": "shu oyda {{count}} ta"
+    },
+    "month": {
+      "title": "Shu oy",
+      "events_one": "{{count}} ta to‘y",
+      "events_other": "{{count}} ta to‘y",
+      "expected": "Kutilayotgan",
+      "collected": "Olingan",
+      "outstanding": "Qarz",
+      "expenses": "Xarajat"
+    }
+  },
+  "brand": {
+    "title": "Brend",
+    "description": "To‘yxona nomi va logotipi: kirish sahifasi, yon menyu va mijozga taqdimotda ko‘rinadi.",
+    "name": "To‘yxona nomi",
+    "logo": "Logotip",
+    "uploadLogo": "Logotip yuklash",
+    "replaceLogo": "Logotipni almashtirish",
+    "removeLogo": "Olib tashlash",
+    "logoHint": "PNG yoki WebP, shaffof fonli kvadrat rasm eng yaxshi ko‘rinadi. Logotip bo‘lmasa, aylanayotgan gavhar turadi.",
+    "toast": {
+      "saved": "Nom saqlandi",
+      "logoSaved": "Logotip yangilandi"
+    }
+  }
+}

@@ -1,0 +1,811 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RBAC
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  /// Tizim rollari uchun o'zgarmas kalit (SUPER_ADMIN, ADMIN); custom rollar uchun slug.
+  key         String   @unique
+  name        String
+  description String?
+  /// Tizim rollarini o'chirib bo'lmaydi.
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String @id @default(uuid()) @db.Uuid
+  /// `resource:action` formatida, masalan `menu:update`.
+  key         String @unique
+  resource    String
+  action      String
+  description String
+
+  roles RolePermission[]
+
+  @@index([resource])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Foydalanuvchilar va sessiyalar
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+model User {
+  id                 String     @id @default(uuid()) @db.Uuid
+  /// Har doim kichik harflarda saqlanadi.
+  email              String     @unique
+  fullName           String     @map("full_name")
+  phone              String?
+  passwordHash       String     @map("password_hash")
+  roleId             String     @map("role_id") @db.Uuid
+  status             UserStatus @default(ACTIVE)
+  mustChangePassword Boolean    @default(false) @map("must_change_password")
+  passwordChangedAt  DateTime?  @map("password_changed_at") @db.Timestamptz(3)
+
+  twoFactorEnabled Boolean @default(false) @map("two_factor_enabled")
+  /// AES-256-GCM bilan shifrlangan TOTP siri.
+  totpSecretEnc    String? @map("totp_secret_enc")
+
+  lastLoginAt DateTime? @map("last_login_at") @db.Timestamptz(3)
+  lastLoginIp String?   @map("last_login_ip")
+
+  createdById String?   @map("created_by_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  role         Role         @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  createdBy    User?        @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers User[]       @relation("UserCreatedBy")
+  sessions     Session[]
+  backupCodes  BackupCode[]
+  auditLogs    AuditLog[]
+
+  @@index([roleId])
+  @@index([status, deletedAt])
+  @@map("users")
+}
+
+enum SessionRevokeReason {
+  LOGOUT
+  REVOKED_BY_USER
+  REVOKED_BY_ADMIN
+  PASSWORD_CHANGED
+  TOKEN_REUSE
+  USER_BLOCKED
+  USER_DELETED
+  SECURITY_CHANGE
+}
+
+/// Bitta login = bitta sessiya (refresh token "oilasi").
+model Session {
+  id           String               @id @default(uuid()) @db.Uuid
+  userId       String               @map("user_id") @db.Uuid
+  ip           String?
+  userAgent    String?              @map("user_agent")
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastUsedAt   DateTime             @default(now()) @map("last_used_at") @db.Timestamptz(3)
+  expiresAt    DateTime             @map("expires_at") @db.Timestamptz(3)
+  revokedAt    DateTime?            @map("revoked_at") @db.Timestamptz(3)
+  revokeReason SessionRevokeReason? @map("revoke_reason")
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+/// Refresh token faqat SHA-256 hash holida saqlanadi. Har ishlatilganda yangisi
+/// beriladi; ishlatilgan token qayta kelsa — o'g'irlik belgisi.
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  sessionId String    @map("session_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("refresh_tokens")
+}
+
+model BackupCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  codeHash  String    @map("code_hash")
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, codeHash])
+  @@map("backup_codes")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Audit
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  /// Foydalanuvchi o'chirilgandan keyin ham kim ekanligi ko'rinishi uchun.
+  actorEmail String?  @map("actor_email")
+  /// Masalan `user.create`, `auth.login_failed`.
+  action     String
+  resource   String
+  resourceId String?  @map("resource_id")
+  before     Json?
+  after      Json?
+  ip         String?
+  userAgent  String?  @map("user_agent")
+  requestId  String?  @map("request_id")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([actorId, createdAt(sort: Desc)])
+  @@index([resource, resourceId])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Zallar
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum HallStatus {
+  ACTIVE
+  MAINTENANCE
+}
+
+model Hall {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String
+  /// Mehmonlar sig'imi.
+  capacity    Int
+  description String?
+  status      HallStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt   DateTime?  @map("deleted_at") @db.Timestamptz(3)
+
+  images HallImage[]
+  events Event[]
+
+  @@index([deletedAt])
+  @@map("halls")
+}
+
+/// Rasmlar MinIO'da web uchun optimallashtirilgan holda saqlanadi (to'liq + kichik nusxa).
+model HallImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  hallId    String   @map("hall_id") @db.Uuid
+  objectKey String   @map("object_key")
+  thumbKey  String   @map("thumb_key")
+  width     Int
+  height    Int
+  sizeBytes Int      @map("size_bytes")
+  /// Eng kichigi — muqova rasmi.
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  hall Hall @relation(fields: [hallId], references: [id], onDelete: Cascade)
+
+  @@index([hallId, sortOrder])
+  @@map("hall_images")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mijozlar
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Client {
+  id         String    @id @default(uuid()) @db.Uuid
+  fullName   String    @map("full_name")
+  /// +998XXXXXXXXX. Faol mijozlar orasida takrorlanmaydi (servis darajasida tekshiriladi).
+  phone      String
+  phoneExtra String?   @map("phone_extra")
+  note       String?
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  events Event[]
+
+  @@index([phone])
+  @@index([fullName])
+  @@index([deletedAt, createdAt(sort: Desc)])
+  @@map("clients")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bronlar (to'ylar va tadbirlar)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum EventType {
+  WEDDING
+  NIKOH
+  OSH
+  SUNNAT
+  BIRTHDAY
+  ANNIVERSARY
+  CORPORATE
+  OTHER
+}
+
+enum EventStatus {
+  /// So'rov: zaklad hali to'lanmagan.
+  REQUEST
+  /// Tasdiqlangan: zaklad to'langan.
+  CONFIRMED
+  /// O'tkazildi: tadbir bo'lib o'tgan, hisob-kitob yopilmagan bo'lishi mumkin.
+  HELD
+  /// Yakunlandi: to'liq to'langan va yopilgan.
+  COMPLETED
+  CANCELLED
+}
+
+model Event {
+  id              String      @id @default(uuid()) @db.Uuid
+  /// Odamlar uchun qulay tartib raqami (shartnoma №).
+  number          Int         @unique @default(autoincrement())
+  clientId        String      @map("client_id") @db.Uuid
+  hallId          String      @map("hall_id") @db.Uuid
+  /// Tanlangan menyu paketi; nomi bron paytidagi holatida saqlanadi.
+  menuPackageId   String?     @map("menu_package_id") @db.Uuid
+  menuPackageName String?     @map("menu_package_name")
+  type            EventType
+  status          EventStatus @default(REQUEST)
+  title           String?
+  startAt         DateTime    @map("start_at") @db.Timestamptz(3)
+  endAt           DateTime    @map("end_at") @db.Timestamptz(3)
+  guestCount      Int         @map("guest_count")
+  /// Stol turi: bitta stolga necha kishi (10 yoki 12). Eski bronlarda bo'sh.
+  tableCapacity   Int?        @map("table_capacity")
+  /// Kelin-kuyov menyudan tanlagan 1- va 2-ovqat. Oshpazlar bozorlikni shunga qarab
+  /// rejalaydi. Nom sifatida saqlanadi (menyu keyin o'zgarsa ham kelishilgani qoladi);
+  /// faqat SUPER_ADMIN belgilaydi.
+  firstDish       String?     @map("first_dish")
+  secondDish      String?     @map("second_dish")
+  /// Narxlar bron paytidagi holatida saqlanadi — keyin paket yoki xizmat narxi
+  /// o'zgarsa ham eski bron summasi o'zgarmaydi. Zal uchun alohida haq olinmaydi.
+  pricePerGuest   Decimal     @map("price_per_guest") @db.Decimal(18, 2)
+  extrasTotal     Decimal     @default(0) @map("extras_total") @db.Decimal(18, 2)
+  discount        Decimal     @default(0) @db.Decimal(18, 2)
+  totalAmount     Decimal     @map("total_amount") @db.Decimal(18, 2)
+  /// To'lovlar yig'indisi (qaytarilganlar ayirilgan). Har to'lovda qayta hisoblanadi.
+  paidAmount      Decimal     @default(0) @map("paid_amount") @db.Decimal(18, 2)
+  note            String?
+  cancelReason    String?     @map("cancel_reason")
+  /// Bekor qilingan vaqt — qaytarilmagan zaklad shu kunning tushumi hisoblanadi.
+  cancelledAt     DateTime?   @map("cancelled_at") @db.Timestamptz(3)
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime?   @map("deleted_at") @db.Timestamptz(3)
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  hall          Hall           @relation(fields: [hallId], references: [id], onDelete: Restrict)
+  menuPackage   MenuPackage?   @relation(fields: [menuPackageId], references: [id], onDelete: SetNull)
+  services      EventService[]
+  payments      Payment[]
+  shoppingLists ShoppingList[]
+  expenses      Expense[]
+  workers       EventWorker[]
+
+  @@index([startAt])
+  @@index([clientId])
+  @@index([hallId, startAt])
+  @@index([status, deletedAt])
+  @@map("events")
+}
+
+enum ExtraServiceUnit {
+  /// Bir tadbir uchun belgilangan narx.
+  PER_EVENT
+  /// Har bir mehmon uchun.
+  PER_GUEST
+}
+
+/// Qo'shimcha xizmatlar katalogi (bezak, karnay-surnay, tort va h.k.).
+model ExtraService {
+  id        String           @id @default(uuid()) @db.Uuid
+  name      String
+  price     Decimal          @db.Decimal(18, 2)
+  unit      ExtraServiceUnit @default(PER_EVENT)
+  isActive  Boolean          @default(true) @map("is_active")
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime?        @map("deleted_at") @db.Timestamptz(3)
+
+  events EventService[]
+
+  @@map("extra_services")
+}
+
+/// Bronga qo'shilgan xizmat — nomi va narxi qo'shilgan paytdagi holatida.
+model EventService {
+  id             String           @id @default(uuid()) @db.Uuid
+  eventId        String           @map("event_id") @db.Uuid
+  extraServiceId String           @map("extra_service_id") @db.Uuid
+  name           String
+  unit           ExtraServiceUnit
+  unitPrice      Decimal          @map("unit_price") @db.Decimal(18, 2)
+  quantity       Int              @default(1)
+  total          Decimal          @db.Decimal(18, 2)
+
+  event        Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  extraService ExtraService @relation(fields: [extraServiceId], references: [id], onDelete: Restrict)
+
+  @@unique([eventId, extraServiceId])
+  @@map("event_services")
+}
+
+enum PaymentKind {
+  DEPOSIT
+  PAYMENT
+  REFUND
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+
+enum Currency {
+  UZS
+  USD
+}
+
+model Payment {
+  id           String        @id @default(uuid()) @db.Uuid
+  eventId      String        @map("event_id") @db.Uuid
+  kind         PaymentKind
+  method       PaymentMethod
+  currency     Currency      @default(UZS)
+  /// To'lov valyutasidagi summa.
+  amount       Decimal       @db.Decimal(18, 2)
+  /// 1 birlik valyuta necha so'm (UZS uchun 1).
+  exchangeRate Decimal       @default(1) @map("exchange_rate") @db.Decimal(18, 4)
+  /// So'mdagi qiymat — barcha hisob-kitob shu ustun bo'yicha.
+  amountUzs    Decimal       @map("amount_uzs") @db.Decimal(18, 2)
+  paidAt       DateTime      @default(now()) @map("paid_at") @db.Timestamptz(3)
+  note         String?
+  createdById  String?       @map("created_by_id") @db.Uuid
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// Bekor qilingan to'lov o'chirilmaydi — tarixda qoladi.
+  deletedAt    DateTime?     @map("deleted_at") @db.Timestamptz(3)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+
+  @@index([eventId, deletedAt])
+  @@index([paidAt])
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sozlamalar
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Kalit-qiymat ko'rinishidagi tizim sozlamalari (masalan `booking.minDepositPercent`).
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("settings")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Menyu
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Menyu bo'limi: Salatlar, Suyuq taomlar, Ichimliklar...
+model MenuCategory {
+  id        String    @id @default(uuid()) @db.Uuid
+  nameUz    String    @map("name_uz")
+  nameRu    String    @map("name_ru")
+  sortOrder Int       @default(0) @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  sections MenuPackageSection[]
+
+  @@map("menu_categories")
+}
+
+/// Menyu paketi: 1 kishilik narx va tarkib (masalan "VIP — 280 000").
+model MenuPackage {
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String
+  description   String?
+  pricePerGuest Decimal   @map("price_per_guest") @db.Decimal(18, 2)
+  /// Kartada ko'rinadigan belgi, masalan "VIP" yoki "Eng ommabop".
+  badge         String?
+  /// Mijozga taqdimotda paket kartasi va sahifasining muqova rasmi.
+  coverKey      String?   @map("cover_key")
+  coverThumbKey String?   @map("cover_thumb_key")
+  isActive      Boolean   @default(true) @map("is_active")
+  sortOrder     Int       @default(0) @map("sort_order")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  sections MenuPackageSection[]
+  prices   MenuPackagePrice[]
+  events   Event[]
+  albums   GalleryAlbum[]
+
+  @@map("menu_packages")
+}
+
+/// Paket tarkibidagi bo'lim: "Salatlar — 4 xil" va ixtiyoriy taom nomlari.
+model MenuPackageSection {
+  id         String   @id @default(uuid()) @db.Uuid
+  packageId  String   @map("package_id") @db.Uuid
+  categoryId String   @map("category_id") @db.Uuid
+  /// Necha xil (masalan 4 xil salat).
+  kindsCount Int      @default(1) @map("kinds_count")
+  /// Aniq taom nomlari (ixtiyoriy).
+  items      String[]
+
+  package  MenuPackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  category MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@unique([packageId, categoryId])
+  @@map("menu_package_sections")
+}
+
+/// Narx tarixi: paket narxi har o'zgarganda bitta yozuv.
+model MenuPackagePrice {
+  id        String   @id @default(uuid()) @db.Uuid
+  packageId String   @map("package_id") @db.Uuid
+  price     Decimal  @db.Decimal(18, 2)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  package MenuPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([packageId, createdAt(sort: Desc)])
+  @@map("menu_package_prices")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Galereya (to'yxona taqdimoti uchun rasm va videolar)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model GalleryAlbum {
+  id            String    @id @default(uuid()) @db.Uuid
+  title         String
+  description   String?
+  /// Albom faqat shu menyu paketining taqdimot sahifasida ko'rinadi; bo'sh bo'lsa — hamma paketda.
+  menuPackageId String?   @map("menu_package_id") @db.Uuid
+  sortOrder     Int       @default(0) @map("sort_order")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  items       GalleryItem[]
+  menuPackage MenuPackage?  @relation(fields: [menuPackageId], references: [id], onDelete: SetNull)
+
+  @@index([menuPackageId])
+  @@map("gallery_albums")
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+}
+
+/// Yangi yuklangan video fonda qayta ishlanadi (hamma qurilmada silliq o'ynashi uchun).
+enum MediaProcessingStatus {
+  READY
+  PROCESSING
+  FAILED
+}
+
+model GalleryItem {
+  id               String                @id @default(uuid()) @db.Uuid
+  albumId          String                @map("album_id") @db.Uuid
+  kind             MediaKind
+  /// Rasm: web uchun optimallashtirilgan nusxa. Video: yuklangan fayl, qayta
+  /// ishlangach — uning o'rniga yozilgan MP4 (H.264, 1080p gacha).
+  objectKey        String                @unique @map("object_key")
+  /// Rasm: kichik nusxa. Video: birinchi kadrdan olingan muqova (bo'lmasligi mumkin).
+  thumbKey         String?               @map("thumb_key")
+  mimeType         String                @map("mime_type")
+  width            Int?
+  height           Int?
+  sizeBytes        BigInt                @map("size_bytes")
+  durationSec      Int?                  @map("duration_sec")
+  /// FAILED — video yuklangan holicha qoldi (o'ynaydi, lekin optimallashtirilmagan).
+  processingStatus MediaProcessingStatus @default(READY) @map("processing_status")
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  album GalleryAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@index([albumId, createdAt])
+  @@map("gallery_items")
+}
+
+/// Xarajat turi. `code` berilgan kategoriya — tizimniki: tasdiqlangan bozorlik shu
+/// orqali topiladi, shuning uchun uni o'chirib bo'lmaydi (nomini o'zgartirsa bo'ladi).
+model ExpenseCategory {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  code      String?   @unique
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  expenses Expense[]
+
+  @@map("expense_categories")
+}
+
+model Expense {
+  id             String    @id @default(uuid()) @db.Uuid
+  categoryId     String    @map("category_id") @db.Uuid
+  amount         Decimal   @db.Decimal(18, 2)
+  /// Xarajat qilingan kun (Toshkent vaqti bo'yicha sana, vaqtsiz).
+  spentOn        DateTime  @map("spent_on") @db.Date
+  note           String?
+  /// To'y xarajati bo'lsa — o'sha to'y. Bunday xarajat to'y kuniga yoziladi va
+  /// shu to'yning sof foydasidan ayiriladi.
+  eventId        String?   @map("event_id") @db.Uuid
+  /// Tasdiqlangan bozorlik ro'yxatidan yozilgan bo'lsa — o'sha ro'yxat.
+  shoppingListId String?   @unique @map("shopping_list_id") @db.Uuid
+  createdById    String?   @map("created_by_id") @db.Uuid
+  createdByName  String?   @map("created_by_name")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  category     ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  shoppingList ShoppingList?   @relation(fields: [shoppingListId], references: [id], onDelete: SetNull)
+  event        Event?          @relation(fields: [eventId], references: [id], onDelete: Restrict)
+
+  @@index([spentOn, deletedAt])
+  @@index([categoryId])
+  @@index([eventId])
+  @@map("expenses")
+}
+
+enum WarehouseSection {
+  /// Idish-tovoq va jihozlar.
+  TABLEWARE
+  /// Oziq-ovqat mahsulotlari.
+  FOOD
+}
+
+enum WarehouseUnit {
+  PIECE
+  KG
+  LITER
+  PACK
+  BOX
+  SET
+}
+
+/// Oziq-ovqat mahsulotining turi (faqat FOOD bo'limida).
+enum ProductCategory {
+  VEGETABLE
+  FRUIT
+  MEAT
+  DAIRY
+  GREENS
+  GRAIN
+  OIL
+  SPICE
+  DRINK
+  OTHER
+}
+
+model WarehouseItem {
+  id              String           @id @default(uuid()) @db.Uuid
+  section         WarehouseSection
+  productCategory ProductCategory? @map("product_category")
+  photoKey        String?          @map("photo_key")
+  photoThumbKey   String?          @map("photo_thumb_key")
+  name            String
+  unit            WarehouseUnit
+  /// Joriy qoldiq. Faqat kirim/chiqim harakatlari orqali o'zgaradi.
+  quantity        Decimal          @default(0) @db.Decimal(14, 3)
+  /// Shu miqdorga tushsa "kam qoldi" deb belgilanadi (0 — kuzatilmaydi).
+  minQuantity     Decimal          @default(0) @map("min_quantity") @db.Decimal(14, 3)
+  note            String?
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime?        @map("deleted_at") @db.Timestamptz(3)
+
+  movements StockMovement[]
+
+  @@index([section, deletedAt])
+  @@map("warehouse_items")
+}
+
+enum StockMovementType {
+  IN
+  OUT
+}
+
+/// Ombor harakati. O'zgartirilmaydi va o'chirilmaydi — xato teskari harakat bilan tuzatiladi.
+model StockMovement {
+  id            String            @id @default(uuid()) @db.Uuid
+  itemId        String            @map("item_id") @db.Uuid
+  type          StockMovementType
+  quantity      Decimal           @db.Decimal(14, 3)
+  /// Harakatdan keyingi qoldiq.
+  balanceAfter  Decimal           @map("balance_after") @db.Decimal(14, 3)
+  /// Kirimda xarid summasi — faqat ma'lumot uchun, hisob-kitobga qo'shilmaydi.
+  totalCost     Decimal?          @map("total_cost") @db.Decimal(18, 2)
+  note          String?
+  createdById   String?           @map("created_by_id") @db.Uuid
+  createdByName String?           @map("created_by_name")
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  item WarehouseItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId, createdAt])
+  @@map("stock_movements")
+}
+
+enum ShoppingListStatus {
+  /// Oshpaz yozdi — SUPER_ADMIN tekshiruvini kutmoqda.
+  SUBMITTED
+  /// SUPER_ADMIN ko'rib chiqdi — admin xarid qilishi kerak.
+  APPROVED
+  /// Admin sotib oldi va narxlarni kiritdi — tasdiq kutmoqda.
+  PURCHASED
+  /// SUPER_ADMIN tasdiqladi — summa xarajatlarga yozildi.
+  CONFIRMED
+}
+
+/// Bitta tadbir uchun bozorlik ro'yxati. Oshpaz yozadi, SUPER_ADMIN tekshiradi,
+/// admin sotib olib narx kiritadi; faqat SUPER_ADMIN tasdiqlagach xarajatga aylanadi.
+model ShoppingList {
+  id              String             @id @default(uuid()) @db.Uuid
+  /// Bo'sh bo'lsa — to'yga bog'lanmagan umumiy bozorlik.
+  eventId         String?            @map("event_id") @db.Uuid
+  status          ShoppingListStatus @default(SUBMITTED)
+  note            String?
+  createdById     String             @map("created_by_id") @db.Uuid
+  createdByName   String             @map("created_by_name")
+  approvedAt      DateTime?          @map("approved_at") @db.Timestamptz(3)
+  purchasedAt     DateTime?          @map("purchased_at") @db.Timestamptz(3)
+  purchasedByName String?            @map("purchased_by_name")
+  confirmedAt     DateTime?          @map("confirmed_at") @db.Timestamptz(3)
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime?          @map("deleted_at") @db.Timestamptz(3)
+
+  event   Event?         @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  items   ShoppingItem[]
+  expense Expense?
+
+  @@index([eventId, deletedAt])
+  @@index([status, deletedAt])
+  @@map("shopping_lists")
+}
+
+model ShoppingItem {
+  id                String        @id @default(uuid()) @db.Uuid
+  listId            String        @map("list_id") @db.Uuid
+  name              String
+  unit              WarehouseUnit
+  /// Oshpaz so'ragan miqdor; keyin o'zgartirilgan bo'lsa farqi ko'rsatiladi.
+  /// SUPER_ADMIN qo'shgan qatorda bo'sh.
+  requestedQuantity Decimal?      @map("requested_quantity") @db.Decimal(14, 3)
+  quantity          Decimal       @db.Decimal(14, 3)
+  /// Shu qator uchun to'langan jami summa (admin kiritadi).
+  price             Decimal?      @db.Decimal(18, 2)
+  /// Oshpazning shu qatorga izohi (masalan "qizil, yirik").
+  note              String?
+  /// Sotib olinmadi (topilmadi yoki kerak bo'lmadi).
+  skipped           Boolean       @default(false)
+  sortOrder         Int           @default(0) @map("sort_order")
+
+  list ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@index([listId, sortOrder])
+  @@map("shopping_items")
+}
+
+enum WorkerPosition {
+  WAITER_MALE
+  WAITER_FEMALE
+  CHEF
+  OTHER
+}
+
+/// To'yxona ishchisi (ofitsiant, oshpaz va boshqalar). Tizimga kirmaydi — bu ro'yxat
+/// ularni to'ylarga biriktirish uchun. Tizimda ishlaydigan oshpazga alohida hisob ochiladi.
+model Worker {
+  id            String         @id @default(uuid()) @db.Uuid
+  fullName      String         @map("full_name")
+  phone         String
+  position      WorkerPosition
+  note          String?
+  /// Faol emas ishchi yangi to'ylarga biriktirilmaydi.
+  isActive      Boolean        @default(true) @map("is_active")
+  photoKey      String?        @map("photo_key")
+  photoThumbKey String?        @map("photo_thumb_key")
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime?      @map("deleted_at") @db.Timestamptz(3)
+
+  assignments EventWorker[]
+
+  @@index([deletedAt, position])
+  @@map("workers")
+}
+
+/// Ishchining to'yga biriktirilishi.
+model EventWorker {
+  id             String   @id @default(uuid()) @db.Uuid
+  eventId        String   @map("event_id") @db.Uuid
+  workerId       String   @map("worker_id") @db.Uuid
+  /// Shu to'ydagi vazifasi (masalan "Bosh ofitsiant").
+  roleAtEvent    String?  @map("role_at_event")
+  assignedByName String?  @map("assigned_by_name")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  worker Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, workerId])
+  @@index([workerId])
+  @@map("event_workers")
+}
+
+/// Taomlar katalogi: paket tarkibida yozilgan taom nomiga rasm va tavsif beradi.
+/// Nomi bo'yicha bog'lanadi — bitta taom rasmi shu taom bor hamma paketda ko'rinadi.
+model Dish {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
+  description   String?
+  photoKey      String?  @map("photo_key")
+  photoThumbKey String?  @map("photo_thumb_key")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("dishes")
+}

@@ -1,0 +1,115 @@
+name: gavhar
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gavhar-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: ${TZ:-Asia/Tashkent}
+    networks:
+      gavhar:
+        ipv4_address: 172.30.40.10
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5440}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: gavhar-redis
+    restart: unless-stopped
+    # BullMQ navbatdagi ishlar yo'qolmasligi uchun noeviction + AOF.
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD}
+      - --appendonly
+      - 'yes'
+      - --maxmemory-policy
+      - noeviction
+    networks:
+      gavhar:
+        ipv4_address: 172.30.40.11
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-6380}:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping | grep -q PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: gavhar-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+      # Brauzer presigned URL orqali to'g'ridan-to'g'ri yuklaydi.
+      MINIO_API_CORS_ALLOW_ORIGIN: ${APP_URL}
+    networks:
+      gavhar:
+        ipv4_address: 172.30.40.12
+    ports:
+      - '127.0.0.1:${MINIO_API_PORT:-9010}:9000'
+      - '127.0.0.1:${MINIO_CONSOLE_PORT:-9011}:9001'
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Bir martalik: bucket'larni yaratadi va chiqib ketadi.
+  minio-init:
+    image: quay.io/minio/mc:latest
+    container_name: gavhar-minio-init
+    networks:
+      - gavhar
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET_ORIGINALS: ${S3_BUCKET_ORIGINALS}
+      S3_BUCKET_DERIVATIVES: ${S3_BUCKET_DERIVATIVES}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        mc alias set gavhar http://minio:9000 "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY"
+        mc mb --ignore-existing "gavhar/$$S3_BUCKET_ORIGINALS"
+        mc mb --ignore-existing "gavhar/$$S3_BUCKET_DERIVATIVES"
+        mc anonymous set none "gavhar/$$S3_BUCKET_ORIGINALS"
+        mc anonymous set none "gavhar/$$S3_BUCKET_DERIVATIVES"
+        echo "Bucketlar tayyor."
+
+# Qat'iy manzillar: host port-forward ishlamaydigan muhitda xizmatlarga
+# to'g'ridan-to'g'ri konteyner IP'si orqali ulanish mumkin (faqat Linux).
+networks:
+  gavhar:
+    ipam:
+      config:
+        - subnet: 172.30.40.0/24
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

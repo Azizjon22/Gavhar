@@ -1,0 +1,15 @@
+packages:
+  - backend
+  - frontend
+
+# Faqat shu paketlarga install skriptlarini ishga tushirishga ruxsat.
+allowBuilds:
+  '@parcel/watcher': true
+  '@prisma/client': true
+  '@prisma/engines': true
+  # Telemetriya skripti — kerak emas.
+  '@scarf/scarf': false
+  argon2: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true

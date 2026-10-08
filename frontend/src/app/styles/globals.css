@@ -1,0 +1,269 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Tema `data-theme` atributi bilan boshqariladi (theme-init.js va theme.store). */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
+ * Gavhar palitrasi: chuqur zumrad + oltin, fil suyagi fonida.
+ * Barcha ranglar semantik tokenlar orqali ishlatiladi — komponentlarda hex yozilmaydi.
+ */
+:root {
+  color-scheme: light;
+  --radius: 0.75rem;
+
+  --background: #faf7f0;
+  --foreground: #12261f;
+  --card: #ffffff;
+  --card-foreground: #12261f;
+  --popover: #ffffff;
+  --popover-foreground: #12261f;
+  --primary: #0f4c3a;
+  --primary-foreground: #faf7f0;
+  --secondary: #f1ecdf;
+  --secondary-foreground: #1c3a2f;
+  --muted: #f3eee2;
+  --muted-foreground: #5d6f68;
+  --accent: #efe8d6;
+  --accent-foreground: #12261f;
+  --destructive: #b3392f;
+  --destructive-foreground: #fff8f5;
+  --success: #2f7d5b;
+  --warning: #a86a12;
+  --border: #e6dfcf;
+  --input: #d9d0bb;
+  --ring: #c9a24b;
+
+  --gold: #c9a24b;
+  --gold-light: #e6c77a;
+  --gold-dark: #b8862f;
+  --emerald-brand: #0f4c3a;
+
+  --sidebar: #0f4c3a;
+  --sidebar-deep: #0a3729;
+  --sidebar-foreground: #ece7d9;
+  --sidebar-muted: #a3c0b4;
+  --sidebar-accent: rgb(255 255 255 / 0.08);
+  --sidebar-border: rgb(255 255 255 / 0.1);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --background: #0b1512;
+  --foreground: #f1ece0;
+  --card: #101d19;
+  --card-foreground: #f1ece0;
+  --popover: #13231e;
+  --popover-foreground: #f1ece0;
+  --primary: #c9a24b;
+  --primary-foreground: #14110a;
+  --secondary: #172822;
+  --secondary-foreground: #e6e0d2;
+  --muted: #14231e;
+  --muted-foreground: #9aaba4;
+  --accent: #1a2d26;
+  --accent-foreground: #f1ece0;
+  --destructive: #e0685c;
+  --destructive-foreground: #1b0b09;
+  --success: #4fb58a;
+  --warning: #e0a94a;
+  --border: #1e2f29;
+  --input: #2a4038;
+  --ring: #c9a24b;
+
+  --sidebar: #0a1814;
+  --sidebar-deep: #07100d;
+  --sidebar-foreground: #dcd6c7;
+  --sidebar-muted: #7f958c;
+  --sidebar-accent: rgb(255 255 255 / 0.06);
+  --sidebar-border: rgb(255 255 255 / 0.07);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-gold-dark: var(--gold-dark);
+  --color-emerald-brand: var(--emerald-brand);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-deep: var(--sidebar-deep);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-border: var(--sidebar-border);
+
+  --font-sans: 'Manrope Variable', Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Playfair Display Variable', Georgia, 'Times New Roman', serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
+
+  --shadow-soft: 0 1px 2px rgb(18 38 31 / 0.04), 0 10px 30px -14px rgb(18 38 31 / 0.14);
+  --shadow-lifted: 0 2px 4px rgb(18 38 31 / 0.05), 0 24px 48px -20px rgb(18 38 31 / 0.22);
+  --shadow-gold: 0 10px 30px -12px rgb(201 162 75 / 0.6);
+
+  --animate-shimmer: shimmer 2.6s linear infinite;
+  --animate-float: float 9s ease-in-out infinite;
+  --animate-ken-burns: ken-burns 18s ease-out both;
+
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Taqdimotdagi muqova rasmi sekin "yaqinlashib" turadi. */
+  @keyframes ken-burns {
+    from {
+      transform: scale(1.12);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(0, -14px, 0);
+    }
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--gold) 35%, transparent);
+  }
+
+  /* Raqamlar jadval va summalarda bir xil kenglikda turadi. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@utility text-gold-gradient {
+  background-image: linear-gradient(
+    135deg,
+    var(--gold-light) 0%,
+    var(--gold) 45%,
+    var(--gold-dark) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Narx va sarlavhalar uchun "oltin zarhal" — nur tushgandek jilolanadi. */
+@utility text-gilded {
+  background-image: linear-gradient(
+    100deg,
+    var(--gold-dark) 0%,
+    #fff1cf 32%,
+    var(--gold) 54%,
+    #fff7e2 78%,
+    #9a7226 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility bg-gold-gradient {
+  background-image: linear-gradient(
+    135deg,
+    var(--gold-light) 0%,
+    var(--gold) 50%,
+    var(--gold-dark) 100%
+  );
+}
+
+@utility bg-sidebar-gradient {
+  background-image: linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-deep) 100%);
+}
+
+/* Harakatni kamaytirishni so'ragan foydalanuvchilar uchun animatsiyalar o'chadi. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+/*
+ * Taqdimot televizor yoki katta monitorda ko'rsatilganda hamma narsa (matn, oraliq,
+ * kartalar) ekranga mos ravishda kattalashadi — uzoqdan ham o'qiladi.
+ */
+@media (min-width: 1700px) {
+  :root:has(.showcase-root) {
+    font-size: clamp(16px, calc(0.42vw + 8.9px), 24px);
+  }
+}
