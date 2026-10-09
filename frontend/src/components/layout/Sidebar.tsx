@@ -1,6 +1,5 @@
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 import { Logo } from '@/components/shared/Logo';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/stores/ui.store';
@@ -27,13 +26,7 @@ export function Sidebar() {
           collapsed ? 'justify-center' : 'px-5',
         )}
       >
-        <Link
-          to="/"
-          aria-label="Gavhar"
-          className="rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-gold/50"
-        >
-          <Logo compact={collapsed} />
-        </Link>
+        <Logo compact={collapsed} />
       </div>
 
       <SidebarNav collapsed={collapsed} />

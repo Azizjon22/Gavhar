@@ -1,7 +1,6 @@
 import dayjs from 'dayjs';
 import {
   ArrowRight,
-  Building2,
   CalendarDays,
   CircleUser,
   ConciergeBell,
@@ -19,7 +18,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { ROUTES } from '@/app/router/paths';
 import { GemMark } from '@/components/shared/Logo';
 import { Badge } from '@/components/ui/badge';
@@ -72,13 +71,6 @@ const QUICK_LINKS: readonly QuickLink[] = [
     permission: 'clients:read',
   },
   {
-    to: ROUTES.halls,
-    icon: Building2,
-    titleKey: 'nav.halls',
-    textKey: 'home.links.halls',
-    permission: 'halls:read',
-  },
-  {
     to: ROUTES.finance,
     icon: Wallet,
     titleKey: 'nav.finance',
@@ -111,7 +103,7 @@ const QUICK_LINKS: readonly QuickLink[] = [
     icon: Presentation,
     titleKey: 'nav.showcase',
     textKey: 'home.links.showcase',
-    anyPermission: ['halls:read', 'menu:read', 'media:read'],
+    anyPermission: ['menu:read', 'media:read'],
   },
   {
     to: ROUTES.users,
@@ -151,6 +143,8 @@ export function HomePage() {
   const user = useAuthStore((state) => state.user);
   const { can, isSuperAdmin } = usePermissions();
   if (!user) return null;
+  // Iqbol: ADMIN boshqaruv panelini ko'rmaydi — unda tushum bor.
+  if (user.role.key === 'ADMIN') return <Navigate to={ROUTES.events} replace />;
 
   const firstName = user.fullName.trim().split(/\s+/)[0] ?? user.fullName;
   const links = QUICK_LINKS.filter(

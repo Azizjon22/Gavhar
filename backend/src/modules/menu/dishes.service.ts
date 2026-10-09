@@ -25,14 +25,20 @@ export class DishesService {
       this.prisma.dish.findMany(),
       this.prisma.menuPackageSection.findMany({
         where: { package: { deletedAt: null }, category: { deletedAt: null } },
-        select: { items: true, packageId: true },
+        select: {
+          items: true,
+          packageId: true,
+          category: { select: { nameUz: true } },
+        },
       }),
     ]);
 
     const saved = new Map(dishes.map((dish) => [key(dish.name), dish]));
     const usage = new Map<string, { name: string; packages: Set<string> }>();
     for (const section of sections) {
-      for (const item of section.items) {
+      // Nom yozilmagan bo'lim o'zi taom: rasm shu nomga qo'yiladi.
+      const names = section.items.length > 0 ? section.items : [section.category.nameUz];
+      for (const item of names) {
         const entry = usage.get(key(item)) ?? { name: item, packages: new Set<string>() };
         entry.packages.add(section.packageId);
         usage.set(key(item), entry);

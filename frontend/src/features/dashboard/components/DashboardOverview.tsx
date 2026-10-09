@@ -4,7 +4,6 @@ import {
   Armchair,
   CalendarDays,
   Clock,
-  MapPin,
   ShoppingBasket,
   Soup,
   TriangleAlert,
@@ -70,10 +69,6 @@ function EventCard({ event, highlight }: { event: DashboardEventCard; highlight:
         <span className="flex items-center gap-1.5">
           <Clock className="size-3.5" />
           {formatTime(event.startAt)}–{formatTime(event.endAt)}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <MapPin className="size-3.5" />
-          {event.hallName}
         </span>
         <span className="flex items-center gap-1.5 font-semibold text-foreground">
           <Users className="size-3.5" />

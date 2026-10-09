@@ -33,7 +33,7 @@ export function MediaTile({
         type="button"
         onClick={onOpen}
         aria-label={label}
-        className="block w-full cursor-zoom-in outline-none focus-visible:ring-[3px] focus-visible:ring-gold/70 focus-visible:ring-inset"
+        className="block w-full cursor-pointer outline-none focus-visible:ring-[3px] focus-visible:ring-gold/70 focus-visible:ring-inset"
       >
         {item.thumbUrl ? (
           <img
@@ -51,10 +51,8 @@ export function MediaTile({
         )}
         {item.kind === 'VIDEO' && (
           <>
-            <span className="absolute inset-0 flex items-center justify-center bg-black/20">
-              <span className="flex size-14 items-center justify-center rounded-full bg-white/90 text-emerald-brand shadow-lifted transition-transform group-hover:scale-110">
-                <Play className="ml-0.5 size-6 fill-current" />
-              </span>
+            <span className="absolute right-2 bottom-2 flex size-8 items-center justify-center rounded-full bg-white/90 text-emerald-brand shadow-lifted">
+              <Play className="ml-0.5 size-4 fill-current" />
             </span>
             {duration && (
               <span className="tabular absolute bottom-2 left-2 rounded-md bg-black/65 px-1.5 py-0.5 text-xs font-semibold text-white">

@@ -1,8 +1,7 @@
 import {
-  Building2,
   CalendarDays,
+  CircleUser,
   ConciergeBell,
-  Contact,
   House,
   Images,
   type LucideIcon,
@@ -11,17 +10,13 @@ import {
   ScrollText,
   ShieldCheck,
   ShoppingBasket,
-  Sparkles,
   Users,
   UtensilsCrossed,
   Wallet,
 } from 'lucide-react';
 import type { AuthProfile } from '@/features/auth/types/auth.types';
-import { hasPermissions, isSuperAdmin } from '@/stores/auth.store';
 
-/** Taqdimotda ko'rsatadigan biror narsasi bor foydalanuvchi. */
-const canSeeShowcase = (user: AuthProfile): boolean =>
-  ['halls:read', 'menu:read', 'media:read'].some((key) => hasPermissions(user, key));
+const hasRole = (user: AuthProfile, ...roles: string[]): boolean => roles.includes(user.role.key);
 
 export interface NavItem {
   key: string;
@@ -31,7 +26,7 @@ export interface NavItem {
   labelKey: string;
   /** Faqat aniq mos kelganda faol (`/` uchun). */
   end?: boolean;
-  /** Menyu bandi shu foydalanuvchiga ko'rinadimi (ruxsat bo'yicha). */
+  /** Menyu bandi shu foydalanuvchiga ko'rinadimi (rol bo'yicha, Iqbol kabi). */
   visible: (user: AuthProfile) => boolean;
 }
 
@@ -41,78 +36,82 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-/** Yon menyuning yagona manbai. Har yangi modul shu yerga bitta band qo'shadi. */
+/**
+ * Yon menyu Iqbol tartibida. Mijozlar, zallar va qo'shimcha xizmatlar menyuda yo'q,
+ * lekin sahifalar ochiq qoladi.
+ */
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
     key: 'main',
+    labelKey: 'nav.groupMain',
     items: [
-      { key: 'home', to: '/', icon: House, labelKey: 'nav.home', end: true, visible: () => true },
-    ],
-  },
-  {
-    key: 'work',
-    labelKey: 'nav.work',
-    items: [
+      {
+        key: 'home',
+        to: '/',
+        icon: House,
+        labelKey: 'nav.home',
+        end: true,
+        visible: (user) => hasRole(user, 'SUPER_ADMIN', 'ZAVZAL'),
+      },
       {
         key: 'events',
         to: '/events',
         icon: CalendarDays,
         labelKey: 'nav.events',
-        visible: (user) => hasPermissions(user, 'events:read'),
+        visible: (user) => hasRole(user, 'SUPER_ADMIN', 'ADMIN', 'ZAVZAL'),
       },
       {
-        key: 'shopping',
-        to: '/shopping',
-        icon: ShoppingBasket,
-        labelKey: 'nav.shopping',
-        visible: (user) => hasPermissions(user, 'shopping:read'),
+        key: 'showcase',
+        to: '/showcase',
+        icon: Presentation,
+        labelKey: 'nav.showcase',
+        visible: (user) => hasRole(user, 'SUPER_ADMIN', 'ADMIN'),
       },
-      {
-        key: 'workers',
-        to: '/workers',
-        icon: ConciergeBell,
-        labelKey: 'nav.workers',
-        visible: (user) => hasPermissions(user, 'staff:read'),
-      },
-      {
-        key: 'clients',
-        to: '/clients',
-        icon: Contact,
-        labelKey: 'nav.clients',
-        visible: (user) => hasPermissions(user, 'clients:read'),
-      },
-      {
-        key: 'halls',
-        to: '/halls',
-        icon: Building2,
-        labelKey: 'nav.halls',
-        visible: (user) => hasPermissions(user, 'halls:read'),
-      },
-      {
-        key: 'extra-services',
-        to: '/extra-services',
-        icon: Sparkles,
-        labelKey: 'nav.extraServices',
-        visible: (user) => hasPermissions(user, 'events:read'),
-      },
+    ],
+  },
+  {
+    key: 'ops',
+    labelKey: 'nav.work',
+    items: [
       {
         key: 'menu',
         to: '/menu',
         icon: UtensilsCrossed,
         labelKey: 'nav.menu',
-        visible: (user) => hasPermissions(user, 'menu:read'),
+        visible: (user) => hasRole(user, 'SUPER_ADMIN'),
       },
       {
         key: 'gallery',
         to: '/gallery',
         icon: Images,
         labelKey: 'nav.gallery',
-        visible: (user) => hasPermissions(user, 'media:read'),
+        visible: (user) => hasRole(user, 'SUPER_ADMIN', 'ADMIN'),
+      },
+      {
+        key: 'workers',
+        to: '/workers',
+        icon: ConciergeBell,
+        labelKey: 'nav.workers',
+        visible: (user) => hasRole(user, 'SUPER_ADMIN', 'ADMIN', 'ZAVZAL'),
+      },
+      {
+        key: 'warehouse',
+        to: '/warehouse',
+        icon: Package,
+        labelKey: 'nav.warehouse',
+        visible: (user) => hasRole(user, 'SUPER_ADMIN', 'ADMIN'),
+      },
+      {
+        key: 'shopping',
+        to: '/shopping',
+        icon: ShoppingBasket,
+        labelKey: 'nav.shopping',
+        visible: (user) => hasRole(user, 'SUPER_ADMIN', 'ADMIN', 'COOK'),
       },
     ],
   },
   {
-    key: 'accounting',
+    key: 'finance',
     labelKey: 'nav.accounting',
     items: [
       {
@@ -120,27 +119,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         to: '/finance',
         icon: Wallet,
         labelKey: 'nav.finance',
-        visible: (user) => hasPermissions(user, 'finance:read'),
-      },
-      {
-        key: 'warehouse',
-        to: '/warehouse',
-        icon: Package,
-        labelKey: 'nav.warehouse',
-        visible: (user) => hasPermissions(user, 'warehouse:read'),
-      },
-    ],
-  },
-  {
-    key: 'clientFacing',
-    labelKey: 'nav.clientFacing',
-    items: [
-      {
-        key: 'showcase',
-        to: '/showcase',
-        icon: Presentation,
-        labelKey: 'nav.showcase',
-        visible: canSeeShowcase,
+        visible: (user) => hasRole(user, 'SUPER_ADMIN'),
       },
     ],
   },
@@ -148,20 +127,33 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     key: 'management',
     labelKey: 'nav.management',
     items: [
-      { key: 'users', to: '/users', icon: Users, labelKey: 'nav.users', visible: isSuperAdmin },
+      {
+        key: 'users',
+        to: '/users',
+        icon: Users,
+        labelKey: 'nav.users',
+        visible: (user) => hasRole(user, 'SUPER_ADMIN'),
+      },
       {
         key: 'roles',
         to: '/roles',
         icon: ShieldCheck,
         labelKey: 'nav.roles',
-        visible: isSuperAdmin,
+        visible: (user) => hasRole(user, 'SUPER_ADMIN'),
       },
       {
         key: 'audit-logs',
         to: '/audit-logs',
         icon: ScrollText,
         labelKey: 'nav.auditLogs',
-        visible: isSuperAdmin,
+        visible: (user) => hasRole(user, 'SUPER_ADMIN'),
+      },
+      {
+        key: 'profile',
+        to: '/profile',
+        icon: CircleUser,
+        labelKey: 'nav.profile',
+        visible: () => true,
       },
     ],
   },
@@ -173,6 +165,12 @@ export const visibleNavGroups = (user: AuthProfile): NavGroup[] =>
     items: group.items.filter((item) => item.visible(user)),
   })).filter((group) => group.items.length > 0);
 
+/** Menyuda yo'q, lekin topbar sarlavhasi kerak bo'lgan sahifalar. */
+const EXTRA_TITLES: readonly { prefix: string; labelKey: string }[] = [
+  { prefix: '/clients', labelKey: 'nav.clients' },
+  { prefix: '/extra-services', labelKey: 'nav.extraServices' },
+];
+
 /** Joriy manzilga mos sahifa nomining i18n kaliti (topbar uchun). */
 export function pageTitleKey(pathname: string): string | null {
   if (pathname.startsWith('/profile')) return 'nav.profile';
@@ -181,5 +179,10 @@ export function pageTitleKey(pathname: string): string | null {
   const match = items.find((item) =>
     item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`),
   );
-  return match?.labelKey ?? null;
+  if (match) return match.labelKey;
+
+  return (
+    EXTRA_TITLES.find((item) => pathname === item.prefix || pathname.startsWith(`${item.prefix}/`))
+      ?.labelKey ?? null
+  );
 }

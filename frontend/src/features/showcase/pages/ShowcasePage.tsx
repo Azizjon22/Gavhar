@@ -1,29 +1,27 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ChevronDown, Images, Users } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ROUTES } from '@/app/router/paths';
 import { Lightbox, type LightboxItem } from '@/components/shared/Lightbox';
 import { GemMark } from '@/components/shared/Logo';
 import { AnimatedGem } from '@/features/auth/components/AnimatedGem';
 import { AuthBackdrop } from '@/features/auth/components/AuthBackdrop';
-import { hallKeys, hallsApi } from '@/features/halls/api/halls.api';
 import { dishIndex, dishKeys, dishesApi } from '@/features/menu/api/dishes.api';
 import { menuApi, menuKeys } from '@/features/menu/api/menu.api';
 import { useBrand } from '@/features/settings/api/brand.api';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
-import { GuestStepper } from '../components/GuestStepper';
 import { Reveal, SectionHeading } from '../components/Ornaments';
+import { ShowcaseContacts } from '../components/ShowcaseContacts';
 import { PackageShowCard } from '../components/PackageShowCard';
 import { ShowcaseHeader, ShowcaseNavLink } from '../components/ShowcaseHeader';
 import { cardsPerRow } from '../lib/package';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
-const glass = 'rounded-3xl border border-white/12 bg-white/[0.05] backdrop-blur-xl';
 
 interface LightboxState {
   title: string;
@@ -32,8 +30,8 @@ interface LightboxState {
 }
 
 /**
- * Mijozga ko'rsatish uchun to'liq ekranli taqdimot: zallar, menyu paketlari va
- * galereya. Faqat ko'rish — boshqaruv tugmalari yo'q; planshet yoki televizorda
+ * Mijozga ko'rsatish uchun to'liq ekranli taqdimot: menyu paketlari va galereya.
+ * Faqat ko'rish — boshqaruv tugmalari yo'q; planshet yoki televizorda
  * ko'rsatishga mo'ljallangan.
  */
 export function ShowcasePage() {
@@ -47,11 +45,6 @@ export function ShowcasePage() {
     toast.dismiss();
   }, []);
 
-  const hallsQuery = useQuery({
-    queryKey: hallKeys.list,
-    queryFn: hallsApi.list,
-    enabled: can('halls:read'),
-  });
   const packagesQuery = useQuery({
     queryKey: menuKeys.packages,
     queryFn: menuApi.packages,
@@ -64,15 +57,13 @@ export function ShowcasePage() {
   });
   const dishes = dishIndex(dishesQuery.data);
 
-  const halls = (hallsQuery.data ?? []).filter((hall) => hall.status === 'ACTIVE');
   const packages = (packagesQuery.data ?? []).filter((pkg) => pkg.isActive);
   const perRow = cardsPerRow(packages.length);
 
-  // Paket sahifasidan "Barcha paketlar" bilan qaytilganda (#menu) o'sha bo'lim ochiladi;
-  // brend bosilganda esa sahifa boshiga chiqadi.
+  // Paket sahifasidan "Barcha paketlar" bilan qaytilganda (#menu) o'sha bo'lim ochiladi.
   const location = useLocation();
   const anchor = location.hash.slice(1);
-  const loaded = !hallsQuery.isLoading && !packagesQuery.isLoading;
+  const loaded = !packagesQuery.isLoading;
   useEffect(() => {
     if (!anchor) window.scrollTo({ top: 0 });
     // Hamma bo'lim yuklangach — aks holda tepada paydo bo'lgan bo'lim sahifani surib yuboradi.
@@ -80,13 +71,12 @@ export function ShowcasePage() {
   }, [anchor, loaded, location.key]);
 
   const sections = [
-    { id: 'halls', label: t('showcase.nav.halls'), visible: halls.length > 0 },
     { id: 'menu', label: t('showcase.nav.menu'), visible: packages.length > 0 },
   ].filter((section) => section.visible);
 
   return (
     <AuthBackdrop>
-      <ShowcaseHeader home={ROUTES.showcase}>
+      <ShowcaseHeader home={ROUTES.home}>
         {sections.map((section) => (
           <ShowcaseNavLink key={section.id} href={`#${section.id}`}>
             {section.label}
@@ -97,21 +87,27 @@ export function ShowcasePage() {
       <main className="showcase-root relative">
         {/* ── Kirish ─────────────────────────────────────────────────────── */}
         <section className="flex min-h-dvh flex-col items-center justify-center px-6 pt-28 pb-10 text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, ease: EASE }}
+          <Link
+            to={ROUTES.home}
+            aria-label={t('nav.home')}
+            className="flex flex-col items-center rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-gold/50"
           >
-            <AnimatedGem className="size-28" />
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: EASE, delay: 0.3 }}
-            className="text-gold-gradient mt-8 pb-3 font-display text-7xl leading-none font-semibold tracking-tight sm:text-9xl"
-          >
-            {brand.name}
-          </motion.h1>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, ease: EASE }}
+            >
+              <AnimatedGem className="size-28" />
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease: EASE, delay: 0.3 }}
+              className="text-gold-gradient mt-8 pb-3 font-display text-7xl leading-none font-semibold tracking-tight sm:text-9xl"
+            >
+              {brand.name}
+            </motion.h1>
+          </Link>
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -150,101 +146,17 @@ export function ShowcasePage() {
           )}
         </section>
 
-        {/* ── Zallar ─────────────────────────────────────────────────────── */}
-        {halls.length > 0 && (
-          <section
-            id="halls"
-            className="mx-auto max-w-6xl scroll-mt-28 md:scroll-mt-20 px-5 py-20 sm:px-8"
-          >
-            <SectionHeading
-              eyebrow={t('showcase.halls.eyebrow')}
-              title={t('showcase.halls.title')}
-            />
-            <div className="grid gap-10">
-              {halls.map((hall, hallIndex) => {
-                const images: LightboxItem[] = hall.images.map((image) => ({
-                  id: image.id,
-                  kind: 'IMAGE',
-                  url: image.url,
-                  thumbUrl: image.thumbUrl,
-                }));
-                const open = (index: number) =>
-                  setLightbox({ title: hall.name, items: images, index });
-                const cover = hall.images[0];
-                return (
-                  <Reveal key={hall.id}>
-                    <article className={cn(glass, 'grid overflow-hidden lg:grid-cols-2')}>
-                      <div
-                        className={cn(
-                          'relative min-h-64 bg-black/30',
-                          hallIndex % 2 === 1 && 'lg:order-2',
-                        )}
-                      >
-                        {cover ? (
-                          <button
-                            type="button"
-                            onClick={() => open(0)}
-                            aria-label={t('showcase.halls.openPhotos', { name: hall.name })}
-                            className="group block size-full cursor-zoom-in overflow-hidden outline-none focus-visible:ring-[3px] focus-visible:ring-gold/70 focus-visible:ring-inset"
-                          >
-                            <img
-                              src={cover.url}
-                              alt={hall.name}
-                              loading="lazy"
-                              className="size-full object-cover transition-transform duration-[1200ms] group-hover:scale-105"
-                            />
-                          </button>
-                        ) : (
-                          <div className="flex size-full min-h-64 items-center justify-center">
-                            <GemMark className="size-24 opacity-30" />
-                          </div>
-                        )}
-                        {hall.images.length > 1 && (
-                          <span className="tabular pointer-events-none absolute right-4 bottom-4 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
-                            <Images className="size-3.5" />
-                            {hall.images.length}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-col justify-center p-8 sm:p-12">
-                        <h3 className="font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-                          {hall.name}
-                        </h3>
-                        {hall.description && (
-                          <p className="mt-4 text-base leading-relaxed text-white/65">
-                            {hall.description}
-                          </p>
-                        )}
-                        <p className="mt-8 flex w-fit items-center gap-3 rounded-2xl border border-gold/30 bg-gold/10 px-5 py-3.5">
-                          <Users className="size-5 text-gold-light" />
-                          <span className="text-sm text-white/60">{t('halls.capacity')}</span>
-                          <span className="tabular text-2xl font-bold text-white">
-                            {t('halls.guests', { count: hall.capacity })}
-                          </span>
-                        </p>
-                      </div>
-                    </article>
-                  </Reveal>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
         {/* ── Menyu ──────────────────────────────────────────────────────── */}
         {packages.length > 0 && (
           <section
             id="menu"
-            className="mx-auto max-w-7xl scroll-mt-28 px-5 py-20 sm:px-8 md:scroll-mt-20"
+            className="mx-auto max-w-7xl scroll-mt-28 px-5 pt-16 pb-2 sm:px-8 md:scroll-mt-20"
           >
             <SectionHeading
               eyebrow={t('showcase.menu.eyebrow')}
               title={t('showcase.menu.title')}
               text={t('showcase.menu.text')}
             />
-            <Reveal className="mb-10 flex justify-center">
-              <GuestStepper />
-            </Reveal>
             {/* Oxirgi qatorda kam karta qolsa, markazda turadi. */}
             <div className="flex flex-wrap justify-center gap-6">
               {packages.map((pkg, index) => (
@@ -264,12 +176,19 @@ export function ShowcasePage() {
           </section>
         )}
 
-        <footer className="flex flex-col items-center gap-3 px-6 pt-10 pb-12 text-center">
-          <GemMark className="size-10 opacity-80" />
-          <p className="text-gold-gradient font-display text-3xl font-semibold">{brand.name}</p>
+        <footer className="flex flex-col items-center gap-3 px-6 pt-6 pb-6 text-center">
+          <Link
+            to={ROUTES.home}
+            aria-label={t('nav.home')}
+            className="flex flex-col items-center gap-3 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-gold/50"
+          >
+            <GemMark className="size-10 opacity-80" />
+            <p className="text-gold-gradient font-display text-3xl font-semibold">{brand.name}</p>
+          </Link>
           <p className="text-xs tracking-[0.3em] text-white/40 uppercase">
             {t('showcase.hero.eyebrow')}
           </p>
+          <ShowcaseContacts className="mt-2" />
         </footer>
       </main>
 

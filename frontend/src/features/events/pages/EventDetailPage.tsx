@@ -299,8 +299,8 @@ export function EventDetailPage() {
                     {formatTime(event.endAt)}
                   </span>
                 </InfoRow>
-                <InfoRow icon={<Users />} label={t('events.detail.hallAndGuests')}>
-                  {event.hall.name} · {t('halls.guests', { count: event.guestCount })}
+                <InfoRow icon={<Users />} label={t('events.form.guestCount')}>
+                  {t('halls.guests', { count: event.guestCount })}
                 </InfoRow>
                 {event.tableCapacity && (
                   <InfoRow icon={<Armchair />} label={t('events.form.tableCapacity')}>

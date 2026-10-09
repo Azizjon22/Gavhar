@@ -20,6 +20,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      // 0.0.0.0: kompyuterdan 127.0.0.1, telefonda esa Wi-Fi IP (masalan
+      // 192.168.0.146) orqali ochiladi. Faqat IPv6 bo'lsa Windows rad etadi.
+      host: true,
       port: webPort,
       strictPort: true,
       // Dev'da API bilan bir xil origin: refresh cookie (SameSite=Strict) muammosiz ishlaydi.
@@ -28,6 +31,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     preview: {
+      host: '127.0.0.1',
       port: webPort,
       strictPort: true,
     },

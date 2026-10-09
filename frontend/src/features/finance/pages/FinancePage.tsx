@@ -217,8 +217,7 @@ export function FinancePage() {
               № {event.number} · {event.title ?? t(`events.type.${event.type}`)}
             </p>
             <p className="text-xs text-muted-foreground">
-              {event.clientName} · {event.hallName} ·{' '}
-              {t('halls.guests', { count: event.guestCount })}
+              {event.clientName} · {t('halls.guests', { count: event.guestCount })}
             </p>
           </div>
         ),

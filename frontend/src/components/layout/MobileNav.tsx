@@ -18,7 +18,7 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
         <SheetTitle className="sr-only">{t('nav.main')}</SheetTitle>
         <SheetDescription className="sr-only">{t('common.appName')}</SheetDescription>
         <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-5">
-          <Logo />
+          <Logo onClick={() => onOpenChange(false)} />
         </div>
         <SidebarNav onNavigate={() => onOpenChange(false)} />
       </SheetContent>

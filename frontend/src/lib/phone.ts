@@ -22,7 +22,10 @@ export function formatLocalPhone(digits: string): string {
  */
 export function extractLocalPhone(input: string): string {
   let digits = input.replace(/\D/g, '');
-  if (digits.length > LOCAL_LENGTH && digits.startsWith('998')) digits = digits.slice(3);
+  // «+998…» — kod allaqachon yozilgan (qisman ham). Uzunlikka qarab kesish yetarli emas:
+  // «+9989» 9 tadan qisqa, shuning uchun 998 qayta mahalliy raqamga qo'shilib ketardi.
+  const hasCountryCode = input.trimStart().startsWith('+') || digits.length > LOCAL_LENGTH;
+  if (hasCountryCode && digits.startsWith('998')) digits = digits.slice(3);
   return digits.slice(0, LOCAL_LENGTH);
 }
 

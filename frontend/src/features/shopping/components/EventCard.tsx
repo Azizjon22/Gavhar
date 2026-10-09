@@ -1,13 +1,4 @@
-import {
-  CalendarDays,
-  ChevronDown,
-  Clock,
-  MapPin,
-  Plus,
-  Soup,
-  Users,
-  UtensilsCrossed,
-} from 'lucide-react';
+import { CalendarDays, ChevronDown, Clock, Plus, Soup, Users, UtensilsCrossed } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
@@ -82,10 +73,6 @@ export function EventCard({ event, viewer, today, onWrite, onAction }: Props) {
             <span className="flex items-center gap-1.5">
               <Clock className="size-3.5" />
               {formatTime(event.startAt)}–{formatTime(event.endAt)}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <MapPin className="size-3.5" />
-              {event.hallName}
             </span>
             <span className="flex items-center gap-1.5 font-semibold">
               <Users className="size-3.5" />

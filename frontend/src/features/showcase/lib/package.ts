@@ -15,11 +15,24 @@ export interface ShowDish {
 
 const dishKey = (name: string): string => name.trim().toLowerCase();
 
+/** Katalogdagi rasm: birinchi mos kelgan nom bo'yicha. */
+export const lookupPhoto = (dishes: Map<string, Dish>, ...names: string[]): ShowDish['photo'] => {
+  for (const name of names) {
+    const photo = dishes.get(dishKey(name))?.photo;
+    if (photo) return photo;
+  }
+  return null;
+};
+
 /** Bo'limdagi taomlar: nomi paketdan, rasm va tavsifi taomlar katalogidan. */
 export const sectionDishes = (section: MenuSection, dishes: Map<string, Dish>): ShowDish[] =>
   section.items.map((name) => {
     const dish = dishes.get(dishKey(name));
-    return { name, description: dish?.description ?? null, photo: dish?.photo ?? null };
+    return {
+      name,
+      description: dish?.description ?? null,
+      photo: lookupPhoto(dishes, name),
+    };
   });
 
 /** Paketdagi taomlar soni: bo'limda nomlar yozilgan bo'lsa ular, bo'lmasa "necha xil". */
@@ -29,15 +42,22 @@ export const dishCount = (pkg: MenuPackage): number =>
     0,
   );
 
-/** Paketdagi rasmli taomlar (takrorsiz) — kattalashtirib, varaqlab ko'rish uchun. */
+/**
+ * Paketdagi rasmli taomlar (takrorsiz) — slayderda varaqlash uchun.
+ * Bo'limda taom nomlari yo'q bo'lsa, rasm bo'lim nomiga biriktiriladi.
+ */
 export const packagePhotos = (pkg: MenuPackage, dishes: Map<string, Dish>): LightboxItem[] => {
   const seen = new Set<string>();
+  const slide = (id: string, photo: ShowDish['photo']): LightboxItem[] => {
+    if (!photo || seen.has(dishKey(id))) return [];
+    seen.add(dishKey(id));
+    return [{ id, kind: 'IMAGE', caption: id, ...photo }];
+  };
+
   return pkg.sections.flatMap((section) =>
-    sectionDishes(section, dishes).flatMap((dish) => {
-      if (!dish.photo || seen.has(dishKey(dish.name))) return [];
-      seen.add(dishKey(dish.name));
-      return [{ id: dish.name, kind: 'IMAGE' as const, caption: dish.name, ...dish.photo }];
-    }),
+    section.items.length > 0
+      ? sectionDishes(section, dishes).flatMap((dish) => slide(dish.name, dish.photo))
+      : slide(section.nameUz, lookupPhoto(dishes, section.nameUz, section.nameRu)),
   );
 };
 

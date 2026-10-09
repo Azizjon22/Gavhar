@@ -70,6 +70,16 @@ describe('paket yordamchilari', () => {
     expect(packagePhotos(pkg(), dishes).map((item) => item.id)).toEqual(['SEZAR ', 'To‘y oshi']);
   });
 
+  it('taom nomi yozilmagan bo‘lim rasmini o‘zbekcha yoki ruscha nom bilan oladi', () => {
+    const withFruit = new Map(dishes);
+    withFruit.set('фрукты', {
+      name: 'Фрукты',
+      description: null,
+      photo: photo('fruit'),
+    });
+    expect(packagePhotos(pkg(), withFruit).map((item) => item.id)).toContain('Mevalar');
+  });
+
   it('muqova: yuklangan rasm, bo‘lmasa birinchi rasmli taom, bo‘lmasa yo‘q', () => {
     expect(packageCover(pkg({ cover: photo('cover') }), dishes)).toBe('/cover.webp');
     expect(packageCover(pkg(), dishes)).toBe('/sezar.webp');

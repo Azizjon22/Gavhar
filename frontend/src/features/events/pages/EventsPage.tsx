@@ -85,9 +85,7 @@ export function EventsPage() {
               <span className="tabular text-muted-foreground">№ {event.number}</span>{' '}
               {event.title ?? t(`events.type.${event.type}`)}
             </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {event.client.fullName} · {event.hall.name}
-            </p>
+            <p className="truncate text-xs text-muted-foreground">{event.client.fullName}</p>
             <div className="mt-1 md:hidden">
               <EventStatusBadge status={event.status} />
             </div>

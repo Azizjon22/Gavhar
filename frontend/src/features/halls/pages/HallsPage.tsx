@@ -98,7 +98,6 @@ export function HallsPage() {
         open={dialog?.type === 'form'}
         onOpenChange={(open) => !open && setDialog(null)}
         hall={editing}
-        onCreated={(hall) => setDialog({ type: 'form', hallId: hall.id })}
       />
       <ConfirmDialog
         open={deleting !== null}

@@ -10,7 +10,6 @@ import { Lightbox, type LightboxItem } from '@/components/shared/Lightbox';
 import { AnimatedGem } from '@/features/auth/components/AnimatedGem';
 import { AuthBackdrop } from '@/features/auth/components/AuthBackdrop';
 import { galleryApi, galleryKeys } from '@/features/gallery/api/gallery.api';
-import { MediaTile } from '@/features/gallery/components/MediaTile';
 import { dishIndex, dishKeys, dishesApi } from '@/features/menu/api/dishes.api';
 import { menuApi, menuKeys } from '@/features/menu/api/menu.api';
 import { localizedName } from '@/features/menu/types/menu.types';
@@ -19,6 +18,8 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { formatAmount } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import { useLocaleStore } from '@/stores/locale.store';
+import { DishSlider } from '../components/DishSlider';
+import { type BentoMedia, GalleryBento } from '../components/GalleryBento';
 import {
   CornerFlourish,
   GemDivider,
@@ -26,10 +27,12 @@ import {
   Reveal,
   SectionHeading,
 } from '../components/Ornaments';
+import { ShowcaseContacts } from '../components/ShowcaseContacts';
 import { ShowcaseHeader, ShowcaseNavLink } from '../components/ShowcaseHeader';
 import {
   type ShowDish,
   dishCount,
+  lookupPhoto,
   packageCover,
   packagePhotos,
   sectionDishes,
@@ -44,36 +47,45 @@ interface LightboxState {
 }
 const CLOSED: LightboxState = { title: '', items: [], index: null };
 
-/** Menyu varag'idagi mayda yozuvlar uchun to'q oltin — och fonda yaxshi o'qiladi. */
-const BRONZE = 'text-[#8a6420]';
-
-/**
- * Rasmlar to'ri: beshtalik guruhlar — bitta katta (2×2) va yonida to'rtta kichik.
- * Oxirgi guruh to'liq bo'lmasa, kataklar kengayib, to'rda bo'sh joy qolmaydi.
- */
-function tileSpans(count: number): string[] {
-  const spans: string[] = [];
-  for (let start = 0; start < count; start += 5) {
-    const small = Math.min(4, count - start - 1);
-    spans.push(small === 0 ? 'col-span-2 row-span-2 md:col-span-4' : 'col-span-2 row-span-2');
-    if (small === 4) spans.push('', '', '', '');
-    if (small === 3) spans.push('', '', 'col-span-2');
-    if (small === 2) spans.push('col-span-2', 'col-span-2');
-    if (small === 1) spans.push('col-span-2 row-span-2');
-  }
-  return spans;
-}
+/** Menyu varag'idagi oltin yozuv — qorong'i fonda. */
+const GOLD = 'text-[#e4c88a]';
 
 /** Menyu varag'idagi bo'lim sarlavhasi: ikki yonida ingichka chiziq. */
 function CourseTitle({ children }: { children: ReactNode }) {
   return (
     <div className="mb-6 flex items-center gap-4">
-      <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[#b8862f]/55" />
-      <h3 className={cn('text-center text-xs font-bold tracking-[0.32em] uppercase', BRONZE)}>
+      <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[#e4c88a]/50" />
+      <h3 className={cn('text-center text-[11px] font-semibold tracking-[0.35em] uppercase', GOLD)}>
         {children}
       </h3>
-      <span className="h-px flex-1 bg-gradient-to-l from-transparent to-[#b8862f]/55" />
+      <span className="h-px flex-1 bg-gradient-to-l from-transparent to-[#e4c88a]/50" />
     </div>
+  );
+}
+
+/** Bo'lim yoki taomlar: ikki ustun, chapda doira — Iqbol menyu varag'idagi qator. */
+function DishGrid({
+  dishes,
+  onOpen,
+  openLabel,
+}: {
+  dishes: ShowDish[];
+  onOpen: (name: string) => void;
+  openLabel: (name: string) => string;
+}) {
+  return (
+    <ul
+      className={cn(
+        'grid gap-x-12 gap-y-5',
+        dishes.length > 1 ? 'sm:grid-cols-2' : 'mx-auto max-w-sm',
+      )}
+    >
+      {dishes.map((dish, index) => (
+        <li key={`${dish.name}-${index}`}>
+          <DishRow dish={dish} onOpen={() => onOpen(dish.name)} openLabel={openLabel(dish.name)} />
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -102,23 +114,23 @@ function DishRow({
 }) {
   const text = (
     <span className="min-w-0">
-      <span className="block font-display text-2xl leading-tight font-semibold [overflow-wrap:anywhere]">
+      <span className="block font-display text-xl leading-tight font-semibold text-[#f6efe2] [overflow-wrap:anywhere] min-[400px]:text-2xl">
         {dish.name}
       </span>
       {dish.description && (
-        <span className="mt-1 block text-sm leading-relaxed text-[#1d2b25]/60 italic">
+        <span className="mt-1 block text-sm leading-relaxed text-[#cbb892]/80 italic">
           {dish.description}
         </span>
       )}
     </span>
   );
   const frame =
-    'relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-offset-2 ring-offset-[#fbf6ea] sm:size-[4.5rem]';
+    'relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-offset-2 ring-offset-[#120f0c] sm:size-16';
 
   if (!dish.photo) {
     return (
       <div className="flex items-center gap-4 p-2">
-        <span className={cn(frame, BRONZE, 'bg-[#b8862f]/8 ring-[#b8862f]/30')}>
+        <span className={cn(frame, GOLD, 'bg-[#e4c88a]/10 ring-[#e4c88a]/35')}>
           <DishMark />
         </span>
         {text}
@@ -130,9 +142,9 @@ function DishRow({
       type="button"
       onClick={onOpen}
       aria-label={openLabel}
-      className="group flex w-full cursor-zoom-in items-center gap-4 rounded-2xl p-2 text-left transition-colors outline-none hover:bg-[#1d2b25]/[0.05] focus-visible:ring-[3px] focus-visible:ring-[#b8862f]/60"
+      className="group flex w-full cursor-pointer items-center gap-4 rounded-2xl p-2 text-left transition-colors outline-none hover:bg-white/[0.04] focus-visible:ring-[3px] focus-visible:ring-[#e4c88a]/60"
     >
-      <span className={cn(frame, 'ring-[#b8862f]/45 transition group-hover:ring-[#b8862f]')}>
+      <span className={cn(frame, 'ring-[#e4c88a]/45 transition group-hover:ring-[#e4c88a]')}>
         <img
           src={dish.photo.thumbUrl}
           alt=""
@@ -157,6 +169,7 @@ export function ShowcasePackagePage() {
   const { can } = usePermissions();
   const language = useLocaleStore((state) => state.language);
   const [lightbox, setLightbox] = useState<LightboxState>(CLOSED);
+  const [slideIndex, setSlideIndex] = useState<number | null>(null);
   const [albumId, setAlbumId] = useState<string | null>(null);
   const allowed = can('menu:read');
 
@@ -181,6 +194,7 @@ export function ShowcasePackagePage() {
     toast.dismiss();
     window.scrollTo({ top: 0 });
     setLightbox(CLOSED);
+    setSlideIndex(null);
     setAlbumId(null);
   }, [id]);
 
@@ -201,21 +215,30 @@ export function ShowcasePackagePage() {
   }
 
   const dishes = dishIndex(dishesQuery.data);
-  const photos = packagePhotos(pkg, dishes);
-  const spans = tileSpans(photos.length);
+  const photos = packagePhotos(pkg, dishes).map((slide) => {
+    const section = pkg.sections.find(
+      (item) => item.items.length === 0 && item.nameUz === slide.id,
+    );
+    return section ? { ...slide, caption: localizedName(section, language) } : slide;
+  });
   const others = packages.filter((item) => item.id !== pkg.id);
   const named = pkg.sections.filter((section) => section.items.length > 0);
   const unnamed = pkg.sections.filter((section) => section.items.length === 0);
-  const openDish = (name: string) => {
-    const index = photos.findIndex((photo) => photo.id === name);
-    if (index >= 0) setLightbox({ title: pkg.name, items: photos, index });
+  const openDish = (id: string) => {
+    const index = photos.findIndex((photo) => photo.id === id);
+    if (index >= 0) setSlideIndex(index);
   };
   // Shu paketga biriktirilgan va umumiy (hech bir paketga biriktirilmagan) albomlar.
   const albums = (albumsQuery.data ?? []).filter(
     (item) =>
       item.items.length > 0 && (item.menuPackageId === null || item.menuPackageId === pkg.id),
   );
-  const album = albums.find((item) => item.id === albumId) ?? albums[0];
+  // `albumId === null` — "Hammasi": barcha albomlar bitta mozaikada.
+  const album = albums.find((item) => item.id === albumId) ?? null;
+  const media: BentoMedia[] = (album ? [album] : albums).flatMap((entry) =>
+    entry.items.map((item) => ({ item, album: entry })),
+  );
+  const galleryTitle = album?.title ?? t('showcase.gallery.title');
 
   return (
     <AuthBackdrop>
@@ -224,7 +247,9 @@ export function ShowcasePackagePage() {
         back={{ to: MENU_LIST, label: t('showcase.package.all') }}
       >
         <ShowcaseNavLink href="#card">{t('showcase.nav.menu')}</ShowcaseNavLink>
-        {album && <ShowcaseNavLink href="#gallery">{t('showcase.nav.gallery')}</ShowcaseNavLink>}
+        {media.length > 0 && (
+          <ShowcaseNavLink href="#gallery">{t('showcase.nav.gallery')}</ShowcaseNavLink>
+        )}
       </ShowcaseHeader>
 
       <main className="showcase-root relative">
@@ -308,105 +333,86 @@ export function ShowcasePackagePage() {
         {pkg.sections.length > 0 && (
           <section id="card" className="scroll-mt-28 px-4 py-16 sm:px-8 sm:py-24 md:scroll-mt-20">
             <Reveal className="mx-auto max-w-4xl">
-              <div className="relative rounded-[30px] bg-[linear-gradient(160deg,#fffaf0_0%,#fbf6ea_45%,#f3ead6_100%)] px-5 py-14 text-[#1d2b25] shadow-[0_50px_120px_-50px_rgba(0,0,0,0.9)] ring-1 ring-gold/50 sm:px-14 sm:py-16">
-                <div className="pointer-events-none absolute inset-2.5 rounded-[23px] border border-[#b8862f]/30" />
-                <CornerFlourish className="top-4 left-4 text-[#b8862f]" />
-                <CornerFlourish className="top-4 right-4 rotate-90 text-[#b8862f]" />
-                <CornerFlourish className="right-4 bottom-4 rotate-180 text-[#b8862f]" />
-                <CornerFlourish className="bottom-4 left-4 -rotate-90 text-[#b8862f]" />
+              <div className="relative rounded-[28px] border border-[#c6a15a]/55 bg-[#120f0c] px-5 py-14 text-[#f6efe2] shadow-[0_50px_120px_-50px_rgba(0,0,0,0.9)] sm:px-14 sm:py-16">
+                <div className="pointer-events-none absolute inset-2.5 rounded-[22px] border border-[#c6a15a]/25" />
+                <CornerFlourish className="top-4 left-4 text-[#c6a15a]" />
+                <CornerFlourish className="top-4 right-4 rotate-90 text-[#c6a15a]" />
+                <CornerFlourish className="right-4 bottom-4 rotate-180 text-[#c6a15a]" />
+                <CornerFlourish className="bottom-4 left-4 -rotate-90 text-[#c6a15a]" />
 
-                <div className="relative text-center">
-                  <p className={cn('text-xs font-bold tracking-[0.36em] uppercase', BRONZE)}>
-                    {pkg.name}
-                  </p>
-                  <h2 className="mt-3 font-display text-[clamp(2.75rem,7vw,4.5rem)] leading-none font-semibold tracking-tight text-emerald-brand">
+                <p className="absolute top-8 right-6 text-right sm:top-10 sm:right-10">
+                  <span className="block font-display text-lg leading-none font-semibold text-[#f3e6c4] tabular-nums sm:text-xl">
+                    {formatAmount(pkg.pricePerGuest)}
+                  </span>
+                  <span className="mt-1 block text-[10px] tracking-[0.14em] text-[#cbb892]/80 uppercase">
+                    {t('menu.perGuest')}
+                  </span>
+                </p>
+
+                <div className="relative px-16 pt-6 text-center sm:pt-2">
+                  <h2 className="font-display text-[clamp(3.25rem,7vw,5rem)] leading-none font-medium text-[#f3e6c4] italic">
                     {t('showcase.package.cardTitle')}
                   </h2>
-                  <p className="mt-3 text-sm text-[#1d2b25]/60">
+                  <p className="mt-3 text-sm text-[#cbb892]/75">
                     {t('showcase.package.cardSubtitle')}
                   </p>
-                  <GemDivider className="mt-6 text-[#b8862f]" />
+                  <GemDivider className="mt-5 text-[#c6a15a]" />
                 </div>
 
-                <div className="relative mt-12 grid gap-12">
+                <div className="relative mt-12 space-y-12">
                   {named.map((section, sectionIndex) => {
                     const list = sectionDishes(section, dishes);
-                    const withPhotos = list.some((dish) => dish.photo);
                     return (
                       <Reveal key={section.categoryId} delay={Math.min(sectionIndex, 4) * 0.05}>
                         <CourseTitle>
                           {localizedName(section, language)}
                           {section.kindsCount > 1 && (
-                            <span className="font-medium tracking-[0.2em] text-[#1d2b25]/45">
+                            <span className="font-medium tracking-[0.2em] text-[#cbb892]/70">
                               {' '}
                               · {t('menu.kinds', { count: section.kindsCount })}
                             </span>
                           )}
                         </CourseTitle>
-                        {withPhotos ? (
-                          <ul
-                            className={cn(
-                              'grid gap-x-10 gap-y-4',
-                              list.length > 1 ? 'sm:grid-cols-2' : 'mx-auto max-w-sm',
-                            )}
-                          >
-                            {list.map((dish) => (
-                              <li key={dish.name}>
-                                <DishRow
-                                  dish={dish}
-                                  onOpen={() => openDish(dish.name)}
-                                  openLabel={t('showcase.package.openDish', { name: dish.name })}
-                                />
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          // Rasmsiz bo'lim — klassik menyu: nomlar markazda, tavsifi ostida.
-                          <ul className="mx-auto grid max-w-2xl gap-x-10 gap-y-5 text-center sm:grid-cols-2">
-                            {list.map((dish, index) => (
-                              <li
-                                key={dish.name}
-                                className={cn(
-                                  list.length % 2 === 1 &&
-                                    index === list.length - 1 &&
-                                    'sm:col-span-2',
-                                )}
-                              >
-                                <span className="block font-display text-2xl leading-tight font-semibold [overflow-wrap:anywhere]">
-                                  {dish.name}
-                                </span>
-                                {dish.description && (
-                                  <span className="mt-1 block text-sm leading-relaxed text-[#1d2b25]/60 italic">
-                                    {dish.description}
-                                  </span>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
+                        <DishGrid
+                          dishes={list}
+                          onOpen={openDish}
+                          openLabel={(name) => t('showcase.package.openDish', { name })}
+                        />
                       </Reveal>
                     );
                   })}
 
-                  {/* Taom nomlari yozilmagan bo'limlar — bitta ixcham ro'yxatda. */}
+                  {/* Taom nomi yozilmagan bo'lim — o'zi taom qatori: doira va nom. */}
                   {unnamed.length > 0 && (
                     <Reveal>
                       {named.length > 0 && (
                         <CourseTitle>{t('showcase.package.alsoTitle')}</CourseTitle>
                       )}
-                      <ul className="mx-auto flex max-w-2xl flex-wrap justify-center gap-x-10 gap-y-5 text-center">
-                        {unnamed.map((section) => (
-                          <li key={section.categoryId} className="w-full sm:w-[calc(50%-1.25rem)]">
-                            <span className="block font-display text-2xl leading-tight font-semibold [overflow-wrap:anywhere]">
-                              {localizedName(section, language)}
-                            </span>
-                            {section.kindsCount > 1 && (
-                              <span className="mt-1 block text-sm text-[#1d2b25]/60 italic">
-                                {t('menu.kinds', { count: section.kindsCount })}
-                              </span>
-                            )}
-                          </li>
-                        ))}
+                      <ul
+                        className={cn(
+                          'grid gap-x-12 gap-y-5',
+                          unnamed.length > 1 ? 'sm:grid-cols-2' : 'mx-auto max-w-sm',
+                        )}
+                      >
+                        {unnamed.map((section) => {
+                          const name = localizedName(section, language);
+                          return (
+                            <li key={section.categoryId}>
+                              <DishRow
+                                dish={{
+                                  name,
+                                  description:
+                                    section.kindsCount > 1
+                                      ? t('menu.kinds', { count: section.kindsCount })
+                                      : null,
+                                  photo: lookupPhoto(dishes, section.nameUz, section.nameRu),
+                                }}
+                                onOpen={() => openDish(section.nameUz)}
+                                openLabel={t('showcase.package.openDish', { name })}
+                              />
+                            </li>
+                          );
+                        })}
                       </ul>
                     </Reveal>
                   )}
@@ -416,43 +422,8 @@ export function ShowcasePackagePage() {
           </section>
         )}
 
-        {/* ── Taomlar rasmlari ───────────────────────────────────────────── */}
-        {photos.length > 1 && (
-          <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-            <SectionHeading
-              eyebrow={t('showcase.package.photosEyebrow')}
-              title={t('showcase.package.photosTitle')}
-            />
-            <div className="grid grid-flow-dense auto-rows-[clamp(130px,38vw,190px)] grid-cols-2 gap-3 md:auto-rows-[clamp(170px,15vw,300px)] md:grid-cols-4">
-              {photos.map((photo, index) => (
-                <button
-                  key={photo.id}
-                  type="button"
-                  onClick={() => setLightbox({ title: pkg.name, items: photos, index })}
-                  aria-label={t('showcase.package.openDish', { name: photo.caption })}
-                  className={cn(
-                    'group relative cursor-zoom-in overflow-hidden rounded-2xl bg-white/5 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-gold/70',
-                    spans[index],
-                  )}
-                >
-                  <img
-                    src={spans[index] ? photo.url : (photo.thumbUrl ?? photo.url)}
-                    alt=""
-                    loading="lazy"
-                    className="size-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/0 to-black/0" />
-                  <span className="pointer-events-none absolute inset-x-0 bottom-0 p-4 font-display text-lg leading-tight font-semibold text-white sm:text-xl">
-                    {photo.caption}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* ── Galereya ───────────────────────────────────────────────────── */}
-        {album && (
+        {media.length > 0 && (
           <section
             id="gallery"
             className="mx-auto max-w-6xl scroll-mt-28 px-5 py-16 sm:px-8 sm:py-20 md:scroll-mt-20"
@@ -464,50 +435,49 @@ export function ShowcasePackagePage() {
             {albums.length > 1 && (
               <div
                 role="tablist"
-                className="mb-8 flex justify-start gap-2 overflow-x-auto pb-1 md:justify-center"
+                className="mb-8 flex justify-start gap-2 overflow-x-auto pb-1 md:flex-wrap md:justify-center"
               >
-                {albums.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={item.id === album.id}
-                    onClick={() => setAlbumId(item.id)}
-                    className={cn(
-                      'shrink-0 cursor-pointer rounded-full border px-5 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-gold/50',
-                      item.id === album.id
-                        ? 'bg-gold-gradient border-transparent text-[#1b1407]'
-                        : 'border-white/15 text-white/70 hover:bg-white/10 hover:text-white',
-                    )}
-                  >
-                    {item.title}
-                  </button>
-                ))}
+                {[null, ...albums.map((item) => item.id)].map((value) => {
+                  const active = value === albumId;
+                  return (
+                    <button
+                      key={value ?? 'all'}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setAlbumId(value)}
+                      className={cn(
+                        'shrink-0 cursor-pointer rounded-full border px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-gold/50',
+                        active
+                          ? 'border-white bg-white text-[#1b1407]'
+                          : 'border-white/15 text-white/70 hover:border-white/40 hover:text-white',
+                      )}
+                    >
+                      {value === null
+                        ? t('showcase.gallery.all')
+                        : albums.find((item) => item.id === value)?.title}
+                    </button>
+                  );
+                })}
               </div>
             )}
-            {albums.length === 1 && (
-              <p className="mb-6 text-center font-display text-2xl font-semibold text-white">
-                {album.title}
-              </p>
-            )}
-            {album.description && (
+            {album?.description && (
               <p className="mx-auto mb-8 max-w-2xl text-center text-base leading-relaxed text-white/60">
                 {album.description}
               </p>
             )}
-            <div
-              key={album.id}
-              className="columns-2 gap-4 animate-in duration-500 fade-in-0 md:columns-3 [&>*]:mb-4 [&>*]:break-inside-avoid"
-            >
-              {album.items.map((item, index) => (
-                <MediaTile
-                  key={item.id}
-                  item={item}
-                  label={t('gallery.openItem', { number: index + 1 })}
-                  onOpen={() => setLightbox({ title: album.title, items: album.items, index })}
-                  className="rounded-2xl bg-white/5"
-                />
-              ))}
+            <div key={album?.id ?? 'all'} className="animate-in duration-500 fade-in-0">
+              <GalleryBento
+                media={media}
+                openLabel={(number) => t('gallery.openItem', { number })}
+                onOpen={(index) =>
+                  setLightbox({
+                    title: galleryTitle,
+                    items: media.map((entry) => entry.item),
+                    index,
+                  })
+                }
+              />
             </div>
           </section>
         )}
@@ -558,7 +528,7 @@ export function ShowcasePackagePage() {
         )}
 
         {/* ── Yakun ──────────────────────────────────────────────────────── */}
-        <section className="px-6 pt-16 pb-20 text-center sm:pt-24 sm:pb-28">
+        <section className="px-6 pt-16 pb-8 text-center sm:pt-20">
           <Reveal className="mx-auto max-w-2xl">
             <GemDivider className="text-gold" />
             <h2 className="mt-7 font-display text-[clamp(2rem,5vw,3.75rem)] leading-tight font-semibold text-white">
@@ -580,10 +550,12 @@ export function ShowcasePackagePage() {
             <p className="mt-2 text-xs tracking-[0.3em] text-white/40 uppercase">
               {t('showcase.hero.eyebrow')}
             </p>
+            <ShowcaseContacts className="mt-5" />
           </Reveal>
         </section>
       </main>
 
+      <DishSlider items={photos} index={slideIndex} onIndexChange={setSlideIndex} />
       <Lightbox
         items={lightbox.items}
         index={lightbox.index}

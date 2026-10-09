@@ -63,16 +63,15 @@
     "expand": "Menyuni yoyish",
     "openMenu": "Menyuni ochish",
     "skipToContent": "Asosiy kontentga o‘tish",
-    "work": "Kundalik ish",
+    "groupMain": "Asosiy",
+    "work": "Operatsiyalar",
     "clients": "Mijozlar",
-    "halls": "Zallar",
     "events": "Bronlar",
     "extraServices": "Qo‘shimcha xizmatlar",
     "menu": "Menyu",
     "gallery": "Galereya",
     "showcase": "Taqdimot",
-    "clientFacing": "Mijoz uchun",
-    "accounting": "Hisob va ombor",
+    "accounting": "Moliya",
     "finance": "Hisob-kitob",
     "warehouse": "Ombor",
     "shopping": "Bozorlik",
@@ -191,11 +190,10 @@
       "audit": "Kim, qachon, nimani o‘zgartirganini ko‘ring.",
       "profile": "Parol, ikki bosqichli himoya va faol sessiyalar.",
       "clients": "Mijozlar ro‘yxati: telefon bo‘yicha qidiring, yangisini qo‘shing.",
-      "halls": "Zallar, ularning sig‘imi va rasmlari.",
       "events": "Bronlar ro‘yxati va kalendari, to‘lovlar va shartnomalar.",
       "menu": "Menyu paketlari: narxi, tarkibi va bo‘limlari.",
       "gallery": "To‘yxona rasmlari va videolari — albomlar bo‘yicha.",
-      "showcase": "Mijozga ko‘rsatish uchun: zallar, menyu va galereya to‘liq ekranda.",
+      "showcase": "Mijozga ko‘rsatish uchun: menyu va galereya to‘liq ekranda.",
       "finance": "Tushum, xarajat va sof foyda — hafta, oy va yil bo‘yicha.",
       "warehouse": "Idish-tovoq va oziq-ovqat qoldig‘i, kirim va chiqim.",
       "shopping": "To‘ylar uchun bozorlik ro‘yxatlari: yozish, tekshirish, xarid va tasdiqlash.",
@@ -812,7 +810,7 @@
     "form": {
       "createTitle": "Yangi zal",
       "editTitle": "Zalni tahrirlash",
-      "createDescription": "Avval asosiy ma’lumotlarni kiriting — rasmlarni keyingi qadamda qo‘shasiz.",
+      "createDescription": "Nom, sig‘im va tavsif. Rasmlarni keyinroq tahrirlashda qo‘shish mumkin.",
       "editDescription": "Rasmlar darhol saqlanadi; qolgan o‘zgarishlar «Saqlash» bosilganda.",
       "images": "Rasmlar",
       "name": "Zal nomi",
@@ -820,8 +818,7 @@
       "status": "Holati",
       "capacity": "Sig‘imi (kishi)",
       "description": "Tavsif",
-      "descriptionPlaceholder": "Zalning o‘ziga xos jihatlari",
-      "createAndContinue": "Yaratish va rasm qo‘shish"
+      "descriptionPlaceholder": "Zalning o‘ziga xos jihatlari"
     },
     "images": {
       "wrongType": "«{{name}}» rasm emas. JPEG, PNG, WebP yoki AVIF yuklang.",
@@ -891,7 +888,7 @@
     },
     "empty": {
       "title": "Hali bronlar yo‘q",
-      "text": "Birinchi bronni oching: mijoz, zal, sana va mehmonlar soni — summani tizim o‘zi hisoblaydi."
+      "text": "Birinchi bronni oching: mijoz, sana va mehmonlar soni — summani tizim o‘zi hisoblaydi."
     },
     "form": {
       "createTitle": "Yangi bron",
@@ -903,8 +900,6 @@
       "type": "Tadbir turi",
       "title": "Nomi",
       "titlePlaceholder": "Masalan: Anvar va Nodira to‘yi",
-      "hall": "Zal",
-      "hallPlaceholder": "Zalni tanlang",
       "guestCount": "Mehmonlar soni",
       "overCapacity": "Zal sig‘imi {{capacity}} kishi — bu sondan ko‘p bo‘lsa bron saqlanmaydi.",
       "date": "Sana",
@@ -978,7 +973,6 @@
       "cancelReason": "Bekor qilish sababi",
       "info": "Tadbir",
       "when": "Sana va vaqt",
-      "hallAndGuests": "Zal va mehmonlar",
       "dishes": "1- va 2-ovqat"
     },
     "confirm": {
@@ -1148,9 +1142,9 @@
       "deleteText": "«{{name}}» bo‘limi barcha paketlar tarkibidan ham olib tashlanadi."
     },
     "dishes": {
-      "description": "Paketlarda yozilgan har bir taomga rasm va qisqa tavsif qo‘shing — ular mijozga taqdimotda ko‘rinadi. Yangi taom paket tarkibiga nomi yozilganda shu yerda paydo bo‘ladi.",
+      "description": "Taomga rasm qo‘shing — u taqdimotda chiqadi va varaqlab ko‘riladi. Bo‘limda taom nomlari yozilmagan bo‘lsa, rasm bo‘limning o‘ziga qo‘yiladi.",
       "emptyTitle": "Hali taomlar yo‘q",
-      "emptyText": "Paketni tahrirlab, bo‘lim ostiga taom nomlarini yozing — ular shu yerda chiqadi.",
+      "emptyText": "Paketni ochib, bo‘limlarni belgilang yoki taom nomlarini yozing — ular shu yerda chiqadi.",
       "inPackages_one": "{{count}} ta paketda",
       "inPackages_other": "{{count}} ta paketda",
       "unused": "Hech bir paketda yo‘q",
@@ -1234,9 +1228,8 @@
   "showcase": {
     "title": "Taqdimot",
     "close": "Taqdimotni yopish",
-    "empty": "Taqdimot uchun hali ma’lumot yo‘q. Zallar va menyu paketlarini qo‘shing.",
+    "empty": "Taqdimot uchun hali ma’lumot yo‘q. Menyu paketlarini qo‘shing.",
     "nav": {
-      "halls": "Zallar",
       "menu": "Menyu",
       "gallery": "Galereya"
     },
@@ -1244,18 +1237,10 @@
       "eyebrow": "To‘yxona · Wedding Studio",
       "tagline": "Hayotingizning eng yorqin kuni — gavhardek bezavol."
     },
-    "halls": {
-      "eyebrow": "Makon",
-      "title": "Bizning zallar",
-      "openPhotos": "{{name}} rasmlarini ochish"
-    },
     "menu": {
       "eyebrow": "Dasturxon",
       "title": "To‘y menyusi",
       "text": "Paketni tanlang — ichida nimalar borligini ko‘rasiz. Narxlar bir kishi uchun, so‘mda.",
-      "guests": "Mehmonlar soni",
-      "fewerGuests": "Mehmonlarni kamaytirish",
-      "moreGuests": "Mehmonlarni ko‘paytirish",
       "perGuest": "so‘m · 1 kishi uchun",
       "totalFor_one": "{{count}} mehmon uchun",
       "totalFor_other": "{{count}} mehmon uchun",
@@ -1265,17 +1250,17 @@
     },
     "gallery": {
       "eyebrow": "Lahzalar",
-      "title": "Galereya"
+      "title": "Galereya",
+      "all": "Hammasi"
     },
     "package": {
       "eyebrow": "Menyu paketi",
       "all": "Barcha paketlar",
       "sections_one": "{{count}} bo‘lim",
       "sections_other": "{{count}} bo‘lim",
-      "cardTitle": "Menyu",
+      "cardTitle": "Dasturxon",
       "cardSubtitle": "Dasturxoningizga tortiladigan taomlar",
       "openDish": "{{name}} rasmini ochish",
-      "photosEyebrow": "Lazzat",
       "photosTitle": "Taomlarimiz",
       "othersEyebrow": "Tanlov",
       "othersTitle": "Boshqa paketlar",

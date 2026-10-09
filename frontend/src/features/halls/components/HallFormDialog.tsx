@@ -43,8 +43,6 @@ interface HallFormDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Berilsa — tahrirlash; berilmasa — yangi zal. */
   hall?: Hall;
-  /** Yangi zal yaratilgach: dialog shu zalni tahrirlash rejimiga o'tadi (rasm qo'shish uchun). */
-  onCreated: (hall: Hall) => void;
 }
 
 const EMPTY: HallFormValues = {
@@ -54,7 +52,7 @@ const EMPTY: HallFormValues = {
   status: 'ACTIVE',
 };
 
-export function HallFormDialog({ open, onOpenChange, hall, onCreated }: HallFormDialogProps) {
+export function HallFormDialog({ open, onOpenChange, hall }: HallFormDialogProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const isEdit = hall !== undefined;
@@ -94,15 +92,10 @@ export function HallFormDialog({ open, onOpenChange, hall, onCreated }: HallForm
       };
       return hall ? hallsApi.update(hall.id, payload) : hallsApi.create(payload);
     },
-    onSuccess: async (saved) => {
+    onSuccess: async () => {
       await refreshList();
-      if (isEdit) {
-        toast.success(t('halls.toast.updated'));
-        onOpenChange(false);
-      } else {
-        toast.success(t('halls.toast.created'));
-        onCreated(saved);
-      }
+      toast.success(t(isEdit ? 'halls.toast.updated' : 'halls.toast.created'));
+      onOpenChange(false);
     },
     onError: (error) => {
       if (toApiError(error).code === 'HALL_NAME_TAKEN') {
@@ -234,7 +227,7 @@ export function HallFormDialog({ open, onOpenChange, hall, onCreated }: HallForm
                 {t(isEdit ? 'common.close' : 'common.cancel')}
               </Button>
               <Button type="submit" loading={mutation.isPending}>
-                {t(isEdit ? 'common.save' : 'halls.form.createAndContinue')}
+                {t(isEdit ? 'common.save' : 'common.create')}
               </Button>
             </DialogFooter>
           </form>

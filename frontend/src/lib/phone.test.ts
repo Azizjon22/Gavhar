@@ -20,6 +20,10 @@ describe('phone', () => {
     ['998901234567', '901234567'],
     ['9012345678999', '901234567'],
     ['998', '998'],
+    ['+9989', '9'],
+    ['+998', ''],
+    ['+998 99 8', '998'],
+    ['99812', '99812'],
     ['abc', ''],
   ])('kiritilgan "%s" dan mahalliy raqam: %s', (input, expected) => {
     expect(extractLocalPhone(input)).toBe(expected);
@@ -28,5 +32,20 @@ describe('phone', () => {
   it('forma qiymati', () => {
     expect(toPhoneValue('901234567')).toBe('+998901234567');
     expect(toPhoneValue('')).toBe('');
+  });
+
+  it("raqam yozilganda 998 o'zi qo'shilmaydi", () => {
+    const typeDigits = (digits: string): string => {
+      let value = '';
+      for (const digit of digits) {
+        const shown = formatLocalPhone(extractLocalPhone(value));
+        value = toPhoneValue(extractLocalPhone(`${shown}${digit}`));
+      }
+      return value;
+    };
+
+    expect(typeDigits('99')).toBe('+99899');
+    expect(typeDigits('901234567')).toBe('+998901234567');
+    expect(typeDigits('998851234')).toBe('+998998851234');
   });
 });

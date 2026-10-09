@@ -180,7 +180,7 @@ export function EventCalendar({ onCreate }: EventCalendarProps) {
                       <li key={event.id}>
                         <Link
                           to={`/events/${event.id}`}
-                          title={`${event.client.fullName} · ${event.hall.name}`}
+                          title={event.client.fullName}
                           className={cn(
                             'tabular block truncate rounded-md px-1.5 py-0.5 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                             STATUS_CHIP[event.status],
@@ -255,7 +255,7 @@ export function EventCalendar({ onCreate }: EventCalendarProps) {
                           {event.client.fullName}
                         </span>
                         <span className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-                          {event.hall.name} · <Users className="size-3" /> {event.guestCount}
+                          <Users className="size-3" /> {event.guestCount}
                         </span>
                         {view === 'day' && (
                           <span className="mt-1.5 block text-xs font-medium">

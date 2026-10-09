@@ -131,17 +131,6 @@ const routes: RouteObject[] = [
                     ],
                   },
                   {
-                    element: <RequirePermission permission="halls:read" />,
-                    children: [
-                      {
-                        path: ROUTES.halls,
-                        lazy: async () => ({
-                          Component: (await import('@/features/halls/pages/HallsPage')).HallsPage,
-                        }),
-                      },
-                    ],
-                  },
-                  {
                     element: <RequirePermission permission="menu:read" />,
                     children: [
                       {

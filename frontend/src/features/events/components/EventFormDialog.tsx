@@ -184,6 +184,12 @@ export function EventFormDialog({ open, onOpenChange, event, defaultDate, onSave
   }, [open, event?.id]);
 
   const hallsQuery = useQuery({ queryKey: hallKeys.list, queryFn: hallsApi.list, enabled: open });
+  // Binoda bitta zal: tanlash yo'q, faol zal o'zi biriktiriladi.
+  useEffect(() => {
+    if (!open || event) return;
+    const hall = (hallsQuery.data ?? []).find((item) => item.status === 'ACTIVE');
+    if (hall && form.getValues('hallId') === '') form.setValue('hallId', hall.id);
+  }, [open, event, hallsQuery.data, form]);
   const servicesQuery = useQuery({
     queryKey: extraServiceKeys.list,
     queryFn: extraServicesApi.list,
@@ -415,38 +421,6 @@ export function EventFormDialog({ open, onOpenChange, event, defaultDate, onSave
                         <FormControl>
                           <Input placeholder={t('events.form.titlePlaceholder')} {...field} />
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="hallId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('events.form.hall')}</FormLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={scheduleLocked}
-                        >
-                          <FormControl>
-                            <SelectTrigger ref={field.ref} onBlur={field.onBlur}>
-                              <SelectValue placeholder={t('events.form.hallPlaceholder')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {halls
-                              .filter(
-                                (hall) => hall.status === 'ACTIVE' || hall.id === event?.hall.id,
-                              )
-                              .map((hall) => (
-                                <SelectItem key={hall.id} value={hall.id}>
-                                  {hall.name} · {t('halls.guests', { count: hall.capacity })}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}

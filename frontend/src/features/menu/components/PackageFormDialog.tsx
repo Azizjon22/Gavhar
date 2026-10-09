@@ -1,5 +1,6 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ImagePlus } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { MoneyInput } from '@/components/shared/MoneyInput';
@@ -19,6 +20,7 @@ import { toApiError } from '@/lib/api-error';
 import { errorMessage } from '@/lib/error-message';
 import { amountToInput } from '@/lib/money';
 import { useLocaleStore } from '@/stores/locale.store';
+import { type Dish, dishKeys, dishesApi } from '../api/dishes.api';
 import { menuApi, menuKeys } from '../api/menu.api';
 import { type MenuCategory, type MenuPackage, localizedName } from '../types/menu.types';
 
@@ -57,6 +59,30 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
   const [sections, setSections] = useState<Record<string, SectionDraft>>({});
   const [nameError, setNameError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const photoInput = useRef<HTMLInputElement>(null);
+  const photoName = useRef<string | null>(null);
+
+  const dishesQuery = useQuery({
+    queryKey: dishKeys.list,
+    queryFn: dishesApi.list,
+    enabled: open,
+  });
+  const photoOf = (nameUz: string, nameRu: string): Dish['photo'] => {
+    const key = (value: string) => value.trim().toLowerCase();
+    return (
+      dishesQuery.data?.find(
+        (dish) => key(dish.name) === key(nameUz) || key(dish.name) === key(nameRu),
+      )?.photo ?? null
+    );
+  };
+  const photoMutation = useMutation({
+    mutationFn: ({ name, file }: { name: string; file: File }) => dishesApi.uploadPhoto(name, file),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: dishKeys.list });
+      toast.success(t('menu.dishes.photoSaved'));
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -126,16 +152,28 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
 
   return (
     <Dialog open={open} onOpenChange={(next) => !mutation.isPending && onOpenChange(next)}>
-      <DialogContent size="lg">
-        <DialogHeader>
+      <DialogContent size="lg" className="flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle>
             {t(isEdit ? 'menu.packageForm.editTitle' : 'menu.packageForm.createTitle')}
           </DialogTitle>
           <DialogDescription>{t('menu.packageForm.description')}</DialogDescription>
         </DialogHeader>
 
+        <input
+          ref={photoInput}
+          type="file"
+          hidden
+          accept="image/jpeg,image/png,image/webp,image/avif"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            const name = photoName.current;
+            event.target.value = '';
+            if (file && name) photoMutation.mutate({ name, file });
+          }}
+        />
         <form
-          className="grid gap-5"
+          className="flex min-h-0 flex-1 flex-col gap-5"
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
@@ -144,7 +182,7 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
             if (nameValid && priceValid) mutation.mutate();
           }}
         >
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid shrink-0 gap-5 sm:grid-cols-2">
             <div className="grid content-start gap-2">
               <Label htmlFor="package-name">{t('menu.packageForm.name')}</Label>
               <Input
@@ -202,9 +240,9 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
             </div>
           </div>
 
-          <div className="grid gap-2">
-            <p className="text-sm font-medium">{t('menu.packageForm.sections')}</p>
-            <ul className="grid max-h-[40dvh] gap-1 overflow-y-auto rounded-xl border p-1.5">
+          <div className="flex min-h-0 flex-1 flex-col gap-2">
+            <p className="shrink-0 text-sm font-medium">{t('menu.packageForm.sections')}</p>
+            <ul className="grid max-h-[calc(100dvh-32rem)] min-h-0 flex-1 gap-1 overflow-y-auto rounded-xl border p-1.5">
               {categories.map((category) => {
                 const draft = sections[category.id];
                 const label = localizedName(category, language);
@@ -218,6 +256,27 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
                         />
                         <span className="truncate">{label}</span>
                       </label>
+                      {draft && !draft.items.trim() && (
+                        <button
+                          type="button"
+                          aria-label={t('menu.dishes.uploadPhoto')}
+                          onClick={() => {
+                            photoName.current = category.nameUz;
+                            photoInput.current?.click();
+                          }}
+                          className="relative flex size-9 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-border bg-muted text-muted-foreground outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/40"
+                        >
+                          {photoOf(category.nameUz, category.nameRu) ? (
+                            <img
+                              src={photoOf(category.nameUz, category.nameRu)?.thumbUrl}
+                              alt=""
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            <ImagePlus className="size-4" />
+                          )}
+                        </button>
+                      )}
                       {draft && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Input
@@ -251,7 +310,7 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
             </ul>
           </div>
 
-          <label className="flex cursor-pointer items-center gap-3 text-sm">
+          <label className="flex shrink-0 cursor-pointer items-center gap-3 text-sm">
             <Checkbox
               checked={isActive}
               onCheckedChange={(checked) => setIsActive(checked === true)}
@@ -259,7 +318,7 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
             {t('menu.packageForm.active')}
           </label>
 
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}

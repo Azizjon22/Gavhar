@@ -52,15 +52,17 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
 
   minio:
-    image: quay.io/minio/minio:latest
+    # quay.io/minio anonim pull'ni rad etadi.
+    image: coollabsio/minio:latest
     container_name: gavhar-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
-      # Brauzer presigned URL orqali to'g'ridan-to'g'ri yuklaydi.
-      MINIO_API_CORS_ALLOW_ORIGIN: ${APP_URL}
+      # Brauzer presigned URL orqali to'g'ridan-to'g'ri yuklaydi. Dev'da Vite
+      # 127.0.0.1 da tinglaydi, shuning uchun u ham ruxsat etiladi.
+      MINIO_API_CORS_ALLOW_ORIGIN: ${APP_URL},http://127.0.0.1:${WEB_PORT:-5180}
     networks:
       gavhar:
         ipv4_address: 172.30.40.12
@@ -77,7 +79,8 @@ services:
 
   # Bir martalik: bucket'larni yaratadi va chiqib ketadi.
   minio-init:
-    image: quay.io/minio/mc:latest
+    # quay.io/minio/mc anonim pull'ni rad etadi.
+    image: pgsty/mc:latest
     container_name: gavhar-minio-init
     networks:
       - gavhar

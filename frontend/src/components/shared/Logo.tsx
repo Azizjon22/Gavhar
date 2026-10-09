@@ -1,5 +1,7 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
+import { ROUTES } from '@/app/router/paths';
 import { useBrand } from '@/features/settings/api/brand.api';
 import { cn } from '@/lib/utils';
 import { SpinningGem } from './SpinningGem';
@@ -38,6 +40,8 @@ interface LogoProps {
   /** Faqat belgi (yig'ilgan sidebar uchun). */
   compact?: boolean;
   className?: string;
+  /** Bosilganda (telefonda menyuni yopish). */
+  onClick?: () => void;
 }
 
 /** Brend belgisi: logotip yuklangan bo'lsa — o'sha, aks holda aylanayotgan gavhar. */
@@ -50,12 +54,20 @@ export function BrandMark({ className }: { className?: string }) {
   );
 }
 
-export function Logo({ compact = false, className }: LogoProps) {
+export function Logo({ compact = false, className, onClick }: LogoProps) {
   const { t } = useTranslation();
   const brand = useBrand();
 
   return (
-    <span className={cn('flex items-center gap-3', className)}>
+    <Link
+      to={ROUTES.home}
+      onClick={onClick}
+      aria-label={t('nav.home')}
+      className={cn(
+        'flex cursor-pointer items-center gap-3 rounded-lg outline-none focus-visible:ring-[3px] focus-visible:ring-gold/50',
+        className,
+      )}
+    >
       <BrandMark className="size-9 shrink-0" />
       {!compact && (
         <span className="flex min-w-0 flex-col leading-none">
@@ -67,6 +79,6 @@ export function Logo({ compact = false, className }: LogoProps) {
           </span>
         </span>
       )}
-    </span>
+    </Link>
   );
 }
