@@ -38,6 +38,27 @@ async function syncPermissions(prisma: PrismaClient): Promise<string[]> {
   return PERMISSION_CATALOG.map((permission) => permission.key).filter((key) => !known.has(key));
 }
 
+/**
+ * Tizim yangilanganda paydo bo'lgan ruxsatlar (yangi bo'limlar) mavjud tizim roliga ham
+ * beriladi — agar ular shu rolning standart ruxsatlari bo'lsa. SUPER_ADMIN ilgari olib
+ * tashlagan ruxsatlar qaytarilmaydi (faqat shu safar yangi qo'shilganlari).
+ */
+async function grantNewDefaults(
+  prisma: PrismaClient,
+  roleId: string,
+  defaults: readonly string[],
+  addedKeys: readonly string[],
+): Promise<void> {
+  const fresh = await prisma.permission.findMany({
+    where: { key: { in: addedKeys.filter((key) => defaults.includes(key)) } },
+    select: { id: true },
+  });
+  await prisma.rolePermission.createMany({
+    data: fresh.map(({ id }) => ({ roleId, permissionId: id })),
+    skipDuplicates: true,
+  });
+}
+
 async function syncSystemRoles(prisma: PrismaClient, addedKeys: readonly string[]) {
   const superAdmin = await prisma.role.upsert({
     where: { key: SYSTEM_ROLES.SUPER_ADMIN },
@@ -68,22 +89,13 @@ async function syncSystemRoles(prisma: PrismaClient, addedKeys: readonly string[
       },
     });
   } else {
-    // Tizim yangilanganda paydo bo'lgan ruxsatlar (yangi bo'limlar) mavjud ADMIN
-    // roliga ham beriladi; SUPER_ADMIN ilgari olib tashlagan ruxsatlar qaytarilmaydi.
-    const fresh = await prisma.permission.findMany({
-      where: {
-        key: { in: addedKeys.filter((key) => DEFAULT_ADMIN_PERMISSIONS.some((k) => k === key)) },
-      },
-      select: { id: true },
-    });
-    await prisma.rolePermission.createMany({
-      data: fresh.map(({ id }) => ({ roleId: existingAdmin.id, permissionId: id })),
-      skipDuplicates: true,
-    });
+    await grantNewDefaults(prisma, existingAdmin.id, DEFAULT_ADMIN_PERMISSIONS, addedKeys);
   }
 
   const existingCook = await prisma.role.findUnique({ where: { key: SYSTEM_ROLES.COOK } });
-  if (!existingCook) {
+  if (existingCook) {
+    await grantNewDefaults(prisma, existingCook.id, DEFAULT_COOK_PERMISSIONS, addedKeys);
+  } else {
     const permissions = await prisma.permission.findMany({
       where: { key: { in: [...DEFAULT_COOK_PERMISSIONS] } },
       select: { id: true },
@@ -100,7 +112,9 @@ async function syncSystemRoles(prisma: PrismaClient, addedKeys: readonly string[
   }
 
   const existingZavzal = await prisma.role.findUnique({ where: { key: SYSTEM_ROLES.ZAVZAL } });
-  if (!existingZavzal) {
+  if (existingZavzal) {
+    await grantNewDefaults(prisma, existingZavzal.id, DEFAULT_ZAVZAL_PERMISSIONS, addedKeys);
+  } else {
     const permissions = await prisma.permission.findMany({
       where: { key: { in: [...DEFAULT_ZAVZAL_PERMISSIONS] } },
       select: { id: true },

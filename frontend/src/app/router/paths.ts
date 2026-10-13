@@ -5,7 +5,6 @@ export const ROUTES = {
   setupTwoFactor: '/setup/two-factor',
   profile: '/profile',
   events: '/events',
-  extraServices: '/extra-services',
   clients: '/clients',
   halls: '/halls',
   menu: '/menu',
@@ -19,4 +18,8 @@ export const ROUTES = {
   users: '/users',
   roles: '/roles',
   auditLogs: '/audit-logs',
+  kitchen: '/kitchen',
+  kitchenEvents: '/kitchen/events',
+  kitchenShopping: '/kitchen/shopping',
+  kitchenStock: '/kitchen/stock',
 } as const;

@@ -1,11 +1,15 @@
 import { http } from '@/lib/api-client';
-import type { MenuCategory, MenuPackage, MenuPackagePayload } from '../types/menu.types';
+import type {
+  CategoryPayload,
+  MenuCategory,
+  MenuPackage,
+  MenuPackagePayload,
+} from '../types/menu.types';
 
 export const menuApi = {
   categories: () => http.get<MenuCategory[]>('/menu/categories'),
-  createCategory: (body: { nameUz: string; nameRu: string }) =>
-    http.post<MenuCategory>('/menu/categories', body),
-  updateCategory: (id: string, body: { nameUz: string; nameRu: string }) =>
+  createCategory: (body: CategoryPayload) => http.post<MenuCategory>('/menu/categories', body),
+  updateCategory: (id: string, body: CategoryPayload) =>
     http.patch<MenuCategory>(`/menu/categories/${id}`, body),
   removeCategory: (id: string) => http.delete(`/menu/categories/${id}`),
   reorderCategories: (ids: string[]) => http.put<MenuCategory[]>('/menu/categories/order', { ids }),

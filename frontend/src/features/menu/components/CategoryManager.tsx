@@ -15,9 +15,16 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { errorMessage } from '@/lib/error-message';
 import { menuApi, menuKeys } from '../api/menu.api';
-import type { MenuCategory } from '../types/menu.types';
+import { MENU_COURSES, type MenuCategory, type MenuCourse } from '../types/menu.types';
 
 type DialogState =
   { type: 'form'; category?: MenuCategory } | { type: 'delete'; category: MenuCategory } | null;
@@ -36,12 +43,14 @@ export function CategoryManager({ categories, canCreate, canUpdate, canDelete }:
   const [dialog, setDialog] = useState<DialogState>(null);
   const [nameUz, setNameUz] = useState('');
   const [nameRu, setNameRu] = useState('');
+  const [course, setCourse] = useState<MenuCourse>('OTHER');
 
   const editing = dialog?.type === 'form' ? dialog.category : undefined;
   useEffect(() => {
     if (dialog?.type !== 'form') return;
     setNameUz(dialog.category?.nameUz ?? '');
     setNameRu(dialog.category?.nameRu ?? '');
+    setCourse(dialog.category?.course ?? 'OTHER');
   }, [dialog]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: menuKeys.all });
@@ -49,7 +58,7 @@ export function CategoryManager({ categories, canCreate, canUpdate, canDelete }:
 
   const saveMutation = useMutation({
     mutationFn: () => {
-      const body = { nameUz: nameUz.trim(), nameRu: nameRu.trim() };
+      const body = { nameUz: nameUz.trim(), nameRu: nameRu.trim(), course };
       return editing ? menuApi.updateCategory(editing.id, body) : menuApi.createCategory(body);
     },
     onSuccess: async () => {
@@ -115,7 +124,9 @@ export function CategoryManager({ categories, canCreate, canUpdate, canDelete }:
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{category.nameUz}</p>
-              <p className="truncate text-xs text-muted-foreground">{category.nameRu}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {category.nameRu} · {t(`kitchen.stages.${category.course}`)}
+              </p>
             </div>
             {canUpdate && (
               <>
@@ -199,6 +210,22 @@ export function CategoryManager({ categories, canCreate, canUpdate, canDelete }:
                 placeholder="Салаты"
                 onChange={(event) => setNameRu(event.target.value)}
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="category-course">{t('menu.categories.course')}</Label>
+              <Select value={course} onValueChange={(value) => setCourse(value as MenuCourse)}>
+                <SelectTrigger id="category-course">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MENU_COURSES.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {t(`kitchen.stages.${value}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t('menu.categories.courseHint')}</p>
             </div>
             <DialogFooter>
               <Button

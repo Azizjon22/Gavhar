@@ -12,12 +12,8 @@ const MONEY_FIELDS = [
   'totalAmount',
   'paidAmount',
   'debt',
-  'pricePerGuest',
-  'guestsTotal',
-  'extrasTotal',
-  'discount',
-  'requiredDeposit',
-  'minDepositPercent',
+  'receivedAmount',
+  'refundedAmount',
   'payments',
 ] as const;
 
@@ -29,13 +25,6 @@ export function withoutMoney<T>(event: T): T {
   if (!isRecord(event) || !('guestCount' in event)) return event;
   const rest: Record<string, unknown> = { ...event };
   for (const field of MONEY_FIELDS) delete rest[field];
-  if (Array.isArray(rest.services)) {
-    rest.services = rest.services.map((service: unknown) => {
-      if (!isRecord(service)) return service;
-      const { unitPrice: _unitPrice, total: _total, ...line } = service;
-      return line;
-    });
-  }
   return rest as T;
 }
 

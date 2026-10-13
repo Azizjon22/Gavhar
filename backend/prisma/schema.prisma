@@ -272,13 +272,11 @@ enum EventType {
 }
 
 enum EventStatus {
-  /// So'rov: zaklad hali to'lanmagan.
+  /// Kutilmoqda: hali to'liq to'lanmagan va qo'lda tasdiqlanmagan.
   REQUEST
-  /// Tasdiqlangan: zaklad to'langan.
+  /// Tasdiqlangan: qo'lda tasdiqlangan yoki to'liq to'langanda o'zi tasdiqlanadi.
   CONFIRMED
-  /// O'tkazildi: tadbir bo'lib o'tgan, hisob-kitob yopilmagan bo'lishi mumkin.
-  HELD
-  /// Yakunlandi: to'liq to'langan va yopilgan.
+  /// Yakunlandi: to'y kuni kelgan (qarz qolgan bo'lishi mumkin — u alohida ko'rinadi).
   COMPLETED
   CANCELLED
 }
@@ -305,11 +303,8 @@ model Event {
   /// faqat SUPER_ADMIN belgilaydi.
   firstDish       String?     @map("first_dish")
   secondDish      String?     @map("second_dish")
-  /// Narxlar bron paytidagi holatida saqlanadi — keyin paket yoki xizmat narxi
-  /// o'zgarsa ham eski bron summasi o'zgarmaydi. Zal uchun alohida haq olinmaydi.
-  pricePerGuest   Decimal     @map("price_per_guest") @db.Decimal(18, 2)
-  extrasTotal     Decimal     @default(0) @map("extras_total") @db.Decimal(18, 2)
-  discount        Decimal     @default(0) @db.Decimal(18, 2)
+  /// Paket narxi bron paytidagi holatida: keyin paket narxi yoki mehmonlar soni
+  /// o'zgarsa ham o'zgarmaydi; faqat boshqa paketga o'tilganda o'sha paket narxi olinadi.
   totalAmount     Decimal     @map("total_amount") @db.Decimal(18, 2)
   /// To'lovlar yig'indisi (qaytarilganlar ayirilgan). Har to'lovda qayta hisoblanadi.
   paidAmount      Decimal     @default(0) @map("paid_amount") @db.Decimal(18, 2)
@@ -324,11 +319,11 @@ model Event {
   client        Client         @relation(fields: [clientId], references: [id], onDelete: Restrict)
   hall          Hall           @relation(fields: [hallId], references: [id], onDelete: Restrict)
   menuPackage   MenuPackage?   @relation(fields: [menuPackageId], references: [id], onDelete: SetNull)
-  services      EventService[]
   payments      Payment[]
   shoppingLists ShoppingList[]
   expenses      Expense[]
   workers       EventWorker[]
+  stockUsages   StockUsage[]
 
   @@index([startAt])
   @@index([clientId])
@@ -337,49 +332,9 @@ model Event {
   @@map("events")
 }
 
-enum ExtraServiceUnit {
-  /// Bir tadbir uchun belgilangan narx.
-  PER_EVENT
-  /// Har bir mehmon uchun.
-  PER_GUEST
-}
-
-/// Qo'shimcha xizmatlar katalogi (bezak, karnay-surnay, tort va h.k.).
-model ExtraService {
-  id        String           @id @default(uuid()) @db.Uuid
-  name      String
-  price     Decimal          @db.Decimal(18, 2)
-  unit      ExtraServiceUnit @default(PER_EVENT)
-  isActive  Boolean          @default(true) @map("is_active")
-  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime?        @map("deleted_at") @db.Timestamptz(3)
-
-  events EventService[]
-
-  @@map("extra_services")
-}
-
-/// Bronga qo'shilgan xizmat — nomi va narxi qo'shilgan paytdagi holatida.
-model EventService {
-  id             String           @id @default(uuid()) @db.Uuid
-  eventId        String           @map("event_id") @db.Uuid
-  extraServiceId String           @map("extra_service_id") @db.Uuid
-  name           String
-  unit           ExtraServiceUnit
-  unitPrice      Decimal          @map("unit_price") @db.Decimal(18, 2)
-  quantity       Int              @default(1)
-  total          Decimal          @db.Decimal(18, 2)
-
-  event        Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  extraService ExtraService @relation(fields: [extraServiceId], references: [id], onDelete: Restrict)
-
-  @@unique([eventId, extraServiceId])
-  @@map("event_services")
-}
-
+/// Qaytarish — mijozga qaytarib berilgan pul (masalan, to'y bekor bo'lganda zaklad).
+/// Summa musbat saqlanadi, hisobda ayiriladi.
 enum PaymentKind {
-  DEPOSIT
   PAYMENT
   REFUND
 }
@@ -390,29 +345,19 @@ enum PaymentMethod {
   TRANSFER
 }
 
-enum Currency {
-  UZS
-  USD
-}
-
 model Payment {
-  id           String        @id @default(uuid()) @db.Uuid
-  eventId      String        @map("event_id") @db.Uuid
-  kind         PaymentKind
-  method       PaymentMethod
-  currency     Currency      @default(UZS)
-  /// To'lov valyutasidagi summa.
-  amount       Decimal       @db.Decimal(18, 2)
-  /// 1 birlik valyuta necha so'm (UZS uchun 1).
-  exchangeRate Decimal       @default(1) @map("exchange_rate") @db.Decimal(18, 4)
-  /// So'mdagi qiymat — barcha hisob-kitob shu ustun bo'yicha.
-  amountUzs    Decimal       @map("amount_uzs") @db.Decimal(18, 2)
-  paidAt       DateTime      @default(now()) @map("paid_at") @db.Timestamptz(3)
-  note         String?
-  createdById  String?       @map("created_by_id") @db.Uuid
-  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  id          String        @id @default(uuid()) @db.Uuid
+  eventId     String        @map("event_id") @db.Uuid
+  kind        PaymentKind
+  method      PaymentMethod
+  /// So'mda.
+  amount      Decimal       @db.Decimal(18, 2)
+  paidAt      DateTime      @default(now()) @map("paid_at") @db.Timestamptz(3)
+  note        String?
+  createdById String?       @map("created_by_id") @db.Uuid
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   /// Bekor qilingan to'lov o'chirilmaydi — tarixda qoladi.
-  deletedAt    DateTime?     @map("deleted_at") @db.Timestamptz(3)
+  deletedAt   DateTime?     @map("deleted_at") @db.Timestamptz(3)
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
 
@@ -439,36 +384,54 @@ model Setting {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Menyu bo'limi: Salatlar, Suyuq taomlar, Ichimliklar...
+/// Oshxona uchun: bo'lim taomlari qaysi bosqichda tayyorlanadi (oshpaz ro'yxatni shu tartibda yozadi).
+enum MenuCourse {
+  SALAD
+  FIRST_DISH
+  SECOND_DISH
+  OTHER
+}
+
 model MenuCategory {
-  id        String    @id @default(uuid()) @db.Uuid
-  nameUz    String    @map("name_uz")
-  nameRu    String    @map("name_ru")
-  sortOrder Int       @default(0) @map("sort_order")
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  id        String     @id @default(uuid()) @db.Uuid
+  nameUz    String     @map("name_uz")
+  nameRu    String     @map("name_ru")
+  course    MenuCourse @default(OTHER)
+  sortOrder Int        @default(0) @map("sort_order")
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime?  @map("deleted_at") @db.Timestamptz(3)
 
   sections MenuPackageSection[]
 
   @@map("menu_categories")
 }
 
-/// Menyu paketi: 1 kishilik narx va tarkib (masalan "VIP — 280 000").
+/// Menyu paketi: belgilangan mehmon soni uchun qat'iy narx va tarkib.
+/// To'liq paket — to'yxona taomlari, kortej, san'atkor va kamerachi; ikkinchisi — faqat taomlar.
+enum MenuPackageType {
+  FULL
+  FOOD_ONLY
+}
+
 model MenuPackage {
-  id            String    @id @default(uuid()) @db.Uuid
+  id            String          @id @default(uuid()) @db.Uuid
   name          String
   description   String?
-  pricePerGuest Decimal   @map("price_per_guest") @db.Decimal(18, 2)
+  /// Butun paket narxi `guestCount` mehmon uchun — 1 kishilik narx emas.
+  price         Decimal         @db.Decimal(18, 2)
+  guestCount    Int             @default(100) @map("guest_count")
+  packageType   MenuPackageType @default(FOOD_ONLY) @map("package_type")
   /// Kartada ko'rinadigan belgi, masalan "VIP" yoki "Eng ommabop".
   badge         String?
   /// Mijozga taqdimotda paket kartasi va sahifasining muqova rasmi.
-  coverKey      String?   @map("cover_key")
-  coverThumbKey String?   @map("cover_thumb_key")
-  isActive      Boolean   @default(true) @map("is_active")
-  sortOrder     Int       @default(0) @map("sort_order")
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+  coverKey      String?         @map("cover_key")
+  coverThumbKey String?         @map("cover_thumb_key")
+  isActive      Boolean         @default(true) @map("is_active")
+  sortOrder     Int             @default(0) @map("sort_order")
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt     DateTime?       @map("deleted_at") @db.Timestamptz(3)
 
   sections MenuPackageSection[]
   prices   MenuPackagePrice[]
@@ -656,10 +619,68 @@ model WarehouseItem {
   updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt       DateTime?        @map("deleted_at") @db.Timestamptz(3)
 
-  movements StockMovement[]
+  movements  StockMovement[]
+  lots       WarehouseLot[]
+  usageItems StockUsageItem[]
 
   @@index([section, deletedAt])
   @@map("warehouse_items")
+}
+
+/// Bir narxda kelgan mahsulot partiyasi. Narx o'zgargan kirimda yangi partiya ochiladi;
+/// chiqim doim eng eski partiyadan boshlanadi — to'yga olingan mahsulot o'zi qanchaga
+/// tushgan bo'lsa, shuncha deb hisoblanadi. Narxni faqat SUPER_ADMIN ko'radi va kiritadi.
+model WarehouseLot {
+  id        String   @id @default(uuid()) @db.Uuid
+  itemId    String   @map("item_id") @db.Uuid
+  /// Partiyadan qolgan miqdor.
+  quantity  Decimal  @db.Decimal(14, 3)
+  /// 1 birlik narxi; bo'sh — narx hali kiritilmagan.
+  unitPrice Decimal? @map("unit_price") @db.Decimal(18, 2)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  item WarehouseItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId, createdAt])
+  @@map("warehouse_lots")
+}
+
+/// Oshpaz bitta to'y uchun ombordan bir martada olgan mahsulotlar.
+model StockUsage {
+  id               String   @id @default(uuid()) @db.Uuid
+  eventId          String   @map("event_id") @db.Uuid
+  takenById        String   @map("taken_by_id") @db.Uuid
+  takenByName      String   @map("taken_by_name")
+  /// Telegram'dagi xabarlar — qaytarilganda tahrirlash uchun.
+  telegramMessages Json?    @map("telegram_messages")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  event Event            @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  items StockUsageItem[]
+
+  @@index([eventId])
+  @@index([createdAt])
+  @@map("stock_usages")
+}
+
+model StockUsageItem {
+  id          String        @id @default(uuid()) @db.Uuid
+  usageId     String        @map("usage_id") @db.Uuid
+  itemId      String        @map("item_id") @db.Uuid
+  /// Nomi va birligi olingan paytdagidek (keyin o'zgarsa ham).
+  name        String
+  unit        WarehouseUnit
+  quantity    Decimal       @db.Decimal(14, 3)
+  /// Bo'sh — olingan mahsulotning bir qismi hali narxlanmagan.
+  totalCost   Decimal?      @map("total_cost") @db.Decimal(18, 2)
+  /// [{ quantity, unitPrice, lotCreatedAt }] — qaytarishda aynan joyiga qo'yish uchun.
+  allocations Json
+
+  usage StockUsage    @relation(fields: [usageId], references: [id], onDelete: Cascade)
+  item  WarehouseItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([usageId])
+  @@map("stock_usage_items")
 }
 
 enum StockMovementType {
@@ -689,33 +710,40 @@ model StockMovement {
 }
 
 enum ShoppingListStatus {
-  /// Oshpaz yozdi — SUPER_ADMIN tekshiruvini kutmoqda.
+  /// Oshpaz yozdi — SUPER_ADMIN hali ko'rmagan.
   SUBMITTED
-  /// SUPER_ADMIN ko'rib chiqdi — admin xarid qilishi kerak.
+  /// SUPER_ADMIN bozorlik sahifasini ochdi — ko'rib chiqilmoqda.
+  REVIEWED
+  /// SUPER_ADMIN tekshirib adminga yubordi — admin xarid qiladi.
   APPROVED
-  /// Admin sotib oldi va narxlarni kiritdi — tasdiq kutmoqda.
+  /// Hamma mahsulot sotib olindi (yoki "olinmadi" deb belgilandi) — tasdiq kutmoqda.
   PURCHASED
-  /// SUPER_ADMIN tasdiqladi — summa xarajatlarga yozildi.
+  /// SUPER_ADMIN tasdiqlab yopdi — summa xarajatlarga yozildi.
   CONFIRMED
 }
 
 /// Bitta tadbir uchun bozorlik ro'yxati. Oshpaz yozadi, SUPER_ADMIN tekshiradi,
 /// admin sotib olib narx kiritadi; faqat SUPER_ADMIN tasdiqlagach xarajatga aylanadi.
 model ShoppingList {
-  id              String             @id @default(uuid()) @db.Uuid
+  id               String             @id @default(uuid()) @db.Uuid
   /// Bo'sh bo'lsa — to'yga bog'lanmagan umumiy bozorlik.
-  eventId         String?            @map("event_id") @db.Uuid
-  status          ShoppingListStatus @default(SUBMITTED)
-  note            String?
-  createdById     String             @map("created_by_id") @db.Uuid
-  createdByName   String             @map("created_by_name")
-  approvedAt      DateTime?          @map("approved_at") @db.Timestamptz(3)
-  purchasedAt     DateTime?          @map("purchased_at") @db.Timestamptz(3)
-  purchasedByName String?            @map("purchased_by_name")
-  confirmedAt     DateTime?          @map("confirmed_at") @db.Timestamptz(3)
-  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt       DateTime?          @map("deleted_at") @db.Timestamptz(3)
+  eventId          String?            @map("event_id") @db.Uuid
+  status           ShoppingListStatus @default(SUBMITTED)
+  note             String?
+  createdById      String             @map("created_by_id") @db.Uuid
+  createdByName    String             @map("created_by_name")
+  reviewedAt       DateTime?          @map("reviewed_at") @db.Timestamptz(3)
+  approvedAt       DateTime?          @map("approved_at") @db.Timestamptz(3)
+  /// Admin bozorlik sahifasini ochganda belgilanadi — qo'ng'iroqchasi o'chadi.
+  adminSeenAt      DateTime?          @map("admin_seen_at") @db.Timestamptz(3)
+  /// Telegram'dagi e'lon xabarlari — ro'yxat o'zgarsa bot ularni tahrirlaydi.
+  telegramMessages Json?              @map("telegram_messages")
+  purchasedAt      DateTime?          @map("purchased_at") @db.Timestamptz(3)
+  purchasedByName  String?            @map("purchased_by_name")
+  confirmedAt      DateTime?          @map("confirmed_at") @db.Timestamptz(3)
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?          @map("deleted_at") @db.Timestamptz(3)
 
   event   Event?         @relation(fields: [eventId], references: [id], onDelete: Restrict)
   items   ShoppingItem[]
@@ -735,8 +763,11 @@ model ShoppingItem {
   /// SUPER_ADMIN qo'shgan qatorda bo'sh.
   requestedQuantity Decimal?      @map("requested_quantity") @db.Decimal(14, 3)
   quantity          Decimal       @db.Decimal(14, 3)
-  /// Shu qator uchun to'langan jami summa (admin kiritadi).
+  /// Shu qator uchun to'langan aniq jami summa (bo'sh — hali sotib olinmagan).
   price             Decimal?      @db.Decimal(18, 2)
+  /// Kim va qachon sotib olgani (har mahsulot alohida belgilanadi).
+  purchasedAt       DateTime?     @map("purchased_at") @db.Timestamptz(3)
+  purchasedByName   String?       @map("purchased_by_name")
   /// Oshpazning shu qatorga izohi (masalan "qizil, yirik").
   note              String?
   /// Sotib olinmadi (topilmadi yoki kerak bo'lmadi).

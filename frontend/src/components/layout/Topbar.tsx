@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitch } from './LanguageSwitch';
+import { DevModeBadge } from './DevModeBadge';
 import { ShoppingBell } from './ShoppingBell';
 import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
@@ -34,6 +35,7 @@ export function Topbar({ onOpenMobileNav }: TopbarProps) {
       </p>
 
       <div className="flex items-center gap-1">
+        <DevModeBadge />
         <ShoppingBell />
         <LanguageSwitch />
         <ThemeToggle />

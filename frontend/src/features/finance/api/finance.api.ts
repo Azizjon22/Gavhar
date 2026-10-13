@@ -27,6 +27,9 @@ export const financeApi = {
   createExpense: (body: ExpensePayload & { eventId?: string }) =>
     http.post<Expense>('/finance/expenses', body),
   eventFinance: (eventId: string) => http.get<EventFinance>(`/finance/events/${eventId}`),
+  /** Ombordan olingan mahsulotlar qiymatini to'y xarajatiga yozish (SUPER_ADMIN). */
+  recordStockExpense: (eventId: string) =>
+    http.post<Expense>(`/finance/events/${eventId}/stock-expense`),
   updateExpense: (id: string, body: ExpensePayload) =>
     http.patch<Expense>(`/finance/expenses/${id}`, body),
   removeExpense: (id: string) => http.delete(`/finance/expenses/${id}`),

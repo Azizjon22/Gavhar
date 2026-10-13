@@ -62,6 +62,14 @@ describe('validateEnv', () => {
       expect(validateEnv(prodEnv).NODE_ENV).toBe('production');
     });
 
+    it('parolsiz tezkor kirishni (DEV_LOGIN_ENABLED) rad etadi', () => {
+      expect(() => validateEnv({ ...prodEnv, DEV_LOGIN_ENABLED: 'true' })).toThrow(
+        /DEV_LOGIN_ENABLED/,
+      );
+      expect(validateEnv({ ...validEnv, DEV_LOGIN_ENABLED: 'true' }).DEV_LOGIN_ENABLED).toBe(true);
+      expect(validateEnv(validEnv).DEV_LOGIN_ENABLED).toBe(false);
+    });
+
     it('COOKIE_SECURE=false ni rad etadi', () => {
       expect(() => validateEnv({ ...prodEnv, COOKIE_SECURE: 'false' })).toThrow(/COOKIE_SECURE/);
     });

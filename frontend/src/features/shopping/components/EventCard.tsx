@@ -82,7 +82,7 @@ export function EventCard({ event, viewer, today, onWrite, onAction }: Props) {
             </span>
           </p>
         </div>
-        {viewer.canWrite && !cancelled && !event.shoppingClosed && (
+        {viewer.canWrite && !cancelled && (
           <Button
             variant={isToday ? 'gold' : 'outline'}
             className={cn('max-sm:w-full', !isToday && 'bg-card')}
@@ -174,7 +174,6 @@ export function EventCard({ event, viewer, today, onWrite, onAction }: Props) {
                 event={event}
                 list={list}
                 viewer={viewer}
-                today={today}
                 onAction={(action, target) => onAction(action, event, target)}
               />
             ))

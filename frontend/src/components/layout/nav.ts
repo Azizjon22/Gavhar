@@ -168,7 +168,6 @@ export const visibleNavGroups = (user: AuthProfile): NavGroup[] =>
 /** Menyuda yo'q, lekin topbar sarlavhasi kerak bo'lgan sahifalar. */
 const EXTRA_TITLES: readonly { prefix: string; labelKey: string }[] = [
   { prefix: '/clients', labelKey: 'nav.clients' },
-  { prefix: '/extra-services', labelKey: 'nav.extraServices' },
 ];
 
 /** Joriy manzilga mos sahifa nomining i18n kaliti (topbar uchun). */

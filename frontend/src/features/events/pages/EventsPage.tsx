@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { CalendarDays, List, Plus, Settings2 } from 'lucide-react';
+import { CalendarDays, List, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -20,13 +20,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { usePermissions } from '@/hooks/use-permissions';
 import { formatDate, formatTime } from '@/lib/format';
 import { formatAmount } from '@/lib/money';
 import { eventKeys, eventsApi } from '../api/events.api';
-import { BookingSettingsDialog } from '../components/BookingSettingsDialog';
 import { EventCalendar } from '../components/EventCalendar';
 import { EventFormDialog } from '../components/EventFormDialog';
 import { EventStatusBadge } from '../components/EventStatusBadge';
@@ -53,7 +51,6 @@ export function EventsPage() {
   const [debtOnly, setDebtOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [form, setForm] = useState<{ open: boolean; date?: string }>({ open: false });
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const debouncedSearch = useDebouncedValue(search.trim());
 
   const params: ListEventsParams = {
@@ -154,26 +151,7 @@ export function EventsPage() {
       <PageHeader
         title={t('events.title')}
         description={t('events.description')}
-        actions={
-          <>
-            {can('settings:update') && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label={t('events.settings.title')}
-                    onClick={() => setSettingsOpen(true)}
-                  >
-                    <Settings2 />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t('events.settings.title')}</TooltipContent>
-              </Tooltip>
-            )}
-            {createButton}
-          </>
-        }
+        actions={createButton}
       />
 
       <Tabs
@@ -282,7 +260,6 @@ export function EventsPage() {
         defaultDate={form.date}
         onSaved={(event) => navigate(`/events/${event.id}`)}
       />
-      <BookingSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   );
 }

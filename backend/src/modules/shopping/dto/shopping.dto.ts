@@ -5,7 +5,6 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
-  IsBoolean,
   IsEnum,
   IsOptional,
   IsString,
@@ -81,37 +80,37 @@ export class SaveShoppingListDto {
   note?: string | null;
 }
 
+/**
+ * Bozorda odatda jami summa ma'lum (38 kg uchun 200 000) — shuning uchun narx jami
+ * (`price`) yoki 1 birlik narxi (`unitPrice`) ko'rinishida yuboriladi, ikkalasidan biri.
+ * `quantity` — amalda olingan miqdor, ro'yxatdagidan farq qilsa.
+ */
 export class PurchaseItemDto {
-  @ApiProperty()
-  @IsUUID()
-  id: string;
-
-  @ApiProperty({ example: '25', description: 'Amalda olingan miqdor' })
+  @ApiPropertyOptional({ example: '38', description: 'Amalda olingan miqdor' })
+  @IsOptional()
   @IsQuantity()
-  quantity: string;
+  quantity?: string;
 
-  @ApiPropertyOptional({ example: '125000', nullable: true, description: 'Shu qator uchun jami' })
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
+  @ApiPropertyOptional({ example: '200000', description: 'Shu qator uchun to‘langan jami' })
+  @ValidateIf((dto: PurchaseItemDto) => dto.unitPrice === undefined)
   @IsMoney()
-  price?: string | null;
+  price?: string;
 
-  @ApiPropertyOptional({ default: false, description: 'Sotib olinmadi' })
-  @IsOptional()
-  @IsBoolean()
-  skipped?: boolean;
+  @ApiPropertyOptional({ example: '5300', description: '1 birlik narxi (jami o‘rniga)' })
+  @ValidateIf((dto: PurchaseItemDto) => dto.price === undefined)
+  @IsMoney()
+  unitPrice?: string;
 }
 
-export class PurchaseDto {
-  @ApiProperty({ type: [PurchaseItemDto] })
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(MAX_LIST_ITEMS)
-  @ValidateNested({ each: true })
-  @Type(() => PurchaseItemDto)
-  items: PurchaseItemDto[];
+/** Sotib olingan mahsulot narxini tuzatish (xato kiritilgan bo'lsa). */
+export class FixItemPriceDto {
+  @ApiPropertyOptional({ example: '200000' })
+  @ValidateIf((dto: FixItemPriceDto) => dto.unitPrice === undefined)
+  @IsMoney()
+  price?: string;
 
-  @ApiProperty({ description: 'true — xarid tugadi; false — faqat kiritilganini saqlash' })
-  @IsBoolean()
-  complete: boolean;
+  @ApiPropertyOptional({ example: '5300' })
+  @ValidateIf((dto: FixItemPriceDto) => dto.price === undefined)
+  @IsMoney()
+  unitPrice?: string;
 }

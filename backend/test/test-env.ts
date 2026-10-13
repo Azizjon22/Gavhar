@@ -20,6 +20,8 @@ export function applyTestEnv(): void {
     SWAGGER_ENABLED: 'false',
     COOKIE_SECURE: 'false',
     SUPER_ADMIN_2FA_REQUIRED: 'true',
+    // Testlar ishlab chiquvchining mahalliy sozlamasiga bog'liq bo'lmasin.
+    DEV_LOGIN_ENABLED: 'false',
     DATABASE_URL: database.toString(),
     REDIS_URL: redis.toString(),
     S3_BUCKET_ORIGINALS: 'gavhar-originals-test',

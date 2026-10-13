@@ -65,10 +65,6 @@ export const packagePhotos = (pkg: MenuPackage, dishes: Map<string, Dish>): Ligh
 export const packageCover = (pkg: MenuPackage, dishes: Map<string, Dish>): string | null =>
   pkg.cover?.url ?? packagePhotos(pkg, dishes)[0]?.url ?? null;
 
-/** Jami summa: 1 kishilik narx × mehmonlar. Butun so'mlarda, aniq hisob (BigInt). */
-export const packageTotal = (pricePerGuest: string, guests: number): string =>
-  (BigInt(pricePerGuest.split('.')[0] || '0') * BigInt(guests)).toString();
-
 /**
  * Bir qatorga nechta karta sig'ishi — oxirgi qatorda yolg'iz karta qolmasligi uchun
  * (4 ta paket → 4 tadan, 3 yoki 6 ta → 3 tadan).

@@ -22,3 +22,9 @@ export const parseAmountInput = (input: string, maxDigits = 13): string =>
 
 /** API'dan kelgan "15000000.00" ni forma qiymatiga ("15000000") aylantiradi. */
 export const amountToInput = (value: string): string => value.split('.')[0] ?? '';
+
+/** "180000.00" yoki "180000" → 180000 (butun so'm). Bo'sh yoki noto'g'ri qiymat — 0. */
+export const toSum = (value: string | undefined): number => {
+  const integer = Number((value ?? '').split('.')[0]);
+  return Number.isSafeInteger(integer) && integer > 0 ? integer : 0;
+};

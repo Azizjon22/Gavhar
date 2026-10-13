@@ -1,4 +1,4 @@
-import { EventType, ExtraServiceUnit, PaymentKind, PaymentMethod, Prisma } from '@prisma/client';
+import { EventType, PaymentKind, PaymentMethod, Prisma } from '@prisma/client';
 import { Content, TDocumentDefinitions, TableCell } from 'pdfmake/interfaces';
 import type { EventDetail } from '../events.service';
 
@@ -20,7 +20,6 @@ const EVENT_TYPES: Record<EventType, string> = {
   OTHER: 'Tadbir',
 };
 const PAYMENT_KINDS: Record<PaymentKind, string> = {
-  DEPOSIT: 'Zaklad',
   PAYMENT: 'To‘lov',
   REFUND: 'Qaytarildi',
 };
@@ -135,23 +134,13 @@ const base = (content: Content[], title: string): TDocumentDefinitions => ({
 /** Bron shartnomasi: tomonlar, tadbir tafsilotlari, hisob-kitob va to'lovlar. */
 export function buildContract(event: EventDetail): TDocumentDefinitions {
   const title = `Shartnoma № ${event.number}`;
-  const guestsTotal = event.pricePerGuest.mul(event.guestCount);
   const debt = event.totalAmount.sub(event.paidAmount);
 
   const priceRows: TableCell[][] = [
     amountRow(
-      `Dasturxon: ${event.guestCount} kishi × ${sum(event.pricePerGuest)}`,
-      sum(guestsTotal),
+      event.menuPackageName ? `Menyu paketi: ${event.menuPackageName}` : 'Paket narxi',
+      sum(event.totalAmount),
     ),
-    ...event.services.map((service) =>
-      amountRow(
-        service.unit === ExtraServiceUnit.PER_GUEST
-          ? `${service.name}: ${event.guestCount} kishi × ${sum(service.unitPrice)}${service.quantity > 1 ? ` × ${service.quantity}` : ''}`
-          : `${service.name}${service.quantity > 1 ? ` × ${service.quantity}` : ''}`,
-        sum(service.total),
-      ),
-    ),
-    ...(event.discount.isZero() ? [] : [amountRow('Chegirma', `− ${sum(event.discount)}`)]),
     amountRow('Jami', sum(event.totalAmount), true),
     amountRow('To‘langan', sum(event.paidAmount)),
     amountRow('Qoldiq', sum(debt.isNegative() ? debt.mul(0) : debt), true),
@@ -209,9 +198,9 @@ export function buildContract(event: EventDetail): TDocumentDefinitions {
             PAYMENT_METHODS[payment.method],
             {
               text:
-                payment.currency === 'USD'
-                  ? `${formatSum(payment.amount)} $ × ${payment.exchangeRate.toString()} = ${sum(payment.amountUzs)}`
-                  : sum(payment.amountUzs),
+                payment.kind === PaymentKind.REFUND
+                  ? `− ${sum(payment.amount)}`
+                  : sum(payment.amount),
               alignment: 'right',
             },
           ]),
@@ -251,14 +240,6 @@ export function buildReceipt(
             ),
             row('To‘lov turi', PAYMENT_KINDS[payment.kind]),
             row('To‘lov usuli', PAYMENT_METHODS[payment.method]),
-            ...(payment.currency === 'USD'
-              ? [
-                  row(
-                    'Valyutada',
-                    `${formatSum(payment.amount)} $ (kurs ${payment.exchangeRate.toString()})`,
-                  ),
-                ]
-              : []),
             ...(payment.note ? [row('Izoh', payment.note)] : []),
           ],
         },
@@ -270,7 +251,7 @@ export function buildReceipt(
           body: [
             amountRow(
               payment.kind === PaymentKind.REFUND ? 'Qaytarilgan summa' : 'Qabul qilingan summa',
-              sum(payment.amountUzs),
+              sum(payment.amount),
               true,
             ),
             amountRow('Shartnoma summasi', sum(event.totalAmount)),

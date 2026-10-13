@@ -1,28 +1,43 @@
-import { ChevronDown, CircleUser, LogOut } from 'lucide-react';
+import { Check, ChevronDown, CircleUser, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { switchRole, useDevLogin } from '@/features/auth/api/dev-login.api';
 import { logoutSession } from '@/lib/auth-session';
+import { errorMessage } from '@/lib/error-message';
 import { useAuthStore } from '@/stores/auth.store';
 
 export function UserMenu() {
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const devLogin = useDevLogin();
   if (!user) return null;
 
   const handleLogout = () => {
     setLoggingOut(true);
     // Tugagach router login sahifasiga o'tkazadi — komponent yo'qoladi.
     void logoutSession();
+  };
+
+  // Sinov rejimi: boshqa rol bilan parolsiz qayta kirish. Muvaffaqiyatli bo'lsa sahifa yangilanadi.
+  const handleSwitch = (roleId: string) => {
+    setSwitching(true);
+    switchRole(roleId).catch((error: unknown) => {
+      toast.error(errorMessage(error));
+      setSwitching(false);
+    });
   };
 
   return (
@@ -46,6 +61,25 @@ export function UserMenu() {
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>
           </div>
         </div>
+        {devLogin.enabled && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>{t('devLogin.switch')}</DropdownMenuLabel>
+            {devLogin.roles.map((role) => (
+              <DropdownMenuItem
+                key={role.id}
+                disabled={switching || role.id === user.role.id}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  handleSwitch(role.id);
+                }}
+              >
+                <Check className={role.id === user.role.id ? 'opacity-100' : 'opacity-0'} />
+                {role.name}
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to="/profile">

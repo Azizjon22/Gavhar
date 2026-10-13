@@ -37,7 +37,7 @@ import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useLocaleStore } from '@/stores/locale.store';
 import { shoppingApi, shoppingKeys } from '../api/shopping.api';
-import type { KitchenEvent, ShoppingList } from '../types/shopping.types';
+import { type KitchenEvent, type ShoppingList, isItemDone } from '../types/shopping.types';
 
 /** `create` — oshpaz yangi ro'yxat yozadi; `edit` — o'zinikini tuzatadi; `review` — SUPER_ADMIN tekshiradi. */
 export type EditorMode = 'create' | 'edit' | 'review';
@@ -58,6 +58,8 @@ interface Row {
   note: string;
   /** Izoh maydoni ochiqmi. */
   noteOpen: boolean;
+  /** Sotib olingan yoki "olinmadi" — nomi va miqdori o'zgarmaydi, o'chirilmaydi. */
+  locked: boolean;
 }
 
 const emptyRow = (): Row => ({
@@ -67,6 +69,7 @@ const emptyRow = (): Row => ({
   quantity: '',
   note: '',
   noteOpen: false,
+  locked: false,
 });
 const isBlank = (row: Row) => row.name.trim() === '' && row.quantity === '';
 const isValid = (row: Row) => row.name.trim().length >= 2 && isPositiveQuantity(row.quantity);
@@ -101,6 +104,7 @@ export function ListEditorDialog({ target, onClose }: Props) {
         quantity: item.quantity,
         note: item.note ?? '',
         noteOpen: Boolean(item.note),
+        locked: isItemDone(item),
       })),
       emptyRow(),
     ]);
@@ -155,6 +159,8 @@ export function ListEditorDialog({ target, onClose }: Props) {
 
   if (!shown) return null;
   const { mode, event } = shown;
+  // Adminga yuborilgan ro'yxatni super admin tuzatadi, lekin qayta yuborish shart emas.
+  const sent = shown.list?.status === 'APPROVED';
 
   const patch = (key: string, change: Partial<Row>) =>
     setRows((current) => {
@@ -228,6 +234,8 @@ export function ListEditorDialog({ target, onClose }: Props) {
                   >
                     <Input
                       value={row.name}
+                      disabled={row.locked}
+                      title={row.locked ? t('shopping.editor.locked') : undefined}
                       maxLength={80}
                       list={datalistId}
                       aria-label={t('shopping.editor.name', { number: index + 1 })}
@@ -238,6 +246,7 @@ export function ListEditorDialog({ target, onClose }: Props) {
                     <Input
                       inputMode={allowFraction ? 'decimal' : 'numeric'}
                       className="tabular text-right"
+                      disabled={row.locked}
                       placeholder="0"
                       aria-label={t('shopping.editor.quantity', { number: index + 1 })}
                       aria-invalid={showError && !isPositiveQuantity(row.quantity)}
@@ -250,6 +259,7 @@ export function ListEditorDialog({ target, onClose }: Props) {
                     />
                     <Select
                       value={row.unit}
+                      disabled={row.locked}
                       onValueChange={(value) => {
                         const unit = value as WarehouseUnit;
                         patch(row.key, {
@@ -287,7 +297,7 @@ export function ListEditorDialog({ target, onClose }: Props) {
                       size="icon-sm"
                       className="mt-1 text-muted-foreground hover:text-destructive"
                       aria-label={t('shopping.editor.removeRow', { number: index + 1 })}
-                      disabled={blank && index === rows.length - 1}
+                      disabled={row.locked || (blank && index === rows.length - 1)}
                       onClick={() =>
                         setRows((current) => {
                           const next = current.filter((item) => item.key !== row.key);
@@ -354,7 +364,7 @@ export function ListEditorDialog({ target, onClose }: Props) {
             <Button variant="outline" onClick={onClose} disabled={mutation.isPending}>
               {t('common.cancel')}
             </Button>
-            {mode === 'review' ? (
+            {mode === 'review' && !sent ? (
               <>
                 <Button
                   type="submit"

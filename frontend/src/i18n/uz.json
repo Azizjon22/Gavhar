@@ -36,7 +36,9 @@
       "title": "Hech narsa topilmadi",
       "text": "Qidiruv so‘zini yoki filtrlarni o‘zgartirib ko‘ring."
     },
-    "currency": "so‘m"
+    "currency": "so‘m",
+    "all": "Hammasi",
+    "back": "Orqaga"
   },
   "theme": {
     "label": "Mavzu",
@@ -67,7 +69,6 @@
     "work": "Operatsiyalar",
     "clients": "Mijozlar",
     "events": "Bronlar",
-    "extraServices": "Qo‘shimcha xizmatlar",
     "menu": "Menyu",
     "gallery": "Galereya",
     "showcase": "Taqdimot",
@@ -423,7 +424,8 @@
         "2fa_enabled": "2FA ni yoqdi",
         "2fa_disabled": "2FA ni o‘chirdi",
         "2fa_backup_codes_regenerated": "Zaxira kodlarni yangiladi",
-        "token_reuse": "Token o‘g‘irligi aniqlandi"
+        "token_reuse": "Token o‘g‘irligi aniqlandi",
+        "dev_login": "Tezkor kirish (parolsiz, sinov rejimi)"
       },
       "user": {
         "create": "Foydalanuvchi yaratdi",
@@ -462,19 +464,15 @@
         "update": "Bronni tahrirladi",
         "delete": "Bronni o‘chirdi",
         "confirm": "Bronni tasdiqladi",
-        "hold": "Tadbir o‘tkazildi",
         "complete": "Bronni yakunladi",
-        "cancel": "Bronni bekor qildi"
+        "cancel": "Bronni bekor qildi",
+        "reopen": "Bronni qayta ochdi",
+        "auto_confirm": "Bron to‘liq to‘lanib, o‘zi tasdiqlandi"
       },
       "payment": {
         "create": "To‘lov qabul qildi",
         "refund": "Pul qaytardi",
         "void": "To‘lovni bekor qildi"
-      },
-      "extra_service": {
-        "create": "Xizmat qo‘shdi",
-        "update": "Xizmatni tahrirladi",
-        "delete": "Xizmatni o‘chirdi"
       },
       "settings": {
         "update": "Sozlamani o‘zgartirdi"
@@ -510,7 +508,10 @@
         "delete": "Mahsulotni o‘chirdi",
         "stock_in": "Omborga kirim qildi",
         "stock_out": "Ombordan chiqim qildi",
-        "stock_count": "Inventarizatsiya qildi"
+        "stock_count": "Inventarizatsiya qildi",
+        "lot_price": "Ombor partiyasiga narx qo‘ydi",
+        "take_for_event": "To‘y uchun ombordan mahsulot oldi",
+        "return_from_event": "To‘ydan mahsulotni omborga qaytardi"
       },
       "shopping": {
         "create": "Bozorlik ro‘yxatini yozdi",
@@ -520,7 +521,11 @@
         "prices_update": "Bozorlik narxlarini tuzatdi",
         "confirm": "Bozorlikni tasdiqladi",
         "unconfirm": "Bozorlik tasdig‘ini bekor qildi",
-        "delete": "Bozorlik ro‘yxatini o‘chirdi"
+        "delete": "Bozorlik ro‘yxatini o‘chirdi",
+        "item_purchase": "Mahsulot sotib oldi",
+        "item_skip": "Mahsulotni «olinmadi» deb belgiladi",
+        "item_reset": "Xarid belgisini bekor qildi",
+        "item_price": "Mahsulot narxini tuzatdi"
       },
       "worker": {
         "create": "Ishchi qo‘shdi",
@@ -640,30 +645,22 @@
       "CLIENT_PHONE_TAKEN": "Bu raqam bilan mijoz mavjud: {{fullName}}.",
       "EVENT_NOT_FOUND": "Bron topilmadi.",
       "EVENT_NOT_EDITABLE": "Yakunlangan yoki bekor qilingan bronni o‘zgartirib bo‘lmaydi.",
-      "EVENT_ALREADY_HELD": "O‘tkazilgan tadbirning zali yoki vaqtini o‘zgartirib bo‘lmaydi.",
-      "EVENT_DELETE_FORBIDDEN": "To‘lovi bor yoki tasdiqlangan bronni o‘chirib bo‘lmaydi — uni bekor qiling.",
-      "EVENT_NOT_STARTED": "Tadbir hali boshlanmagan.",
-      "EVENT_HAS_DEBT": "Bronni yakunlash uchun avval qarzni to‘liq yoping.",
-      "EVENT_CLOSED": "Yakunlangan bronning to‘lovlarini o‘zgartirib bo‘lmaydi.",
-      "EVENT_CANCELLED": "Bekor qilingan bron uchun faqat pul qaytarish mumkin.",
-      "DEPOSIT_REQUIRED": "Tasdiqlash uchun avval zaklad to‘lanishi kerak.",
+      "EVENT_DELETE_FORBIDDEN": "Tasdiqlangan yoki yakunlangan bronni o‘chirib bo‘lmaydi — kerak bo‘lsa bekor qiling.",
+      "EVENT_NOT_STARTED": "Kelajakdagi to‘yni yakunlangan deb belgilab bo‘lmaydi.",
+      "EVENT_CANCELLED": "Bekor qilingan to‘yga to‘lov qabul qilinmaydi — faqat pul qaytarish mumkin.",
       "INVALID_STATUS_TRANSITION": "Bronning joriy holatida bu amalni bajarib bo‘lmaydi.",
       "HALL_BUSY": "Bu vaqtda zal band. Boshqa vaqt yoki zalni tanlang.",
       "HALL_UNAVAILABLE": "Zal ta’mirda — unga bron ochib bo‘lmaydi.",
       "HALL_HAS_EVENTS": "Bu zalda yopilmagan bronlar bor. Avval ularni yakunlang yoki bekor qiling.",
       "CLIENT_HAS_EVENTS": "Bu mijozning yopilmagan bronlari bor. Avval ularni yakunlang yoki bekor qiling.",
       "GUEST_COUNT_EXCEEDS_CAPACITY": "Mehmonlar soni zal sig‘imidan ({{capacity}}) oshib ketdi.",
-      "DISCOUNT_EXCEEDS_TOTAL": "Chegirma bron summasidan katta bo‘lishi mumkin emas.",
-      "TOTAL_BELOW_PAID": "Yangi summa to‘langan summadan kam. Avval ortiqcha to‘lovni qaytaring.",
+      "TOTAL_BELOW_PAID": "Bu paket narxi allaqachon to‘langan summadan kam — avval ortiqcha pulni qaytaring.",
       "INVALID_TIME_RANGE": "Tadbir vaqti noto‘g‘ri: tugashi boshlanishdan keyin va 48 soatdan oshmasin.",
       "INVALID_DATE_RANGE": "Sana oralig‘i noto‘g‘ri.",
-      "EXTRA_SERVICE_NOT_FOUND": "Tanlangan xizmat topilmadi yoki o‘chirib qo‘yilgan.",
-      "EXTRA_SERVICE_NAME_TAKEN": "Bunday nomli xizmat mavjud.",
       "PAYMENT_NOT_FOUND": "To‘lov topilmadi.",
       "PAYMENT_EXCEEDS_DEBT": "To‘lov qolgan qarzdan ko‘p.",
       "REFUND_EXCEEDS_PAID": "Qaytariladigan summa to‘langandan ko‘p.",
       "PAYMENT_VOID_INVALID": "Bu to‘lovni bekor qilib bo‘lmaydi: qaytarilgan summa to‘langandan oshib ketadi.",
-      "EXCHANGE_RATE_REQUIRED": "Dollar uchun kursni kiriting.",
       "INVALID_AMOUNT": "Summa noldan katta bo‘lishi kerak.",
       "MENU_CATEGORY_NOT_FOUND": "Menyu bo‘limi topilmadi.",
       "MENU_PACKAGE_NOT_FOUND": "Menyu paketi topilmadi yoki faol emas.",
@@ -693,13 +690,9 @@
       "SHOPPING_LIST_LOCKED": "Ro‘yxat ko‘rib chiqilgan — endi o‘zgartirib yoki o‘chirib bo‘lmaydi.",
       "SHOPPING_ITEM_NOT_FOUND": "Ro‘yxatda bunday qator yo‘q. Sahifani yangilab ko‘ring.",
       "SHOPPING_ITEM_DUPLICATE": "«{{name}}» ro‘yxatda ikki marta yozilgan.",
-      "SHOPPING_TOO_EARLY": "Bozorlik to‘y kuni qilinadi — narxlarni shu kundan boshlab kiritish mumkin.",
-      "SHOPPING_PRICES_MISSING": "Har bir mahsulot narxini kiriting yoki «olinmadi» deb belgilang.",
-      "SHOPPING_NOTHING_PURCHASED": "Hech narsa sotib olinmagan — kamida bitta mahsulot narxini kiriting.",
       "EXPENSE_LINKED": "Bu xarajat bozorlik ro‘yxatidan yozilgan. Uni Bozorlik bo‘limida tasdiqni bekor qilib o‘zgartiring.",
       "DISHES_SUPER_ADMIN_ONLY": "1-ovqat va 2-ovqatni faqat super admin belgilaydi.",
       "EXPENSE_EVENT_DATE_FIXED": "To‘y xarajati to‘y kuniga yoziladi — sanasini o‘zgartirib bo‘lmaydi.",
-      "SHOPPING_CLOSED": "Bu to‘yning bozorligi qilib bo‘lingan — yangi ro‘yxat yozib bo‘lmaydi.",
       "UNIT_CHANGE_WITH_STOCK": "Qoldig‘i bor mahsulotning o‘lchov birligini o‘zgartirib bo‘lmaydi — avval qoldiqni 0 ga tushiring.",
       "MENU_PACKAGE_REQUIRED": "Menyu paketini tanlang — narx shu paketdan olinadi.",
       "WORKER_NOT_FOUND": "Ishchi topilmadi.",
@@ -709,7 +702,24 @@
       "ASSIGNMENT_NOT_FOUND": "Bu ishchi shu to‘yga biriktirilmagan.",
       "BRAND_LOGO_NOT_FOUND": "Logotip yuklanmagan.",
       "DISH_PHOTO_NOT_FOUND": "Bu taomga rasm yuklanmagan.",
-      "VIDEO_REPROCESS_NOT_NEEDED": "Bu faylni qayta ishlash kerak emas."
+      "VIDEO_REPROCESS_NOT_NEEDED": "Bu faylni qayta ishlash kerak emas.",
+      "DEV_LOGIN_DISABLED": "Tezkor kirish o‘chirilgan.",
+      "EVENT_DATE_PAST": "O‘tib ketgan sanaga to‘y yozib bo‘lmaydi.",
+      "EVENT_HAS_MONEY": "Bu bronga to‘lov yoki xarajat yozilgan — uni o‘chirib bo‘lmaydi, kerak bo‘lsa bekor qiling.",
+      "EVENT_FULLY_PAID": "Bu to‘y to‘liq to‘langan — yangi to‘lov qabul qilinmaydi.",
+      "SHOPPING_NOT_SENT": "Xarid faqat super admin yuborgan ro‘yxatda qilinadi.",
+      "SHOPPING_ITEM_DONE": "Bu mahsulot allaqachon belgilangan — narxni «tuzatish» orqali o‘zgartiring.",
+      "SHOPPING_ITEM_LOCKED": "Sotib olingan mahsulotni o‘zgartirib bo‘lmaydi.",
+      "SHOPPING_ITEM_NOT_PURCHASED": "Narxni faqat sotib olingan mahsulot uchun tuzatish mumkin.",
+      "PRICE_SUPER_ADMIN_ONLY": "Narxni faqat super admin kiritadi.",
+      "STOCK_TAKE_DAY": "Ombordan faqat bugungi yoki ertangi to‘y uchun olish mumkin.",
+      "STOCK_TAKE_FOOD_ONLY": "To‘y uchun faqat oziq-ovqat mahsuloti olinadi.",
+      "STOCK_RETURN_FORBIDDEN": "Faqat bugun o‘zingiz olgan mahsulotni qaytarishingiz mumkin.",
+      "STOCK_USAGE_NOT_FOUND": "Yozuv topilmadi — ehtimol allaqachon qaytarilgan.",
+      "STOCK_COST_EMPTY": "Bu to‘yga ombordan narxi ma’lum mahsulot olinmagan.",
+      "STOCK_EXPENSE_EXISTS": "Ombor mahsulotlari xarajati allaqachon yozilgan.",
+      "WAREHOUSE_LOT_NOT_FOUND": "Partiya topilmadi — sahifani yangilang.",
+      "EVENT_HAS_STOCK": "Bu to‘yga ombordan mahsulot olingan — uni o‘chirib bo‘lmaydi, kerak bo‘lsa bekor qiling."
     }
   },
   "validation": {
@@ -736,13 +746,13 @@
     "timeRequired": "Vaqtni kiriting",
     "guestCount": "Mehmonlar sonini kiriting",
     "timeRange": "Tugash vaqti boshlanishdan farq qilsin",
-    "serviceName": "Nom 2 tadan 80 tagacha belgidan iborat bo‘lsin",
     "packageName": "Paket nomi 2 tadan 80 tagacha belgidan iborat bo‘lsin",
     "expenseCategory": "Xarajat turini tanlang",
     "expenseDate": "Sanani kiriting — bugundan kech bo‘lmasin",
     "itemName": "Nom 2 tadan 80 tagacha belgidan iborat bo‘lsin",
     "quantity": "Miqdorni kiriting",
-    "menuPackageRequired": "Menyu paketini tanlang — narx shu paketdan olinadi"
+    "menuPackageRequired": "Menyu paketini tanlang — narx shu paketdan olinadi",
+    "packageGuests": "Mehmonlar soni 1 dan 2000 gacha bo‘lsin"
   },
   "pages": {
     "backHome": "Bosh sahifaga",
@@ -870,9 +880,8 @@
       "allStatuses": "Barcha holatlar"
     },
     "status": {
-      "REQUEST": "So‘rov",
+      "REQUEST": "Kutilmoqda",
       "CONFIRMED": "Tasdiqlangan",
-      "HELD": "O‘tkazildi",
       "COMPLETED": "Yakunlandi",
       "CANCELLED": "Bekor qilindi"
     },
@@ -893,7 +902,6 @@
     "form": {
       "createTitle": "Yangi bron",
       "editTitle": "Bron № {{number}} ni tahrirlash",
-      "description": "Summa avtomatik hisoblanadi: mehmonlar × 1 kishilik narx + xizmatlar − chegirma. Zal uchun alohida haq olinmaydi.",
       "client": "Mijoz",
       "clientPlaceholder": "Mijozni tanlang",
       "clientNotFound": "Mijoz topilmadi. O‘ngdagi tugma bilan yangisini qo‘shing.",
@@ -907,42 +915,31 @@
       "endTime": "Tugashi",
       "nextDay": "Ertasi kuni tugaydi",
       "hallBusyDetails": "Bu vaqtda zal band: bron № {{number}}, {{client}}, {{from}}–{{to}}.",
-      "pricePerGuest": "1 kishilik narx",
-      "discount": "Chegirma",
-      "services": "Qo‘shimcha xizmatlar",
-      "noServices": "Katalogda faol xizmatlar yo‘q. Ularni «Qo‘shimcha xizmatlar» bo‘limida qo‘shing.",
-      "quantity": "{{name}} soni",
       "note": "Izoh",
       "notePlaceholder": "Maxsus talablar, bezak, dastur…",
       "submit": "Bronni saqlash",
       "menuPackage": "Menyu paketi",
-      "noMenuPackage": "Paketsiz (narx qo‘lda kiritiladi)",
-      "menuPackageHint": "Paket tanlansa, 1 kishilik narx avtomatik qo‘yiladi — kelishuv bo‘lsa, uni o‘zgartirishingiz mumkin.",
+      "menuPackageHint": "Narx shu paketdan olinadi. Keyin paket narxi yoki mehmonlar soni o‘zgarsa ham bron narxi o‘zgarmaydi.",
       "tableCapacity": "Stol turi",
       "tableAny": "Ko‘rsatilmagan",
       "firstDish": "1-ovqat",
       "secondDish": "2-ovqat",
       "dishPlaceholder": "Masalan: Osh",
       "dishHint": "1- va 2-ovqatni faqat super admin belgilaydi.",
-      "descriptionByPackage": "Bron narxi tanlangan menyu paketidan avtomatik olinadi.",
+      "descriptionByPackage": "To‘y narxi tanlangan menyu paketidan olinadi va bronda qotib qoladi.",
       "menuPackagePlaceholder": "Paketni tanlang"
     },
     "summary": {
       "title": "Hisob-kitob",
-      "guests": "{{count}} kishi × {{price}}",
-      "extras": "Qo‘shimcha xizmatlar",
-      "discount": "Chegirma",
       "total": "Jami",
       "paid": "To‘langan",
       "debt": "Qoldiq",
-      "depositHint": "Bron tasdiqlanishi uchun kamida {{amount}} so‘m ({{percent}}%) zaklad to‘lanishi kerak."
-    },
-    "settings": {
-      "title": "Bron sozlamalari",
-      "description": "Bron «Tasdiqlangan» holatiga o‘tishi uchun to‘lanishi shart bo‘lgan minimal zaklad.",
-      "minDeposit": "Minimal zaklad",
-      "hint": "Jami summadan foizda. 0 — zakladsiz ham tasdiqlash mumkin.",
-      "saved": "Sozlamalar saqlandi"
+      "package": "Menyu paketi",
+      "packageGuests": "Paket",
+      "packageHint": "Narx paketdan olinadi va bronda qotib qoladi.",
+      "fixedHint": "Bron narxi qotib qolgan: faqat boshqa paket tanlansa, o‘sha paket narxi olinadi.",
+      "received": "Olingan",
+      "refunded": "Qaytarilgan"
     },
     "cancel": {
       "title": "Bronni bekor qilish",
@@ -955,8 +952,8 @@
       "cancel": "Bekor qilish",
       "contract": "Shartnoma (PDF)",
       "confirm": "Tasdiqlash",
-      "hold": "O‘tkazildi",
-      "complete": "Yakunlash"
+      "complete": "Yakunlash",
+      "reopen": "Qayta ochish"
     },
     "toast": {
       "created": "Bron saqlandi",
@@ -964,12 +961,11 @@
       "cancelled": "Bron bekor qilindi",
       "deleted": "Bron o‘chirildi",
       "confirm": "Bron tasdiqlandi",
-      "hold": "Tadbir o‘tkazildi deb belgilandi",
-      "complete": "Bron yakunlandi"
+      "complete": "Bron yakunlandi",
+      "reopen": "Bron qayta ochildi"
     },
     "detail": {
       "title": "Bron № {{number}}",
-      "depositNeeded": "Tasdiqlash uchun yana {{amount}} so‘m zaklad kerak (jami summaning {{percent}}%).",
       "cancelReason": "Bekor qilish sababi",
       "info": "Tadbir",
       "when": "Sana va vaqt",
@@ -1002,9 +998,6 @@
     "receipt": "Kvitansiya (PDF)",
     "void": "To‘lovni bekor qilish",
     "amount": "Summa",
-    "currency": "Valyuta",
-    "rate": "Kurs",
-    "ratePlaceholder": "Kurs: 1 $ = … so‘m",
     "note": "Izoh",
     "overDebt": "Summa qolgan qarzdan ({{limit}} so‘m) oshmasin.",
     "overPaid": "Summa to‘langan miqdordan ({{limit}} so‘m) oshmasin.",
@@ -1016,7 +1009,6 @@
     },
     "kind": {
       "label": "Turi",
-      "DEPOSIT": "Zaklad",
       "PAYMENT": "To‘lov",
       "REFUND": "Qaytarish"
     },
@@ -1028,7 +1020,6 @@
     },
     "fill": {
       "allPaid": "Hammasi",
-      "deposit": "Zaklad",
       "fullDebt": "To‘liq qarz"
     },
     "toast": {
@@ -1041,54 +1032,11 @@
       "voidText": "{{amount}} so‘mlik to‘lov hisobdan chiqariladi. Yozuv tarixda saqlanib qoladi."
     }
   },
-  "services": {
-    "title": "Qo‘shimcha xizmatlar",
-    "description": "Bronga qo‘shiladigan xizmatlar katalogi: bezak, karnay-surnay, tort va boshqalar. Narx o‘zgarsa, eski bronlar eski narxda qoladi.",
-    "new": "Yangi xizmat",
-    "active": "Faol",
-    "inactive": "O‘chirilgan",
-    "activate": "Yoqish",
-    "deactivate": "O‘chirib qo‘yish",
-    "actionsLabel": "{{name}} uchun amallar",
-    "columns": {
-      "name": "Xizmat",
-      "unit": "Hisoblanishi",
-      "price": "Narxi",
-      "status": "Holat"
-    },
-    "unit": {
-      "PER_EVENT": "bir tadbir uchun",
-      "PER_GUEST": "bir mehmon uchun"
-    },
-    "form": {
-      "createTitle": "Yangi xizmat",
-      "editTitle": "Xizmatni tahrirlash",
-      "description": "«Bir mehmon uchun» xizmat narxi bronda mehmonlar soniga ko‘paytiriladi.",
-      "name": "Nomi",
-      "namePlaceholder": "Masalan: Zal bezagi",
-      "unit": "Hisoblanishi",
-      "price": "Narxi"
-    },
-    "confirm": {
-      "deleteTitle": "Xizmatni o‘chirish",
-      "deleteText": "«{{name}}» katalogdan olib tashlanadi. Mavjud bronlardagi nusxalari o‘zgarmaydi."
-    },
-    "toast": {
-      "created": "Xizmat qo‘shildi",
-      "updated": "Xizmat saqlandi",
-      "deleted": "Xizmat o‘chirildi"
-    },
-    "empty": {
-      "title": "Katalog bo‘sh",
-      "text": "Bronlarga qo‘shish uchun birinchi xizmatni yarating."
-    }
-  },
   "menu": {
     "title": "Menyu",
-    "description": "To‘y menyusi paketlari: 1 kishilik narx va tarkib. Bu paketlar bron ochishda va mijozga taqdimotda ko‘rinadi.",
+    "description": "To‘y menyusi paketlari: belgilangan mehmonlar soni uchun qat’iy narx va tarkib. Bu paketlar bron ochishda va mijozga taqdimotda ko‘rinadi.",
     "newPackage": "Yangi paket",
     "inactive": "Faol emas",
-    "perGuest": "so‘m / 1 kishi",
     "kinds_one": "{{count}} xil",
     "kinds_other": "{{count}} xil",
     "noSections": "Tarkib kiritilmagan",
@@ -1115,9 +1063,9 @@
     "packageForm": {
       "createTitle": "Yangi menyu paketi",
       "editTitle": "Paketni tahrirlash",
-      "description": "Narxni o‘zgartirsangiz, avval ochilgan bronlar eski narxida qoladi.",
+      "description": "Paket — belgilangan mehmonlar soni uchun qat’iy narx. Narxni o‘zgartirsangiz, avval ochilgan bronlar eski narxida qoladi.",
       "name": "Paket nomi",
-      "price": "1 kishilik narx",
+      "price": "Paket narxi (so‘m)",
       "badge": "Belgi",
       "badgePlaceholder": "Masalan: VIP",
       "descriptionLabel": "Qisqa tavsif",
@@ -1126,7 +1074,9 @@
       "kindsUnit": "xil",
       "itemsLabel": "{{name}}: taom nomlari",
       "itemsPlaceholder": "Taom nomlari, vergul bilan (ixtiyoriy)",
-      "active": "Faol — bron formasida va taqdimotda ko‘rinadi"
+      "active": "Faol — bron formasida va taqdimotda ko‘rinadi",
+      "guestCount": "Necha kishilik",
+      "type": "Paket turi"
     },
     "categories": {
       "description": "Menyu bo‘limlari barcha paketlar uchun umumiy. Tartibi paket tarkibida va taqdimotda shunday ko‘rinadi.",
@@ -1139,7 +1089,9 @@
       "nameUz": "Nomi (o‘zbekcha)",
       "nameRu": "Nomi (ruscha)",
       "deleteTitle": "Bo‘limni o‘chirasizmi?",
-      "deleteText": "«{{name}}» bo‘limi barcha paketlar tarkibidan ham olib tashlanadi."
+      "deleteText": "«{{name}}» bo‘limi barcha paketlar tarkibidan ham olib tashlanadi.",
+      "course": "Oshxona bosqichi",
+      "courseHint": "Oshpaz bozorlikni taom bo‘yicha shu tartibda yozadi: salat, 1-ovqat, 2-ovqat, boshqa."
     },
     "dishes": {
       "description": "Taomga rasm qo‘shing — u taqdimotda chiqadi va varaqlab ko‘riladi. Bo‘limda taom nomlari yozilmagan bo‘lsa, rasm bo‘limning o‘ziga qo‘yiladi.",
@@ -1166,6 +1118,16 @@
       "hint": "Mijozga taqdimotda paket kartasining foni bo‘ladi",
       "saved": "Muqova saqlandi",
       "removed": "Muqova olib tashlandi"
+    },
+    "forGuests_one": "{{count}} kishi uchun",
+    "forGuests_other": "{{count}} kishi uchun",
+    "packageType": {
+      "FULL": "To‘liq paket",
+      "FOOD_ONLY": "Faqat taomlar"
+    },
+    "packageTypeHint": {
+      "FULL": "To‘yxona taomlari, kortej, san’atkor va kamerachi",
+      "FOOD_ONLY": "Faqat to‘yxona dasturxoni"
     }
   },
   "gallery": {
@@ -1241,12 +1203,12 @@
       "eyebrow": "Dasturxon",
       "title": "To‘y menyusi",
       "text": "Paketni tanlang — ichida nimalar borligini ko‘rasiz. Narxlar bir kishi uchun, so‘mda.",
-      "perGuest": "so‘m · 1 kishi uchun",
-      "totalFor_one": "{{count}} mehmon uchun",
-      "totalFor_other": "{{count}} mehmon uchun",
       "dishCount_one": "{{count}} xil taom",
       "dishCount_other": "{{count}} xil taom",
-      "view": "Menyuni ko‘rish"
+      "view": "Menyuni ko‘rish",
+      "priceFor_one": "so‘m · {{count}} kishi uchun",
+      "priceFor_other": "so‘m · {{count}} kishi uchun",
+      "includes": "Paket turi"
     },
     "gallery": {
       "eyebrow": "Lahzalar",
@@ -1371,7 +1333,12 @@
     "eventCard": {
       "title": "To‘y xarajatlari va sof foyda",
       "empty": "Bu to‘yga hali xarajat yozilmagan. Kamerachi, san’atkor, oshpazga to‘lov kabi xarajatlarni shu yerga yozing.",
-      "paid": "Olingan pul"
+      "paid": "Olingan pul",
+      "stockSuggest": "Ombordan {{amount}} so‘mlik mahsulot olingan — xarajatga yozilmagan.",
+      "stockChanged": "Ombordan olinganlar qiymati o‘zgardi: endi {{amount}} so‘m.",
+      "stockUnpriced": "Ayrim mahsulotlar narxi omborga kiritilmagan — ular hisobga kirmadi.",
+      "stockRecord": "Xarajatga yozish",
+      "stockRecorded": "Ombor mahsulotlari xarajatga yozildi"
     }
   },
   "warehouse": {
@@ -1391,7 +1358,8 @@
     "columns": {
       "name": "Nomi",
       "quantity": "Qoldiq",
-      "status": "Holat"
+      "status": "Holat",
+      "value": "Qiymati"
     },
     "section": {
       "TABLEWARE": "Idish-tovoq",
@@ -1451,7 +1419,9 @@
       "note": "Izoh",
       "notePlaceholder": "Masalan: 2-javonda, oq rangli",
       "category": "Mahsulot turi",
-      "noCategory": "Ko‘rsatilmagan"
+      "noCategory": "Ko‘rsatilmagan",
+      "initialCost": "Xarid summasi (jami)",
+      "initialCostHint": "Boshlang‘ich qoldiq uchun to‘langan jami summa — partiya narxi shundan hisoblanadi."
     },
     "movement": {
       "inTitle": "Kirim — omborga qo‘shish",
@@ -1502,11 +1472,38 @@
       "upload": "Rasm yuklash",
       "replace": "Rasmni almashtirish",
       "remove": "Rasmni olib tashlash"
+    },
+    "lots": {
+      "title": "Partiyalar va narx",
+      "description": "Mahsulot qaysi narxda qancha kirgani. Chiqim eng eski partiyadan boshlanadi; to‘yga olingan mahsulot o‘sha narxda hisoblanadi.",
+      "empty": "Omborda bu mahsulot qolmagan.",
+      "next": "Navbatda",
+      "noPrice": "Narx kiritilmagan",
+      "perUnit": "{{price}} so‘m / {{unit}}",
+      "pricePlaceholder": "1 {{unit}} narxi",
+      "saved": "Partiya narxi saqlandi",
+      "setPrice": "Partiya narxini kiritish",
+      "unpriced": "Narxi kiritilmagan: {{quantity}} — qiymatga qo‘shilmagan.",
+      "value": "Ombordagi qiymati"
+    },
+    "sectionValue": "Bo‘limdagi mahsulotlar qiymati",
+    "unpricedItems_one": "{{count}} ta mahsulotning narxi kiritilmagan",
+    "unpricedItems_other": "{{count}} ta mahsulotning narxi kiritilmagan",
+    "usages": {
+      "title": "To‘ylarga olinganlar",
+      "eventTitle": "Ombordan olinganlar",
+      "description": "Oshpazlar to‘ylar uchun ombordan olgan mahsulotlar — bozorlikdan alohida.",
+      "empty": "Hali ombordan to‘y uchun hech narsa olinmagan.",
+      "giveBack": "Omborga qaytarish",
+      "returned": "Mahsulotlar omborga qaytarildi",
+      "confirmTitle": "Omborga qaytarasizmi?",
+      "confirmText": "{{name}} № {{number}} to‘y uchun olgan mahsulotlar o‘z narxi bilan omborga qaytadi.",
+      "unpriced": "narxi to‘liq emas"
     }
   },
   "shopping": {
     "title": "Bozorlik",
-    "description": "Har bir to‘y uchun bozorlik: oshpaz yozadi, super admin tekshiradi, admin sotib olib narx kiritadi. Super admin tasdiqlagach summa xarajatlarga o‘tadi.",
+    "description": "Har bir to‘y uchun bozorlik: oshpaz yozadi, super admin ko‘rib adminga yuboradi, har bir mahsulot alohida sotib olinadi. Super admin tasdiqlagach summa xarajatlarga o‘tadi.",
     "today": "Bugun",
     "write": "Bozorlik yozish",
     "menu": "Menyu",
@@ -1518,7 +1515,6 @@
     "itemsCount_one": "{{count}} ta mahsulot",
     "itemsCount_other": "{{count}} ta mahsulot",
     "purchasedBy": "Xarid: {{name}}, {{date}}",
-    "tooEarly": "Bozorlik to‘y kuni qilinadi — narx kiritish {{date}} kuni ochiladi.",
     "tabs": {
       "today": "Bugun",
       "upcoming": "Kelgusi",
@@ -1526,10 +1522,11 @@
       "general": "Umumiy"
     },
     "status": {
-      "SUBMITTED": "Tekshiruvda",
-      "APPROVED": "Xarid kutilmoqda",
+      "SUBMITTED": "Yangi",
+      "APPROVED": "Xarid qilinmoqda",
       "PURCHASED": "Sotib olingan",
-      "CONFIRMED": "Tasdiqlangan"
+      "CONFIRMED": "Tasdiqlangan",
+      "REVIEWED": "Ko‘rib chiqilmoqda"
     },
     "tasks": {
       "review_one": "Tekshirish kerak: {{count}} ta",
@@ -1542,11 +1539,12 @@
     "actions": {
       "review": "Tekshirish",
       "approve": "Adminga yuborish",
-      "purchase": "Narx kiritish",
+      "purchase": "Xarid qilish",
       "fixPrices": "Narxlarni tuzatish",
       "confirm": "Tasdiqlash",
       "unconfirm": "Tasdiqni bekor qilish",
-      "delete": "Ro‘yxatni o‘chirish"
+      "delete": "Ro‘yxatni o‘chirish",
+      "buySelf": "O‘zim xarid qilaman"
     },
     "empty": {
       "today": {
@@ -1567,7 +1565,7 @@
       "saved": "Ro‘yxat saqlandi",
       "approved": "Ro‘yxat adminga yuborildi",
       "progressSaved": "Kiritilgan narxlar saqlandi",
-      "purchased": "Xarid yakunlandi — tasdiq kutilmoqda",
+      "purchased": "Hammasi olindi — ro‘yxat tasdiqqa o‘tdi",
       "confirm": "Tasdiqlandi — summa xarajatlarga yozildi",
       "unconfirm": "Tasdiq bekor qilindi",
       "delete": "Ro‘yxat o‘chirildi"
@@ -1585,7 +1583,7 @@
       },
       "delete": {
         "title": "Ro‘yxatni o‘chirasizmi?",
-        "text": "{{name}} yozgan bozorlik ro‘yxati o‘chiriladi.",
+        "text": "{{name}} yozgan bozorlik ro‘yxati o‘chiriladi (bekor qilinadi).",
         "submit": "O‘chirish"
       }
     },
@@ -1608,21 +1606,29 @@
       "notePlaceholder": "Masalan: go‘sht yangi so‘yilgan bo‘lsin",
       "submit": "Super adminga yuborish",
       "rowNote": "{{number}}-qator: izoh",
-      "rowNotePlaceholder": "Izoh: masalan, qizil va yirik bo‘lsin"
+      "rowNotePlaceholder": "Izoh: masalan, qizil va yirik bo‘lsin",
+      "locked": "Sotib olingan — o‘zgartirib bo‘lmaydi"
     },
     "purchase": {
-      "title": "Narxlarni kiritish",
-      "fixTitle": "Narxlarni tuzatish",
-      "description": "Narx — shu qator uchun to‘langan jami summa.",
+      "title": "Xarid",
+      "description": "Har bir mahsulotni olgach «Olindi» bosing — darhol saqlanadi.",
       "skipped": "Olinmadi",
       "quantityFor": "{{name}}: olingan miqdor",
       "priceFor": "{{name}}: narxi",
-      "saveProgress": "Saqlab qo‘yish",
-      "complete": "Xarid tugadi",
       "priceMode": "Narx qanday kiritiladi",
       "modeTotal": "Jami summa",
       "modeUnit": "1 birlik narxi",
-      "unitPriceFor": "{{name}}: 1 birlik narxi"
+      "unitPriceFor": "{{name}}: 1 birlik narxi",
+      "progress": "Belgilandi",
+      "planned": "Ro‘yxatda: {{quantity}} {{unit}}",
+      "bought": "Olindi",
+      "notFound": "{{name}}: topilmadi, olinmadi",
+      "undo": "{{name}}: belgini bekor qilish",
+      "fixPrice": "{{name}}: narxni tuzatish",
+      "perUnit": "{{price}} so‘m / {{unit}}",
+      "totalPlaceholder": "Jami summa",
+      "unitPlaceholder": "1 birlik narxi",
+      "allDone": "Hammasi belgilandi — ro‘yxat super admin tasdig‘ini kutmoqda. Narxni tasdiqlanguncha tuzatish mumkin."
     },
     "firstDish": "1-ovqat",
     "secondDish": "2-ovqat",
@@ -1630,7 +1636,8 @@
       "title": "Umumiy bozorlik",
       "subtitle": "To‘yga bog‘lanmagan xaridlar: tuz, salfetka, yuvish vositalari kabi doimiy narsalar.",
       "empty": "Hali umumiy ro‘yxat yozilmagan."
-    }
+    },
+    "progress": "Olindi: {{done}}/{{total}}"
   },
   "workers": {
     "title": "Ishchilar",
@@ -1745,5 +1752,176 @@
       "saved": "Nom saqlandi",
       "logoSaved": "Logotip yangilandi"
     }
+  },
+  "devLogin": {
+    "title": "Tezkor kirish",
+    "hint": "Sinov rejimi yoqilgan: parol so‘ralmaydi. Rolni tanlang.",
+    "or": "yoki email va parol bilan",
+    "switch": "Rolni almashtirish",
+    "badge": "Sinov rejimi",
+    "badgeHint": "Parolsiz tezkor kirish yoqilgan (DEV_LOGIN_ENABLED). Ishni tugatgach .env faylida o‘chirib qo‘ying."
+  },
+  "kitchen": {
+    "nav": {
+      "label": "Oshpaz bo‘limlari",
+      "home": "Bosh sahifa",
+      "events": "To‘ylar",
+      "shopping": "Bozorlik",
+      "stock": "Ombor"
+    },
+    "when": {
+      "today": "Bugun",
+      "tomorrow": "Ertaga",
+      "inDays_one": "{{count}} kundan keyin",
+      "inDays_other": "{{count}} kundan keyin"
+    },
+    "guests": "mehmon",
+    "dishesMissing": "1-ovqat va 2-ovqat hali belgilanmagan",
+    "listMissing": "Bozorlik yozilmagan",
+    "writeList": "Ro‘yxat yozish",
+    "writeMore": "Yana yozish",
+    "home": {
+      "morning": "Xayrli tong, {{name}}",
+      "day": "Xayrli kun, {{name}}",
+      "evening": "Xayrli kech, {{name}}",
+      "weekEmpty": "Bu hafta to‘y yo‘q",
+      "next": "Keyingi to‘y",
+      "noEvents": "Hozircha rejada to‘y yo‘q — yangisi qo‘shilganda shu yerda chiqadi.",
+      "newList": "Yangi bozorlik ro‘yxati",
+      "myLists": "Ro‘yxatlarim",
+      "takeStock": "Ombordan olish",
+      "listsStatus": "Ro‘yxatlarim holati",
+      "week_one": "Bu hafta {{count}} ta to‘y",
+      "week_other": "Bu hafta {{count}} ta to‘y",
+      "withoutList_one": "{{count}} tasiga bozorlik yozilmagan",
+      "withoutList_other": "{{count}} tasiga bozorlik yozilmagan",
+      "all_one": "Hammasi ({{count}})",
+      "all_other": "Hammasi ({{count}})"
+    },
+    "events": {
+      "title": "To‘ylar",
+      "view": "Ko‘rinish",
+      "list": "Ro‘yxat",
+      "calendar": "Kalendar",
+      "empty": "Rejada to‘y yo‘q.",
+      "prevMonth": "Oldingi oy",
+      "nextMonth": "Keyingi oy",
+      "buckets": {
+        "week": "Shu hafta",
+        "month": "Keyingi 30 kun",
+        "later": "Keyinroq"
+      },
+      "count_one": "{{count}} ta to‘y",
+      "count_other": "{{count}} ta to‘y",
+      "onlyMissing_one": "Faqat bozorlik yozilmaganlar ({{count}})",
+      "onlyMissing_other": "Faqat bozorlik yozilmaganlar ({{count}})"
+    },
+    "shopping": {
+      "title": "Bozorlik",
+      "new": "Yangi ro‘yxat",
+      "mine": "Ro‘yxatlarim"
+    },
+    "stages": {
+      "SALAD": "Salatlar",
+      "FIRST_DISH": "1-ovqat",
+      "SECOND_DISH": "2-ovqat",
+      "OTHER": "Boshqa taomlar"
+    },
+    "stagePurpose": {
+      "SALAD": "salatlar uchun",
+      "FIRST_DISH": "1-ovqat uchun",
+      "SECOND_DISH": "2-ovqat uchun",
+      "OTHER": "boshqa taomlar uchun"
+    },
+    "parts": {
+      "SALAD": "Salat",
+      "FIRST_DISH": "1-ovqat",
+      "SECOND_DISH": "2-ovqat",
+      "OTHER": "Boshqa",
+      "GENERAL": "Umumiy"
+    },
+    "builder": {
+      "forWhich": "1. Qaysi to‘y uchun?",
+      "generalHint": "To‘yga bog‘lanmagan: tuz, salfetka…",
+      "hasList": "Ro‘yxat bor",
+      "pickProducts": "2. Mahsulotlarni tanlang",
+      "copy": "Oldingi ro‘yxatdan nusxa",
+      "copied": "«{{source}}» ro‘yxatidan nusxa olindi",
+      "copiedScaled": "«{{source}}» ro‘yxatidan: {{from}} → {{to}} mehmon, miqdorlar ×{{ratio}}",
+      "copiedHint": "Kerak bo‘lsa miqdorlarni to‘g‘rilang",
+      "now": "Hozir: {{stage}} yozyapsiz",
+      "noDishes": "Menyuda bu bosqichga taom kiritilmagan.",
+      "next": "Keyingisi: {{stage}}",
+      "openCart": "Savatni ko‘rish",
+      "search": "Qidirish: kartoshka, sabzi…",
+      "categories": "Bo‘limlar",
+      "notFound": "«{{query}}» topilmadi — pastdan qo‘lda qo‘shing.",
+      "emptyCatalog": "Katalog hali bo‘sh — mahsulotni pastdan qo‘lda qo‘shing.",
+      "totalCorner": "jami {{amount}}",
+      "pick": "{{name}}: tanlash",
+      "decrease": "{{name}}: kamaytirish",
+      "increase": "{{name}}: ko‘paytirish",
+      "amount": "{{name}}: miqdori",
+      "measure": "{{name}}: o‘lchov",
+      "kg": "kg",
+      "gram": "gramm",
+      "customTitle": "Katalogda yo‘q mahsulot",
+      "customName": "Mahsulot nomi",
+      "customQuantity": "Miqdori",
+      "customUnit": "Birligi",
+      "customAdd": "Savatga qo‘shish",
+      "remove": "{{name}}: olib tashlash",
+      "cartEmpty": "Savat bo‘sh",
+      "cart": "Savat",
+      "reviewTitle": "Ro‘yxat tayyormi?",
+      "reviewHint": "Super adminga har mahsulotning faqat jami miqdori boradi; taom bo‘yicha bo‘linish — sizning hisobingiz.",
+      "partAmount": "{{name}}: {{part}} miqdori",
+      "keepShopping": "Yana qo‘shish",
+      "copyTitle": "Oldingi ro‘yxatdan nusxa",
+      "copyScaled": "Miqdorlar {{count}} mehmonga moslanadi",
+      "copyPlain": "Miqdorlar o‘zgarmasdan ko‘chiriladi",
+      "items_one": "{{count}} ta",
+      "items_other": "{{count}} ta",
+      "productsCount_one": "{{count}} ta mahsulot",
+      "productsCount_other": "{{count}} ta mahsulot",
+      "cartCount_one": "{{count}} ta mahsulot",
+      "cartCount_other": "{{count}} ta mahsulot",
+      "send": "Yuborish"
+    },
+    "lists": {
+      "progress": "Ro‘yxat qayerga yetdi",
+      "steps": {
+        "SUBMITTED": "Yuborildi",
+        "REVIEWED": "Ko‘rildi",
+        "APPROVED": "Xaridda",
+        "PURCHASED": "Olindi",
+        "CONFIRMED": "Yopildi"
+      },
+      "cancel": "Bekor qilish",
+      "cancelTitle": "Ro‘yxatni bekor qilasizmi?",
+      "cancelText": "Ro‘yxat super admindan olib tashlanadi. Kerak bo‘lsa yangisini yozasiz.",
+      "cancelled": "Ro‘yxat bekor qilindi",
+      "empty": "Hali ro‘yxat yozmagansiz."
+    },
+    "stock": {
+      "title": "Ombor",
+      "description": "To‘y uchun ombordan olgan mahsulotingizni shu yerda belgilang — qoldiq o‘zi kamayadi.",
+      "forWhich": "Qaysi to‘y uchun?",
+      "noEvents": "Ombordan faqat bugungi yoki ertangi to‘y uchun olinadi — hozir bunday to‘y yo‘q.",
+      "today": "Bugun olganlarim",
+      "empty": "Omborda oziq-ovqat mahsuloti yo‘q.",
+      "left": "omborda {{amount}}",
+      "out": "tugagan",
+      "nothing": "Hech narsa tanlanmagan",
+      "pickEvent": "To‘yni tanlang",
+      "take": "Olish",
+      "reviewTitle": "Ombordan olasizmi?",
+      "reviewText": "«{{event}}» uchun quyidagilar ombor qoldig‘idan ayiriladi.",
+      "confirm": "Ha, oldim",
+      "taken": "Yozildi — ombor qoldig‘i kamaydi",
+      "returnText": "Bugun olgan mahsulotlaringiz omborga qaytariladi."
+    },
+    "listWritten_one": "Bozorlik yozilgan",
+    "listWritten_other": "Bozorlik yozilgan ({{count}})"
   }
 }

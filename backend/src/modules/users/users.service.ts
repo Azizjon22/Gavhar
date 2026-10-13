@@ -9,6 +9,7 @@ import { AuthUser } from '@/common/types/auth-user';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import { auditDiff } from '@/modules/audit/audit-sanitizer';
 import { AuditService } from '@/modules/audit/audit.service';
+import { DEV_LOGIN_EMAIL_DOMAIN } from '@/modules/auth/auth.constants';
 import { AuthContextService } from '@/modules/auth/services/auth-context.service';
 import { LoginAttemptsService } from '@/modules/auth/services/login-attempts.service';
 import { SessionsService } from '@/modules/auth/services/sessions.service';
@@ -384,6 +385,8 @@ export class UsersService {
         deletedAt: null,
         status: UserStatus.ACTIVE,
         role: { key: SYSTEM_ROLES.SUPER_ADMIN },
+        // Tezkor kirishning sinov hisobi haqiqiy super admin o'rnini bosa olmaydi.
+        NOT: { email: { endsWith: `@${DEV_LOGIN_EMAIL_DOMAIN}` } },
       },
     });
     if (others === 0) {

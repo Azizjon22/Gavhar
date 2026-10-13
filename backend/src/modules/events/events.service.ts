@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Currency, EventStatus, HallStatus, PaymentKind, Prisma } from '@prisma/client';
+import { EventStatus, HallStatus, PaymentKind, Prisma } from '@prisma/client';
 import { Paginated } from '@/common/dto/pagination.dto';
 import { AppException } from '@/common/errors/app.exception';
 import { AuthUser } from '@/common/types/auth-user';
@@ -8,16 +8,13 @@ import { Money, ZERO, money, moneyString } from '@/common/utils/money.util';
 import { AppConfigService } from '@/config/app-config.service';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import { AuditService } from '@/modules/audit/audit.service';
-import { SettingsService } from '@/modules/settings/settings.service';
 import {
   CalendarQueryDto,
   CreateEventDto,
   CreatePaymentDto,
-  EventServiceItemDto,
   ListEventsDto,
   UpdateEventDto,
 } from './dto/event.dto';
-import { calculatePricing, requiredDeposit, serviceTotal, toUzs } from './event-pricing';
 
 const SUMMARY_INCLUDE = {
   client: { select: { id: true, fullName: true, phone: true } },
@@ -26,7 +23,6 @@ const SUMMARY_INCLUDE = {
 
 const DETAIL_INCLUDE = {
   ...SUMMARY_INCLUDE,
-  services: { orderBy: { name: 'asc' } },
   payments: { where: { deletedAt: null }, orderBy: [{ paidAt: 'asc' }, { createdAt: 'asc' }] },
 } satisfies Prisma.EventInclude;
 
@@ -35,21 +31,8 @@ export type EventDetail = Prisma.EventGetPayload<{ include: typeof DETAIL_INCLUD
 
 type Tx = Prisma.TransactionClient;
 
-interface ServiceLine {
-  extraServiceId: string;
-  name: string;
-  unit: EventDetail['services'][number]['unit'];
-  unitPrice: Money;
-  quantity: number;
-  total: Money;
-}
-
 /** Vaqtni band qilib turadigan holatlar. */
-const ACTIVE_STATUSES: EventStatus[] = [
-  EventStatus.REQUEST,
-  EventStatus.CONFIRMED,
-  EventStatus.HELD,
-];
+const ACTIVE_STATUSES: EventStatus[] = [EventStatus.REQUEST, EventStatus.CONFIRMED];
 const EDITABLE_STATUSES = new Set<EventStatus>(ACTIVE_STATUSES);
 const MAX_DURATION_MS = 48 * 60 * 60 * 1000;
 const MAX_CALENDAR_RANGE_MS = 100 * 24 * 60 * 60 * 1000;
@@ -103,23 +86,14 @@ const auditFields = (event: EventDetail) => ({
   startAt: event.startAt,
   endAt: event.endAt,
   guestCount: event.guestCount,
-  pricePerGuest: moneyString(event.pricePerGuest),
-  discount: moneyString(event.discount),
   totalAmount: moneyString(event.totalAmount),
-  services: event.services.map((service) => `${service.name} × ${service.quantity}`),
   note: event.note,
 });
-
-/** `priceFromPackage` — so'rov pulni ko'rmaydigan roldan: narx va chegirma undan qabul qilinmaydi. */
-export interface PricingPolicy {
-  priceFromPackage?: boolean;
-}
 
 @Injectable()
 export class EventsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly settings: SettingsService,
     private readonly audit: AuditService,
     private readonly config: AppConfigService,
   ) {}
@@ -185,11 +159,7 @@ export class EventsService {
   }
 
   async findOne(id: string) {
-    const [event, { minDepositPercent }] = await Promise.all([
-      this.findRecord(this.prisma, id),
-      this.settings.getBooking(),
-    ]);
-    return this.detailView(event, minDepositPercent);
+    return this.detailView(await this.findRecord(this.prisma, id));
   }
 
   /** PDF va boshqa ichki ehtiyojlar uchun xom yozuv. */
@@ -199,25 +169,16 @@ export class EventsService {
 
   // ── Yaratish va tahrirlash ───────────────────────────────────────────────
 
-  async create(dto: CreateEventDto, policy: PricingPolicy = {}) {
+  /**
+   * Narx tanlangan menyu paketidan olinadi va bronda qotib qoladi: keyin paket narxi
+   * yoki mehmonlar soni o'zgarsa ham bron summasi o'zgarmaydi.
+   */
+  async create(dto: CreateEventDto) {
     this.assertTimeRange(dto.startAt, dto.endAt);
+    this.assertNotPast(dto.startAt);
     await this.assertClientExists(dto.clientId);
     await this.assertHallBookable(dto.hallId, dto.guestCount);
-
-    const menuPackage = dto.menuPackageId ? await this.loadMenuPackage(dto.menuPackageId) : null;
-
-    const services = await this.buildServiceLines(dto.services ?? [], [], dto.guestCount);
-    // Pulni ko'rmaydigan rol narx va chegirma kiritmaydi: narx paketdan olinadi.
-    const discount = policy.priceFromPackage ? ZERO : money(dto.discount ?? '0');
-    const pricePerGuest = policy.priceFromPackage
-      ? this.packagePrice(menuPackage)
-      : money(this.requirePrice(dto.pricePerGuest));
-    const pricing = calculatePricing({
-      guestCount: dto.guestCount,
-      pricePerGuest,
-      discount,
-      services,
-    });
+    const menuPackage = await this.loadMenuPackage(dto.menuPackageId);
     await this.assertHallFree(dto.hallId, dto.startAt, dto.endAt);
 
     const event = await this.guardOverlap(() =>
@@ -226,8 +187,8 @@ export class EventsService {
           data: {
             clientId: dto.clientId,
             hallId: dto.hallId,
-            menuPackageId: menuPackage?.id ?? null,
-            menuPackageName: menuPackage?.name ?? null,
+            menuPackageId: menuPackage.id,
+            menuPackageName: menuPackage.name,
             type: dto.type,
             title: dto.title || null,
             startAt: dto.startAt,
@@ -236,12 +197,8 @@ export class EventsService {
             tableCapacity: dto.tableCapacity ?? null,
             firstDish: dto.firstDish || null,
             secondDish: dto.secondDish || null,
-            pricePerGuest,
-            extrasTotal: pricing.extrasTotal,
-            discount,
-            totalAmount: pricing.totalAmount,
+            totalAmount: menuPackage.price,
             note: dto.note || null,
-            services: { create: services },
           },
           include: DETAIL_INCLUDE,
         });
@@ -257,10 +214,10 @@ export class EventsService {
         return created;
       }),
     );
-    return this.detailView(event, (await this.settings.getBooking()).minDepositPercent);
+    return this.detailView(event);
   }
 
-  async update(id: string, dto: UpdateEventDto, policy: PricingPolicy = {}) {
+  async update(id: string, dto: UpdateEventDto) {
     const before = await this.findRecord(this.prisma, id);
     if (!EDITABLE_STATUSES.has(before.status)) {
       throw AppException.conflict(
@@ -278,12 +235,6 @@ export class EventsService {
       startAt.getTime() !== before.startAt.getTime() ||
       endAt.getTime() !== before.endAt.getTime();
 
-    if (scheduleChanged && before.status === EventStatus.HELD) {
-      throw AppException.conflict(
-        'EVENT_ALREADY_HELD',
-        "O'tkazilgan tadbirning zali yoki vaqtini o'zgartirib bo'lmaydi",
-      );
-    }
     this.assertTimeRange(startAt, endAt);
     if (dto.clientId && dto.clientId !== before.clientId)
       await this.assertClientExists(dto.clientId);
@@ -294,50 +245,32 @@ export class EventsService {
       await this.assertCapacity(hallId, guestCount);
     }
 
-    // Paket o'zgarsa — yangisining nomi olinadi; o'zgarmasa bron paytidagi nom saqlanadi.
-    let menuPackage: { menuPackageId: string | null; menuPackageName: string | null } | undefined;
-    let newPackagePrice: Money | null = null;
+    // Faqat boshqa paketga o'tilganda narx o'sha paketdan qayta olinadi; mehmonlar
+    // soni o'zgarishi narxga ta'sir qilmaydi. Olingan pul yangi narxdan oshmasligi kerak.
+    let repriced: { menuPackageId: string; menuPackageName: string; totalAmount: Money } | null =
+      null;
     if (dto.menuPackageId !== undefined && dto.menuPackageId !== before.menuPackageId) {
-      const selected = dto.menuPackageId ? await this.loadMenuPackage(dto.menuPackageId) : null;
-      if (policy.priceFromPackage) newPackagePrice = this.packagePrice(selected);
-      menuPackage = {
-        menuPackageId: selected?.id ?? null,
-        menuPackageName: selected?.name ?? null,
+      const selected = await this.loadMenuPackage(dto.menuPackageId);
+      if (selected.price.lt(before.paidAmount)) {
+        throw AppException.conflict(
+          'TOTAL_BELOW_PAID',
+          "Bu paket narxi allaqachon to'langan summadan kam — avval ortiqcha pulni qaytaring",
+          {
+            paidAmount: moneyString(before.paidAmount),
+            totalAmount: moneyString(selected.price),
+          },
+        );
+      }
+      repriced = {
+        menuPackageId: selected.id,
+        menuPackageName: selected.name,
+        totalAmount: selected.price,
       };
-    }
-
-    const requested: EventServiceItemDto[] =
-      dto.services ??
-      before.services.map(({ extraServiceId, quantity }) => ({ extraServiceId, quantity }));
-    const services = await this.buildServiceLines(requested, before.services, guestCount);
-    // Pulni ko'rmaydigan rol narxga tegmaydi: kelishilgan narx saqlanadi, faqat boshqa
-    // paketga o'tilganda o'sha paket narxi olinadi.
-    const discount =
-      !policy.priceFromPackage && dto.discount !== undefined
-        ? money(dto.discount)
-        : before.discount;
-    const pricePerGuest = policy.priceFromPackage
-      ? (newPackagePrice ?? before.pricePerGuest)
-      : dto.pricePerGuest !== undefined
-        ? money(dto.pricePerGuest)
-        : before.pricePerGuest;
-    const pricing = calculatePricing({ guestCount, pricePerGuest, discount, services });
-
-    if (pricing.totalAmount.lt(before.paidAmount)) {
-      throw AppException.conflict(
-        'TOTAL_BELOW_PAID',
-        "Yangi summa to'langan summadan kam. Avval ortiqcha to'lovni qaytaring",
-        {
-          paidAmount: moneyString(before.paidAmount),
-          totalAmount: moneyString(pricing.totalAmount),
-        },
-      );
     }
     if (scheduleChanged) await this.assertHallFree(hallId, startAt, endAt, id);
 
     const event = await this.guardOverlap(() =>
       this.prisma.$transaction(async (tx) => {
-        await tx.eventService.deleteMany({ where: { eventId: id } });
         const updated = await tx.event.update({
           where: { id },
           data: {
@@ -348,16 +281,11 @@ export class EventsService {
             ...(dto.tableCapacity !== undefined && { tableCapacity: dto.tableCapacity }),
             ...(dto.firstDish !== undefined && { firstDish: dto.firstDish || null }),
             ...(dto.secondDish !== undefined && { secondDish: dto.secondDish || null }),
-            ...menuPackage,
+            ...repriced,
             hallId,
             startAt,
             endAt,
             guestCount,
-            pricePerGuest,
-            discount,
-            extrasTotal: pricing.extrasTotal,
-            totalAmount: pricing.totalAmount,
-            services: { create: services },
           },
           include: DETAIL_INCLUDE,
         });
@@ -381,19 +309,36 @@ export class EventsService {
         return updated;
       }),
     );
-    return this.detailView(event, (await this.settings.getBooking()).minDepositPercent);
+    return this.detailView(event);
   }
 
-  /** Faqat pul qabul qilinmagan so'rov yoki bekor qilingan bronni o'chirish mumkin. */
+  /**
+   * Tasdiqlangan, yakunlangan yoki puli/xarajati bor bron hisobda qoladi — uni o'chirib
+   * bo'lmaydi, faqat bekor qilinadi. Bekor qilingan to'lov ham tarix sifatida hisoblanadi.
+   */
   async remove(id: string): Promise<void> {
     const event = await this.findRecord(this.prisma, id);
-    const removable =
-      event.paidAmount.isZero() &&
-      (event.status === EventStatus.REQUEST || event.status === EventStatus.CANCELLED);
-    if (!removable) {
+    if (event.status === EventStatus.CONFIRMED || event.status === EventStatus.COMPLETED) {
       throw AppException.conflict(
         'EVENT_DELETE_FORBIDDEN',
-        "To'lovi bor yoki tasdiqlangan bronni o'chirib bo'lmaydi — uni bekor qiling",
+        "Tasdiqlangan yoki yakunlangan bronni o'chirib bo'lmaydi — kerak bo'lsa bekor qiling",
+      );
+    }
+    const [payments, expenses, stockUsages] = await Promise.all([
+      this.prisma.payment.count({ where: { eventId: id } }),
+      this.prisma.expense.count({ where: { eventId: id, deletedAt: null } }),
+      this.prisma.stockUsage.count({ where: { eventId: id } }),
+    ]);
+    if (stockUsages > 0) {
+      throw AppException.conflict(
+        'EVENT_HAS_STOCK',
+        "Bu to'yga ombordan mahsulot olingan — uni o'chirib bo'lmaydi, kerak bo'lsa bekor qiling",
+      );
+    }
+    if (payments > 0 || expenses > 0) {
+      throw AppException.conflict(
+        'EVENT_HAS_MONEY',
+        "Bu bronga to'lov yoki xarajat yozilgan — uni o'chirib bo'lmaydi, kerak bo'lsa bekor qiling",
       );
     }
 
@@ -408,56 +353,32 @@ export class EventsService {
 
   // ── Holat o'tishlari ─────────────────────────────────────────────────────
 
-  /** SO'ROV → TASDIQLANGAN: zaklad to'langan bo'lishi shart. */
-  async confirm(id: string) {
-    const { minDepositPercent } = await this.settings.getBooking();
+  /** KUTILMOQDA → TASDIQLANGAN qo'lda. To'liq to'langan bron o'zi tasdiqlanadi. */
+  confirm(id: string) {
     return this.transition(
       id,
       'event.confirm',
       [EventStatus.REQUEST],
       EventStatus.CONFIRMED,
-      (event) => {
-        const required = requiredDeposit(event.totalAmount, minDepositPercent);
-        if (event.paidAmount.lt(required)) {
-          throw AppException.conflict(
-            'DEPOSIT_REQUIRED',
-            'Bronni tasdiqlash uchun zaklad to‘lanishi kerak',
-            {
-              required: moneyString(required),
-              paid: moneyString(event.paidAmount),
-              percent: minDepositPercent,
-            },
-          );
-        }
-      },
+      () => undefined,
     );
   }
 
-  /** TASDIQLANGAN → O'TKAZILDI: tadbir boshlangan bo'lishi kerak. */
-  hold(id: string) {
-    return this.transition(id, 'event.hold', [EventStatus.CONFIRMED], EventStatus.HELD, (event) => {
-      if (event.startAt.getTime() > Date.now()) {
-        throw AppException.conflict('EVENT_NOT_STARTED', 'Tadbir hali boshlanmagan');
-      }
-    });
-  }
-
-  /** O'TKAZILDI → YAKUNLANDI: qarz qolmagan bo'lishi shart. */
+  /**
+   * Yakunlangan — to'y kuni kelgan. Oldindan yakunlab bo'lmaydi. Qarz qolishi mumkin:
+   * u qarzdor to'ylar ro'yxatida turadi va to'lovlar qabul qilinaveradi.
+   */
   complete(id: string) {
     return this.transition(
       id,
       'event.complete',
-      [EventStatus.HELD],
+      [EventStatus.REQUEST, EventStatus.CONFIRMED],
       EventStatus.COMPLETED,
       (event) => {
-        const debt = event.totalAmount.sub(event.paidAmount);
-        if (debt.gt(ZERO)) {
+        if (this.dayOf(event.startAt) > this.dayOf(new Date())) {
           throw AppException.conflict(
-            'EVENT_HAS_DEBT',
-            "Bronni yakunlash uchun qarz to'liq yopilishi kerak",
-            {
-              debt: moneyString(debt),
-            },
+            'EVENT_NOT_STARTED',
+            "Kelajakdagi to'yni yakunlangan deb belgilab bo'lmaydi",
           );
         }
       },
@@ -475,46 +396,72 @@ export class EventsService {
     );
   }
 
+  /**
+   * Xato bilan bekor qilingan yoki yakunlangan bronni qaytarish: bekor qilingan —
+   * "Kutilmoqda"ga (vaqti bo'sh bo'lsa), yakunlangan — "Tasdiqlangan"ga.
+   */
+  async reopen(id: string) {
+    const event = await this.findRecord(this.prisma, id);
+    if (event.status === EventStatus.CANCELLED) {
+      await this.assertHallFree(event.hallId, event.startAt, event.endAt, id);
+      return this.guardOverlap(() =>
+        this.transition(
+          id,
+          'event.reopen',
+          [EventStatus.CANCELLED],
+          EventStatus.REQUEST,
+          () => undefined,
+          { cancelReason: null, cancelledAt: null },
+        ),
+      );
+    }
+    return this.transition(
+      id,
+      'event.reopen',
+      [EventStatus.COMPLETED],
+      EventStatus.CONFIRMED,
+      () => undefined,
+    );
+  }
+
   // ── To'lovlar ────────────────────────────────────────────────────────────
 
+  /**
+   * To'lov qarzdan, qaytarish olingan puldan oshmaydi (bir vaqtda kiritilganlar navbat
+   * bilan tekshiriladi). Kutilayotgan bron to'liq to'langanda o'zi tasdiqlanadi.
+   */
   async addPayment(id: string, dto: CreatePaymentDto, actor: AuthUser) {
     const amount = money(dto.amount);
     if (amount.isZero()) {
       throw AppException.badRequest('INVALID_AMOUNT', "Summa noldan katta bo'lishi kerak");
     }
-    if (dto.currency === Currency.USD && !dto.exchangeRate) {
-      throw AppException.badRequest('EXCHANGE_RATE_REQUIRED', 'Dollar uchun kursni kiriting');
-    }
-    const exchangeRate = dto.currency === Currency.UZS ? money(1) : money(dto.exchangeRate ?? '1');
-    const amountUzs = toUzs(amount, exchangeRate);
 
     await this.prisma.$transaction(async (tx) => {
       const event = await this.lockEvent(tx, id);
       const isRefund = dto.kind === PaymentKind.REFUND;
 
-      if (event.status === EventStatus.COMPLETED) {
-        throw AppException.conflict('EVENT_CLOSED', "Yakunlangan bronga to'lov qo'shib bo'lmaydi");
-      }
       if (event.status === EventStatus.CANCELLED && !isRefund) {
         throw AppException.conflict(
           'EVENT_CANCELLED',
-          'Bekor qilingan bron uchun faqat pul qaytarish mumkin',
+          "Bekor qilingan to'yga to'lov qabul qilinmaydi — faqat pul qaytarish mumkin",
         );
       }
-      if (isRefund && amountUzs.gt(event.paidAmount)) {
+      if (isRefund && amount.gt(event.paidAmount)) {
         throw AppException.conflict(
           'REFUND_EXCEEDS_PAID',
-          "Qaytariladigan summa to'langandan ko'p",
-          {
-            paid: moneyString(event.paidAmount),
-          },
+          "Olingan puldan ko'p qaytarib bo'lmaydi",
+          { paid: moneyString(event.paidAmount) },
         );
       }
       const debt = event.totalAmount.sub(event.paidAmount);
-      if (!isRefund && amountUzs.gt(debt)) {
-        throw AppException.conflict('PAYMENT_EXCEEDS_DEBT', "To'lov qolgan qarzdan ko'p", {
-          debt: moneyString(debt),
-        });
+      if (!isRefund && amount.gt(debt)) {
+        throw AppException.conflict(
+          debt.gt(ZERO) ? 'PAYMENT_EXCEEDS_DEBT' : 'EVENT_FULLY_PAID',
+          debt.gt(ZERO)
+            ? "To'lov qolgan qarzdan ko'p"
+            : "Bu to'y to'liq to'langan — yangi to'lov qabul qilinmaydi",
+          { debt: moneyString(debt.isNegative() ? ZERO : debt) },
+        );
       }
 
       const payment = await tx.payment.create({
@@ -522,16 +469,13 @@ export class EventsService {
           eventId: id,
           kind: dto.kind,
           method: dto.method,
-          currency: dto.currency,
           amount,
-          exchangeRate,
-          amountUzs,
           paidAt: dto.paidAt,
           note: dto.note || null,
           createdById: actor.id,
         },
       });
-      await this.recalculatePaid(tx, id);
+      const paid = await this.recalculatePaid(tx, id);
       await this.audit.log(
         {
           action: isRefund ? 'payment.refund' : 'payment.create',
@@ -541,14 +485,26 @@ export class EventsService {
             paymentId: payment.id,
             kind: payment.kind,
             method: payment.method,
-            currency: payment.currency,
             amount: moneyString(amount),
-            exchangeRate: exchangeRate.toString(),
-            amountUzs: moneyString(amountUzs),
           },
         },
         tx,
       );
+
+      // To'liq to'landi: bron o'zi tasdiqlanadi (va endi o'chirib bo'lmaydi).
+      if (!isRefund && event.status === EventStatus.REQUEST && paid.gte(event.totalAmount)) {
+        await tx.event.update({ where: { id }, data: { status: EventStatus.CONFIRMED } });
+        await this.audit.log(
+          {
+            action: 'event.auto_confirm',
+            resource: 'event',
+            resourceId: id,
+            before: { status: EventStatus.REQUEST },
+            after: { status: EventStatus.CONFIRMED },
+          },
+          tx,
+        );
+      }
     });
     return this.findOne(id);
   }
@@ -556,13 +512,7 @@ export class EventsService {
   /** To'lov o'chirilmaydi — bekor qilingan deb belgilanadi va hisobdan chiqariladi. */
   async voidPayment(id: string, paymentId: string) {
     await this.prisma.$transaction(async (tx) => {
-      const event = await this.lockEvent(tx, id);
-      if (event.status === EventStatus.COMPLETED) {
-        throw AppException.conflict(
-          'EVENT_CLOSED',
-          "Yakunlangan bron to'lovini bekor qilib bo'lmaydi",
-        );
-      }
+      await this.lockEvent(tx, id);
       const payment = await tx.payment.findFirst({
         where: { id: paymentId, eventId: id, deletedAt: null },
       });
@@ -584,7 +534,7 @@ export class EventsService {
           before: {
             paymentId,
             kind: payment.kind,
-            amountUzs: moneyString(payment.amountUzs),
+            amount: moneyString(payment.amount),
           },
         },
         tx,
@@ -645,10 +595,10 @@ export class EventsService {
     const groups = await tx.payment.groupBy({
       by: ['kind'],
       where: { eventId, deletedAt: null },
-      _sum: { amountUzs: true },
+      _sum: { amount: true },
     });
     const paid = groups.reduce((sum, group) => {
-      const value = group._sum.amountUzs ?? ZERO;
+      const value = group._sum.amount ?? ZERO;
       return group.kind === PaymentKind.REFUND ? sum.sub(value) : sum.add(value);
     }, ZERO);
 
@@ -685,27 +635,29 @@ export class EventsService {
     if (!client) throw AppException.badRequest('CLIENT_NOT_FOUND', 'Mijoz topilmadi');
   }
 
-  private requirePrice(value: string | undefined): string {
-    if (value === undefined) {
-      throw AppException.badRequest('VALIDATION_ERROR', '1 kishilik narxni kiriting');
-    }
-    return value;
+  /** To'y kuni (Toshkent vaqti bilan) "YYYY-MM-DD". */
+  private dayOf(instant: Date): string {
+    return localDate(instant, this.config.app.timezone);
   }
 
-  private packagePrice(menuPackage: { pricePerGuest: Money } | null): Money {
-    if (!menuPackage) {
+  /** O'tib ketgan kunga to'y yozib bo'lmaydi (bugungi kunga — mumkin). */
+  private assertNotPast(startAt: Date): void {
+    if (this.dayOf(startAt) < this.dayOf(new Date())) {
+      throw AppException.badRequest('EVENT_DATE_PAST', "O'tib ketgan sanaga to'y yozib bo'lmaydi");
+    }
+  }
+
+  /** To'y narxi shu paketdan olinadi: paket majburiy, faol bo'lishi kerak. */
+  private async loadMenuPackage(id: string | null | undefined) {
+    if (!id) {
       throw AppException.badRequest(
         'MENU_PACKAGE_REQUIRED',
         'Menyu paketini tanlang — narx shu paketdan olinadi',
       );
     }
-    return menuPackage.pricePerGuest;
-  }
-
-  private async loadMenuPackage(id: string) {
     const menuPackage = await this.prisma.menuPackage.findFirst({
       where: { id, deletedAt: null, isActive: true },
-      select: { id: true, name: true, pricePerGuest: true },
+      select: { id: true, name: true, price: true },
     });
     if (!menuPackage) {
       throw AppException.badRequest(
@@ -790,80 +742,24 @@ export class EventsService {
     }
   }
 
-  /**
-   * Xizmatlar ro'yxatini narxlari bilan yig'adi. Bronga avval qo'shilgan xizmat
-   * o'sha paytdagi narxida qoladi; yangi qo'shilgani katalogdagi joriy narxni oladi.
-   */
-  private async buildServiceLines(
-    requested: EventServiceItemDto[],
-    existing: EventDetail['services'],
-    guestCount: number,
-  ): Promise<ServiceLine[]> {
-    const snapshots = new Map(existing.map((service) => [service.extraServiceId, service]));
-    const newIds = requested
-      .map((item) => item.extraServiceId)
-      .filter((serviceId) => !snapshots.has(serviceId));
-
-    const catalog = newIds.length
-      ? await this.prisma.extraService.findMany({
-          where: { id: { in: newIds }, deletedAt: null, isActive: true },
-        })
-      : [];
-    const catalogById = new Map(catalog.map((service) => [service.id, service]));
-
-    return requested.map(({ extraServiceId, quantity }) => {
-      const snapshot = snapshots.get(extraServiceId);
-      const source = snapshot
-        ? { name: snapshot.name, unit: snapshot.unit, unitPrice: snapshot.unitPrice }
-        : catalogById.get(extraServiceId);
-      if (!source) {
-        throw AppException.badRequest(
-          'EXTRA_SERVICE_NOT_FOUND',
-          "Tanlangan xizmat topilmadi yoki o'chirib qo'yilgan",
-        );
-      }
-      const unitPrice = 'unitPrice' in source ? source.unitPrice : source.price;
-      const line = { unit: source.unit, unitPrice, quantity };
-      return {
-        extraServiceId,
-        name: source.name,
-        ...line,
-        total: serviceTotal(line, guestCount),
-      };
-    });
-  }
-
-  private detailView(event: EventDetail, minDepositPercent: number) {
-    const guestsTotal = event.pricePerGuest.mul(event.guestCount);
-    const deposit = requiredDeposit(event.totalAmount, minDepositPercent);
+  private detailView(event: EventDetail) {
+    const sumOf = (kind: PaymentKind) =>
+      event.payments
+        .filter((payment) => payment.kind === kind)
+        .reduce((sum, payment) => sum.add(payment.amount), ZERO);
 
     return {
       ...summaryView(event),
-      pricePerGuest: moneyString(event.pricePerGuest),
-      guestsTotal: moneyString(guestsTotal),
-      extrasTotal: moneyString(event.extrasTotal),
-      discount: moneyString(event.discount),
-      /** Tasdiqlash uchun kerakli zaklad va uning foizi. */
-      requiredDeposit: moneyString(deposit),
-      minDepositPercent,
+      /** Olingan pul va mijozga qaytarilgani (bekor qilinmagan to'lovlar). */
+      receivedAmount: moneyString(sumOf(PaymentKind.PAYMENT)),
+      refundedAmount: moneyString(sumOf(PaymentKind.REFUND)),
       note: event.note,
       cancelReason: event.cancelReason,
-      services: event.services.map((service) => ({
-        extraServiceId: service.extraServiceId,
-        name: service.name,
-        unit: service.unit,
-        unitPrice: moneyString(service.unitPrice),
-        quantity: service.quantity,
-        total: moneyString(service.total),
-      })),
       payments: event.payments.map((payment) => ({
         id: payment.id,
         kind: payment.kind,
         method: payment.method,
-        currency: payment.currency,
         amount: moneyString(payment.amount),
-        exchangeRate: payment.exchangeRate.toString(),
-        amountUzs: moneyString(payment.amountUzs),
         paidAt: payment.paidAt,
         note: payment.note,
       })),

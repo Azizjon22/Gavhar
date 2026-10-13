@@ -11,6 +11,7 @@ import { SessionsController } from './controllers/sessions.controller';
 import { TwoFactorController } from './controllers/two-factor.controller';
 import { AuthContextService } from './services/auth-context.service';
 import { AuthCookieService } from './services/auth-cookie.service';
+import { DevLoginService } from './services/dev-login.service';
 import { LoginAttemptsService } from './services/login-attempts.service';
 import { SessionsService } from './services/sessions.service';
 import { TokenService } from './services/token.service';
@@ -24,6 +25,7 @@ import { TwoFactorService } from './services/two-factor.service';
     AuthService,
     AuthContextService,
     AuthCookieService,
+    DevLoginService,
     LoginAttemptsService,
     SessionsService,
     TokenService,

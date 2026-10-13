@@ -91,4 +91,13 @@ export interface EventFinance {
   /** Olingan pul − shu to'y xarajatlari. */
   netProfit: string;
   expenses: Expense[];
+  /** Faqat SUPER_ADMIN uchun: shu to'yga ombordan olingan mahsulotlar qiymati. */
+  stock: {
+    usages: number;
+    cost: string;
+    /** Bir qismining narxi omborga kiritilmagan — qiymat to'liq emas. */
+    unpriced: boolean;
+    /** Xarajatga yozilgan summa; bo'sh — hali yozilmagan. */
+    recordedAmount: string | null;
+  } | null;
 }

@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   ParseUUIDPipe,
   Post,
   Put,
@@ -18,7 +19,12 @@ import { Permissions } from '@/common/decorators/permissions.decorator';
 import { SuperAdminOnly } from '@/common/decorators/super-admin-only.decorator';
 import { AuthUser } from '@/common/types/auth-user';
 import { PdfService } from '@/infrastructure/pdf/pdf.service';
-import { KitchenEventsQueryDto, PurchaseDto, SaveShoppingListDto } from './dto/shopping.dto';
+import {
+  FixItemPriceDto,
+  KitchenEventsQueryDto,
+  PurchaseItemDto,
+  SaveShoppingListDto,
+} from './dto/shopping.dto';
 import { buildShoppingList } from './pdf/shopping-list.pdf';
 import { ShoppingService } from './shopping.service';
 
@@ -48,11 +54,40 @@ export class ShoppingController {
     return this.service.suggestions();
   }
 
+  @Get('catalog')
+  @Permissions('shopping:read')
+  @ApiOperation({
+    summary: 'Oshpaz uchun mahsulot katalogi',
+    description: 'Ombordagi oziq-ovqat (turi, rasmi) va ilgari yozilgan mahsulotlar — narxsiz.',
+  })
+  catalog() {
+    return this.service.catalog();
+  }
+
+  @Get('lists/mine')
+  @Permissions('shopping:read')
+  @ApiOperation({ summary: 'O‘zim yozgan ro‘yxatlar (oxirgi 30 ta)' })
+  mine(@CurrentUser() actor: AuthUser) {
+    return this.service.mine(actor);
+  }
+
   @Get('pending')
   @Permissions('shopping:read')
   @ApiOperation({ summary: 'Foydalanuvchidan kutilayotgan ro‘yxatlar soni (bildirishnoma uchun)' })
   pending(@CurrentUser() actor: AuthUser) {
     return this.service.pending(actor);
+  }
+
+  @Post('seen')
+  @Permissions('shopping:read')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Bozorlik sahifasi ochildi',
+    description:
+      'SUPER_ADMIN uchun yangi ro‘yxatlar «ko‘rildi» bo‘ladi, xaridchi uchun — unga yuborilganlar.',
+  })
+  async markSeen(@CurrentUser() actor: AuthUser): Promise<void> {
+    await this.service.markSeen(actor);
   }
 
   @Get('lists/general')
@@ -84,7 +119,8 @@ export class ShoppingController {
   @Permissions('shopping:create')
   @ApiOperation({
     summary: 'Ro‘yxatni o‘zgartirish',
-    description: 'Tekshiruvgacha: oshpaz o‘zinikini, SUPER_ADMIN har qandayini.',
+    description:
+      'Oshpaz o‘zinikini SUPER_ADMIN ko‘rmasidan oldin; SUPER_ADMIN xarid tugaguncha (sotib olingan qatorlar qulflangan).',
   })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -102,15 +138,57 @@ export class ShoppingController {
     return this.service.approve(id);
   }
 
-  @Put('lists/:id/purchase')
+  @Post('lists/:id/items/:itemId/purchase')
   @Permissions('shopping:purchase')
-  @ApiOperation({ summary: 'Narxlarni kiritish va xaridni yakunlash (admin)' })
-  purchase(
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Mahsulot sotib olindi',
+    description:
+      'Amaldagi miqdor (ixtiyoriy) va narx — jami (`price`) yoki 1 birlik (`unitPrice`). Hamma qator tugagach ro‘yxat «sotib olingan» bo‘ladi.',
+  })
+  purchaseItem(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: PurchaseDto,
+    @Param('itemId', ParseUUIDPipe) itemId: string,
+    @Body() dto: PurchaseItemDto,
     @CurrentUser() actor: AuthUser,
   ) {
-    return this.service.purchase(id, dto, actor);
+    return this.service.purchaseItem(id, itemId, dto, actor);
+  }
+
+  @Post('lists/:id/items/:itemId/skip')
+  @Permissions('shopping:purchase')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Mahsulot olinmadi deb belgilash' })
+  skipItem(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('itemId', ParseUUIDPipe) itemId: string,
+    @CurrentUser() actor: AuthUser,
+  ) {
+    return this.service.skipItem(id, itemId, actor);
+  }
+
+  @Post('lists/:id/items/:itemId/reset')
+  @Permissions('shopping:purchase')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Belgini bekor qilish — mahsulot yana «olinmagan»' })
+  resetItem(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('itemId', ParseUUIDPipe) itemId: string,
+    @CurrentUser() actor: AuthUser,
+  ) {
+    return this.service.resetItem(id, itemId, actor);
+  }
+
+  @Patch('lists/:id/items/:itemId/price')
+  @Permissions('shopping:purchase')
+  @ApiOperation({ summary: 'Sotib olingan mahsulot narxini tuzatish' })
+  fixItemPrice(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('itemId', ParseUUIDPipe) itemId: string,
+    @Body() dto: FixItemPriceDto,
+    @CurrentUser() actor: AuthUser,
+  ) {
+    return this.service.fixItemPrice(id, itemId, dto, actor);
   }
 
   @Post('lists/:id/confirm')

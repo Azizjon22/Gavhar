@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { EventStatus, ExpenseCategory, Prisma, ShoppingListStatus } from '@prisma/client';
 import { Paginated } from '@/common/dto/pagination.dto';
 import { AppException } from '@/common/errors/app.exception';
+import { SYSTEM_ROLES } from '@/common/permissions/permission-catalog';
 import { AuthUser } from '@/common/types/auth-user';
 import {
   addDays,
@@ -24,6 +25,7 @@ import {
   SummaryQueryDto,
   UpdateExpenseDto,
 } from './dto/finance.dto';
+import { ensureSystemCategory } from './expense-categories';
 import { DatedAmount, buildSeries, sumAmounts } from './finance-summary';
 
 /** Kunlik grafik uchun eng uzun davr; undan uzunida oylar bo'yicha so'raladi. */
@@ -285,8 +287,10 @@ export class FinanceService {
    * Bitta to'yning hisobi: olingan pul, shu to'yga qilingan xarajatlar va sof foyda
    * (olingan pul − xarajatlar). Bekor qilingan to'yda ham haqiqatda harakat qilgan
    * pul ko'rinadi: qaytarilmagan zaklad va to'langan xarajatlar.
+   * SUPER_ADMIN uchun `stock` — shu to'yga ombordan olingan mahsulotlar qiymati va
+   * u xarajatga yozilgan-yozilmagani (ombor narxlarini faqat u ko'radi).
    */
-  async eventFinance(eventId: string) {
+  async eventFinance(eventId: string, actor: AuthUser) {
     const event = await this.prisma.event.findFirst({
       where: { id: eventId, deletedAt: null },
       select: { id: true, totalAmount: true, paidAmount: true },
@@ -306,6 +310,93 @@ export class FinanceService {
       expensesTotal: moneyString(expensesTotal),
       netProfit: moneyString(event.paidAmount.sub(expensesTotal)),
       expenses: expenses.map(expenseView),
+      stock:
+        actor.roleKey === SYSTEM_ROLES.SUPER_ADMIN
+          ? await this.stockSummary(eventId, expenses)
+          : null,
+    };
+  }
+
+  /**
+   * Ombordan olingan mahsulotlar qiymatini to'y xarajatiga yozadi ("Ombor mahsulotlari").
+   * Yozilgan bo'lsa, summasi hozirgi qiymatga tenglashtiriladi (mahsulot qaytarilgan
+   * yoki partiya narxi keyin kiritilgan bo'lishi mumkin).
+   */
+  async recordStockExpense(eventId: string, actor: AuthUser) {
+    const spentOn = await this.eventDay(eventId);
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM events WHERE id = ${eventId}::uuid FOR UPDATE`;
+      const category = await ensureSystemCategory(tx, 'STOCK');
+      const { cost } = await this.stockCost(tx, eventId);
+      const existing = await tx.expense.findFirst({
+        where: { eventId, categoryId: category.id, deletedAt: null },
+        include: EXPENSE_INCLUDE,
+      });
+      if (cost.isZero()) {
+        throw AppException.badRequest(
+          'STOCK_COST_EMPTY',
+          "Bu to'yga ombordan narxi ma'lum mahsulot olinmagan",
+        );
+      }
+      if (existing?.amount.eq(cost)) {
+        throw AppException.conflict(
+          'STOCK_EXPENSE_EXISTS',
+          'Ombor mahsulotlari xarajati allaqachon yozilgan',
+        );
+      }
+      const expense = existing
+        ? await tx.expense.update({
+            where: { id: existing.id },
+            data: { amount: cost },
+            include: EXPENSE_INCLUDE,
+          })
+        : await tx.expense.create({
+            data: {
+              categoryId: category.id,
+              amount: cost,
+              spentOn,
+              eventId,
+              note: 'Ombordan olingan mahsulotlar',
+              createdById: actor.id,
+              createdByName: actor.fullName,
+            },
+            include: EXPENSE_INCLUDE,
+          });
+      await this.audit.log(
+        {
+          action: existing ? 'expense.update' : 'expense.create',
+          resource: 'expense',
+          resourceId: expense.id,
+          ...(existing && { before: auditFields(existing) }),
+          after: auditFields(expense),
+        },
+        tx,
+      );
+      return expenseView(expense);
+    });
+  }
+
+  private async stockSummary(eventId: string, expenses: readonly ExpenseRecord[]) {
+    const { cost, unpriced, usages } = await this.stockCost(this.prisma, eventId);
+    const recorded = expenses.find((expense) => expense.category.code === 'STOCK');
+    return {
+      usages,
+      cost: moneyString(cost),
+      /** Bir qismining narxi omborga hali kiritilmagan — qiymat to'liq emas. */
+      unpriced,
+      recordedAmount: recorded ? moneyString(recorded.amount) : null,
+    };
+  }
+
+  private async stockCost(db: Prisma.TransactionClient, eventId: string) {
+    const items = await db.stockUsageItem.findMany({
+      where: { usage: { eventId } },
+      select: { totalCost: true, usageId: true },
+    });
+    return {
+      cost: items.reduce((sum, item) => (item.totalCost ? sum.add(item.totalCost) : sum), ZERO),
+      unpriced: items.some((item) => item.totalCost === null),
+      usages: new Set(items.map((item) => item.usageId)).size,
     };
   }
 

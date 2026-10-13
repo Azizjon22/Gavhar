@@ -17,6 +17,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Permissions } from '@/common/decorators/permissions.decorator';
+import { SuperAdminOnly } from '@/common/decorators/super-admin-only.decorator';
 import { PaginationQueryDto } from '@/common/dto/pagination.dto';
 import { AuthUser } from '@/common/types/auth-user';
 import { MAX_IMAGE_BYTES } from '@/infrastructure/storage/image-processor';
@@ -25,10 +26,13 @@ import {
   CreateMovementDto,
   ListItemsQueryDto,
   RecentMovementsQueryDto,
+  SetLotPriceDto,
   StockCountDto,
+  TakeStockDto,
   UpdateItemDto,
 } from './dto/warehouse.dto';
-import { WarehouseService } from './warehouse.service';
+import { StockUsageService } from './stock-usage.service';
+import { WarehouseService, seesPrices } from './warehouse.service';
 
 @ApiTags('Ombor')
 @ApiBearerAuth()
@@ -39,8 +43,8 @@ export class WarehouseController {
   @Get()
   @Permissions('warehouse:read')
   @ApiOperation({ summary: 'Ombordagi mahsulotlar (bo‘lim bo‘yicha)' })
-  list(@Query() query: ListItemsQueryDto) {
-    return this.service.list(query);
+  list(@Query() query: ListItemsQueryDto, @CurrentUser() actor: AuthUser) {
+    return this.service.list(query, actor);
   }
 
   @Post()
@@ -70,8 +74,8 @@ export class WarehouseController {
   @Get('recent-movements')
   @Permissions('warehouse:read')
   @ApiOperation({ summary: 'Butun ombor bo‘yicha so‘nggi kirim-chiqimlar' })
-  recentMovements(@Query() query: RecentMovementsQueryDto) {
-    return this.service.recentMovements(query.limit);
+  recentMovements(@Query() query: RecentMovementsQueryDto, @CurrentUser() actor: AuthUser) {
+    return this.service.recentMovements(query.limit, actor);
   }
 
   @Post(':id/count')
@@ -116,7 +120,77 @@ export class WarehouseController {
   @Get(':id/movements')
   @Permissions('warehouse:read')
   @ApiOperation({ summary: 'Mahsulot bo‘yicha kirim-chiqim tarixi' })
-  listMovements(@Param('id', ParseUUIDPipe) id: string, @Query() query: PaginationQueryDto) {
-    return this.service.listMovements(id, query);
+  listMovements(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: PaginationQueryDto,
+    @CurrentUser() actor: AuthUser,
+  ) {
+    return this.service.listMovements(id, query, actor);
+  }
+}
+
+/** Partiya narxlari va to'y uchun ombordan olish (oshpaz). */
+@ApiTags('Ombor')
+@ApiBearerAuth()
+@Controller('warehouse')
+export class StockUsageController {
+  constructor(
+    private readonly service: WarehouseService,
+    private readonly usages: StockUsageService,
+  ) {}
+
+  @Patch('lots/:lotId')
+  @SuperAdminOnly()
+  @ApiOperation({ summary: 'Partiyaga narx qo‘yish (1 birlik, faqat SUPER_ADMIN)' })
+  setLotPrice(@Param('lotId', ParseUUIDPipe) lotId: string, @Body() dto: SetLotPriceDto) {
+    return this.service.setLotPrice(lotId, dto.unitPrice);
+  }
+
+  @Get('stock')
+  @Permissions('warehouse:take')
+  @ApiOperation({ summary: 'Oshpaz uchun ombor: oziq-ovqat va qoldig‘i (narxsiz)' })
+  stock() {
+    return this.usages.stock();
+  }
+
+  @Post('usages')
+  @Permissions('warehouse:take')
+  @ApiOperation({ summary: 'Bugungi yoki ertangi to‘y uchun ombordan mahsulot olish' })
+  take(@Body() dto: TakeStockDto, @CurrentUser() actor: AuthUser) {
+    return this.usages.take(dto, actor);
+  }
+
+  @Get('usages/mine')
+  @Permissions('warehouse:take')
+  @ApiOperation({ summary: 'O‘zim olganlarim (oxirgi 30 ta)' })
+  mine(@CurrentUser() actor: AuthUser) {
+    return this.usages.mine(actor);
+  }
+
+  @Get('usages')
+  @Permissions('warehouse:read')
+  @ApiOperation({ summary: 'Ombordan to‘ylar uchun olinganlar (narx — faqat SUPER_ADMIN)' })
+  recent(@CurrentUser() actor: AuthUser) {
+    return this.usages.recent(actor);
+  }
+
+  @Get('usages/event/:eventId')
+  @Permissions('events:read')
+  @ApiOperation({ summary: 'Bitta to‘y uchun ombordan olinganlar (narx — faqat SUPER_ADMIN)' })
+  forEvent(@Param('eventId', ParseUUIDPipe) eventId: string, @CurrentUser() actor: AuthUser) {
+    return this.usages.forEvent(eventId, seesPrices(actor));
+  }
+
+  @Delete('usages/:id')
+  @Permissions('warehouse:take')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Olinganini qaytarish (oshpaz — o‘zi bugun olganini, SUPER_ADMIN — istalganini)',
+  })
+  async giveBack(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actor: AuthUser,
+  ): Promise<void> {
+    await this.usages.giveBack(id, actor);
   }
 }

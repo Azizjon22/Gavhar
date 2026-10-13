@@ -6,7 +6,9 @@ import {
   History,
   Image as ImageIcon,
   ImageOff,
+  Layers,
   Minus,
+  PackageOpen,
   Pencil,
   Plus,
   Trash2,
@@ -34,13 +36,16 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePermissions } from '@/hooks/use-permissions';
 import { errorMessage } from '@/lib/error-message';
+import { formatAmount } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import { warehouseApi, warehouseKeys } from '../api/warehouse.api';
 import { HistoryDialog } from '../components/HistoryDialog';
 import { ItemFormDialog } from '../components/ItemFormDialog';
+import { LotsDialog } from '../components/LotsDialog';
 import { MovementDialog } from '../components/MovementDialog';
 import { RecentMovementsDialog } from '../components/RecentMovementsDialog';
 import { StocktakeDialog } from '../components/StocktakeDialog';
+import { UsagesDialog } from '../components/UsagesDialog';
 import { formatQuantity } from '../lib/quantity';
 import {
   type MovementType,
@@ -57,14 +62,19 @@ type DialogState =
   | { type: 'history'; item: WarehouseItem }
   | { type: 'count'; item: WarehouseItem }
   | { type: 'recent' }
+  | { type: 'usages' }
+  | { type: 'lots'; item: WarehouseItem }
   | { type: 'delete'; item: WarehouseItem }
   | null;
 
-/** Ombor: idish-tovoq va oziq-ovqat bo'limlari, kirim-chiqim va qoldiq nazorati. */
+/**
+ * Ombor: idish-tovoq va oziq-ovqat bo'limlari, kirim-chiqim va qoldiq nazorati.
+ * SUPER_ADMIN qo'shimcha ravishda partiyalar narxini va ombordagi qiymatni ko'radi.
+ */
 export function WarehousePage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { can } = usePermissions();
+  const { can, isSuperAdmin } = usePermissions();
   const canCreate = can('warehouse:create');
   const canUpdate = can('warehouse:update');
   const canDelete = can('warehouse:delete');
@@ -110,6 +120,8 @@ export function WarehousePage() {
     [all, section],
   );
   const lowCount = inSection.filter((item) => item.isLow).length;
+  const sectionValue = inSection.reduce((sum, item) => sum + Number(item.stockValue ?? 0), 0);
+  const unpricedCount = inSection.filter((item) => Number(item.unpricedQuantity) > 0).length;
   const needle = search.trim().toLowerCase();
   const rows = all
     ? inSection.filter(
@@ -193,6 +205,27 @@ export function WarehousePage() {
           ),
       },
     ];
+    if (isSuperAdmin) {
+      base.push({
+        id: 'value',
+        header: t('warehouse.columns.value'),
+        className: 'hidden text-right lg:table-cell',
+        cell: (item) => (
+          <button
+            type="button"
+            className="tabular cursor-pointer rounded-md text-right whitespace-nowrap outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/40"
+            onClick={() => setDialog({ type: 'lots', item })}
+          >
+            <span className="block font-semibold">
+              {formatAmount(item.stockValue)} {t('common.currency')}
+            </span>
+            {Number(item.unpricedQuantity) > 0 && (
+              <span className="block text-xs text-warning">{t('warehouse.lots.noPrice')}</span>
+            )}
+          </button>
+        ),
+      });
+    }
 
     return [
       ...base,
@@ -242,6 +275,12 @@ export function WarehousePage() {
                   <History />
                   {t('warehouse.history.title')}
                 </DropdownMenuItem>
+                {isSuperAdmin && (
+                  <DropdownMenuItem onSelect={() => setDialog({ type: 'lots', item })}>
+                    <Layers />
+                    {t('warehouse.lots.title')}
+                  </DropdownMenuItem>
+                )}
                 {canUpdate && (
                   <>
                     <DropdownMenuItem onSelect={() => setDialog({ type: 'count', item })}>
@@ -279,7 +318,7 @@ export function WarehousePage() {
         ),
       },
     ];
-  }, [t, canUpdate, canDelete, pickPhoto, removePhoto]);
+  }, [t, canUpdate, canDelete, isSuperAdmin, pickPhoto, removePhoto]);
 
   const deleting = dialog?.type === 'delete' ? dialog.item : null;
   const createButton = canCreate && (
@@ -296,6 +335,10 @@ export function WarehousePage() {
         description={t('warehouse.description')}
         actions={
           <>
+            <Button variant="outline" onClick={() => setDialog({ type: 'usages' })}>
+              <PackageOpen />
+              {t('warehouse.usages.title')}
+            </Button>
             <Button variant="outline" onClick={() => setDialog({ type: 'recent' })}>
               <History />
               {t('warehouse.recent.title')}
@@ -361,6 +404,22 @@ export function WarehousePage() {
         </div>
       </div>
 
+      {isSuperAdmin && all && inSection.length > 0 && (
+        <p className="tabular mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-muted-foreground">
+          <span>
+            {t('warehouse.sectionValue')}:{' '}
+            <span className="font-semibold text-foreground">
+              {formatAmount(sectionValue)} {t('common.currency')}
+            </span>
+          </span>
+          {unpricedCount > 0 && (
+            <span className="text-warning">
+              {t('warehouse.unpricedItems', { count: unpricedCount })}
+            </span>
+          )}
+        </p>
+      )}
+
       <Card className="overflow-hidden">
         {query.isError ? (
           <ErrorState error={query.error} onRetry={() => void query.refetch()} />
@@ -412,6 +471,14 @@ export function WarehousePage() {
       />
       <HistoryDialog
         item={dialog?.type === 'history' ? dialog.item : null}
+        onClose={() => setDialog(null)}
+      />
+      <UsagesDialog
+        open={dialog?.type === 'usages'}
+        onOpenChange={(open) => !open && setDialog(null)}
+      />
+      <LotsDialog
+        item={dialog?.type === 'lots' ? dialog.item : null}
         onClose={() => setDialog(null)}
       />
       <ConfirmDialog

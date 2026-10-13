@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Outlet, useLocation, useNavigation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigation } from 'react-router-dom';
+import { ROUTES } from '@/app/router/paths';
+import { useAuthStore } from '@/stores/auth.store';
 import { MobileNav } from './MobileNav';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
@@ -23,6 +25,12 @@ export function AppLayout() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const roleKey = useAuthStore((state) => state.user?.role.key);
+
+  // Oshpaz o'z ilovasida ishlaydi; profil sahifasi umumiy qobiqda ochiladi.
+  if (roleKey === 'COOK' && pathname !== ROUTES.profile) {
+    return <Navigate to={ROUTES.kitchen} replace />;
+  }
 
   return (
     <div className="flex min-h-dvh bg-background">

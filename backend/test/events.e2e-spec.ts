@@ -15,8 +15,9 @@ describe('Bronlar (e2e)', () => {
   let admin: ActiveSuperAdmin;
   let hallId: string;
   let clientId: string;
-  let decorId: string;
-  let cakeId: string;
+  /** 300 mehmonlik paket — 69 000 000 so'm; arzonrog'i — 40 000 000. */
+  let packageId: string;
+  let cheaperId: string;
 
   beforeAll(async () => {
     t = await TestApp.create();
@@ -32,11 +33,10 @@ describe('Bronlar (e2e)', () => {
     hallId = (await api('/halls', { name: 'Oltin zal', capacity: 400 })).body.data.id;
     clientId = (await api('/clients', { fullName: 'Karimov Anvar', phone: '+998901234567' })).body
       .data.id;
-    decorId = (
-      await api('/extra-services', { name: 'Zal bezagi', price: '3000000', unit: 'PER_EVENT' })
-    ).body.data.id;
-    cakeId = (await api('/extra-services', { name: 'Tort', price: '5000', unit: 'PER_GUEST' })).body
-      .data.id;
+    const menuPackage = (name: string, price: string, packageType: string) =>
+      api('/menu/packages', { name, price, guestCount: 300, packageType, sections: [] });
+    packageId = (await menuPackage('To‘liq paket', '69000000', 'FULL')).body.data.id;
+    cheaperId = (await menuPackage('Taomlar', '40000000', 'FOOD_ONLY')).body.data.id;
   });
 
   afterAll(async () => {
@@ -46,76 +46,56 @@ describe('Bronlar (e2e)', () => {
   const booking = (overrides: object = {}) => ({
     clientId,
     hallId,
+    menuPackageId: packageId,
     type: 'WEDDING',
     startAt: at(30, 13),
     endAt: at(30, 18),
     guestCount: 300,
-    pricePerGuest: '230000',
     ...overrides,
   });
   const post = (path: string, body: object = {}, auth = admin.auth) =>
     t.http().post(`/api/v1${path}`).set(auth).send(body);
+  const patch = (path: string, body: object) =>
+    t.http().patch(`/api/v1${path}`).set(admin.auth).send(body);
   const createEvent = async (overrides: object = {}) =>
     (await post('/events', booking(overrides)).expect(201)).body.data;
   const pay = (eventId: string, body: object) =>
-    post(`/events/${eventId}/payments`, {
-      kind: 'PAYMENT',
-      method: 'CASH',
-      currency: 'UZS',
-      ...body,
-    });
+    post(`/events/${eventId}/payments`, { kind: 'PAYMENT', method: 'CASH', ...body });
+  /** Kechagi to'y: o'tgan sanaga bron ochilmaydi, shuning uchun mavjudi ko'chiriladi. */
+  const pastEvent = async () => {
+    const event = await createEvent({ startAt: at(20, 13), endAt: at(20, 18) });
+    await patch(`/events/${event.id}`, { startAt: at(-1, 13), endAt: at(-1, 18) }).expect(200);
+    return event as { id: string };
+  };
 
-  describe('narx hisobi', () => {
-    it('jami = mehmonlar × narx + xizmatlar − chegirma (zal uchun alohida haq yo‘q); narxlar bronda saqlanadi', async () => {
-      const event = await createEvent({
-        title: 'Anvar va Nodira to‘yi',
-        discount: '4500000',
-        services: [
-          { extraServiceId: decorId, quantity: 1 },
-          { extraServiceId: cakeId, quantity: 1 },
-        ],
-      });
-
+  describe('narx — menyu paketidan', () => {
+    it('to‘y narxi paketdan olinadi; paket narxi yoki mehmonlar soni o‘zgarsa ham saqlanadi', async () => {
+      const event = await createEvent({ title: 'Anvar va Nodira to‘yi' });
       expect(event).toMatchObject({
         number: 1,
         status: 'REQUEST',
-        guestsTotal: '69000000.00',
-        extrasTotal: '4500000.00',
-        discount: '4500000.00',
         totalAmount: '69000000.00',
         paidAmount: '0.00',
         debt: '69000000.00',
-        requiredDeposit: '13800000.00',
-        minDepositPercent: 20,
+        receivedAmount: '0.00',
+        refundedAmount: '0.00',
+        menuPackage: { id: packageId, name: 'To‘liq paket' },
         client: { fullName: 'Karimov Anvar' },
         hall: { name: 'Oltin zal' },
       });
-      expect(event).not.toHaveProperty('hallPrice');
+      for (const removed of ['pricePerGuest', 'discount', 'services', 'requiredDeposit']) {
+        expect(event).not.toHaveProperty(removed);
+      }
 
-      // Xizmat narxi keyin o'zgarsa ham mavjud bron summasi o'zgarmaydi.
-      await t
-        .http()
-        .patch(`/api/v1/extra-services/${decorId}`)
-        .set(admin.auth)
-        .send({ price: '9000000' })
-        .expect(200);
-      const updated = await t
-        .http()
-        .patch(`/api/v1/events/${event.id}`)
-        .set(admin.auth)
-        .send({
-          guestCount: 200,
-          services: [
-            { extraServiceId: decorId, quantity: 2 },
-            { extraServiceId: cakeId, quantity: 1 },
-          ],
-        })
-        .expect(200);
+      await patch(`/menu/packages/${packageId}`, { price: '90000000' }).expect(200);
+      const fewer = await patch(`/events/${event.id}`, { guestCount: 200 }).expect(200);
+      expect(fewer.body.data).toMatchObject({ guestCount: 200, totalAmount: '69000000.00' });
 
-      // 200 × 230 000 + (2 × 3 000 000 + 200 × 5 000) − 4 500 000
-      expect(updated.body.data).toMatchObject({
-        extrasTotal: '7000000.00',
-        totalAmount: '48500000.00',
+      // Faqat boshqa paketga o'tilganda narx o'sha paketdan qayta olinadi.
+      const switched = await patch(`/events/${event.id}`, { menuPackageId: cheaperId }).expect(200);
+      expect(switched.body.data).toMatchObject({
+        totalAmount: '40000000.00',
+        menuPackage: { id: cheaperId, name: 'Taomlar' },
       });
     });
 
@@ -155,37 +135,34 @@ describe('Bronlar (e2e)', () => {
       expect(edited.body.data).toMatchObject({ tableCapacity: 10, firstDish: 'Osh' });
 
       // Bo'sh qiymat tanlovni olib tashlaydi.
-      const cleared = await t
-        .http()
-        .patch(`/api/v1/events/${event.id}`)
-        .set(admin.auth)
-        .send({ secondDish: null })
-        .expect(200);
+      const cleared = await patch(`/events/${event.id}`, { secondDish: null }).expect(200);
       expect(cleared.body.data).toMatchObject({ firstDish: 'Osh', secondDish: null });
     });
 
     it.each([
       [{ endAt: at(30, 12) }, 'INVALID_TIME_RANGE'],
       [{ guestCount: 401 }, 'GUEST_COUNT_EXCEEDS_CAPACITY'],
-      [{ discount: '70000000' }, 'DISCOUNT_EXCEEDS_TOTAL'],
-      [
-        { services: [{ extraServiceId: '7f3c5b9e-2c1a-4e55-9b7e-111111111111', quantity: 1 }] },
-        'EXTRA_SERVICE_NOT_FOUND',
-      ],
       [{ clientId: '7f3c5b9e-2c1a-4e55-9b7e-222222222222' }, 'CLIENT_NOT_FOUND'],
+      [{ menuPackageId: '7f3c5b9e-2c1a-4e55-9b7e-333333333333' }, 'MENU_PACKAGE_NOT_FOUND'],
+      [{ menuPackageId: undefined }, 'VALIDATION_ERROR'],
+      [{ startAt: at(-2, 13), endAt: at(-2, 18) }, 'EVENT_DATE_PAST'],
     ])('noto‘g‘ri bron rad etiladi: %j → %s', async (override, code) => {
       const res = await post('/events', booking(override)).expect(400);
       expect(res.body.error.code).toBe(code);
     });
 
-    it("ta'mirdagi zalga bron ochilmaydi", async () => {
-      await t
-        .http()
-        .patch(`/api/v1/halls/${hallId}`)
-        .set(admin.auth)
-        .send({ status: 'MAINTENANCE' })
-        .expect(200);
+    it("bugungi kunga bron ochiladi; faol bo'lmagan paket tanlanmaydi", async () => {
+      await createEvent({ startAt: at(0, 21), endAt: at(0, 23) });
+      await patch(`/menu/packages/${cheaperId}`, { isActive: false }).expect(200);
+      const inactive = await post(
+        '/events',
+        booking({ menuPackageId: cheaperId, startAt: at(41, 13), endAt: at(41, 18) }),
+      ).expect(400);
+      expect(inactive.body.error.code).toBe('MENU_PACKAGE_NOT_FOUND');
+    });
 
+    it("ta'mirdagi zalga bron ochilmaydi", async () => {
+      await patch(`/halls/${hallId}`, { status: 'MAINTENANCE' }).expect(200);
       const res = await post('/events', booking()).expect(409);
       expect(res.body.error.code).toBe('HALL_UNAVAILABLE');
     });
@@ -208,10 +185,7 @@ describe('Bronlar (e2e)', () => {
       await createEvent({ type: 'OSH', startAt: at(30, 2), endAt: at(30, 6) });
       await createEvent({ startAt: at(30, 18), endAt: at(30, 23) });
 
-      const other = await post('/halls', {
-        name: 'Kumush zal',
-        capacity: 300,
-      }).expect(201);
+      const other = await post('/halls', { name: 'Kumush zal', capacity: 300 }).expect(201);
       await createEvent({ hallId: other.body.data.id });
     });
 
@@ -224,113 +198,75 @@ describe('Bronlar (e2e)', () => {
       expect(await t.prisma.event.count()).toBe(1);
     });
 
-    it("bekor qilingan bron vaqtni bo'shatadi; band vaqtga ko'chirib bo'lmaydi", async () => {
+    it("bekor qilingan bron vaqtni bo'shatadi; qayta ochilganda vaqt yana tekshiriladi", async () => {
       const first = await createEvent();
       const second = await createEvent({ startAt: at(31, 13), endAt: at(31, 18) });
 
-      const move = await t
-        .http()
-        .patch(`/api/v1/events/${second.id}`)
-        .set(admin.auth)
-        .send({ startAt: at(30, 15), endAt: at(30, 20) })
-        .expect(409);
+      const move = await patch(`/events/${second.id}`, {
+        startAt: at(30, 15),
+        endAt: at(30, 20),
+      }).expect(409);
       expect(move.body.error.code).toBe('HALL_BUSY');
 
       await post(`/events/${first.id}/cancel`, { reason: 'Mijoz rad etdi' }).expect(200);
-      await t
-        .http()
-        .patch(`/api/v1/events/${second.id}`)
-        .set(admin.auth)
-        .send({ startAt: at(30, 15), endAt: at(30, 20) })
-        .expect(200);
+      await patch(`/events/${second.id}`, { startAt: at(30, 15), endAt: at(30, 20) }).expect(200);
+
+      // Vaqtini boshqasi egallagan bekor qilingan bron qayta ochilmaydi.
+      const busy = await post(`/events/${first.id}/reopen`).expect(409);
+      expect(busy.body.error.code).toBe('HALL_BUSY');
     });
   });
 
-  describe('zaklad va holatlar', () => {
-    it("zaklad to'lanmaguncha tasdiqlanmaydi; foiz sozlamadan olinadi", async () => {
-      const event = await createEvent(); // jami 69 000 000, 20% = 13 800 000
+  describe('holatlar', () => {
+    it("to'liq to'langan bron o'zi tasdiqlanadi; qo'lda ham tasdiqlash mumkin", async () => {
+      const paid = await createEvent();
+      await pay(paid.id, { amount: '30000000' }).expect(201);
+      const settled = await pay(paid.id, { amount: '39000000', method: 'TRANSFER' }).expect(201);
+      expect(settled.body.data).toMatchObject({ status: 'CONFIRMED', debt: '0.00' });
 
-      const noDeposit = await post(`/events/${event.id}/confirm`).expect(409);
-      expect(noDeposit.body.error).toMatchObject({
-        code: 'DEPOSIT_REQUIRED',
-        details: { required: '13800000.00', paid: '0.00', percent: 20 },
-      });
+      const again = await pay(paid.id, { amount: '1' }).expect(409);
+      expect(again.body.error.code).toBe('EVENT_FULLY_PAID');
 
-      await pay(event.id, { kind: 'DEPOSIT', amount: '13799999' }).expect(201);
-      await post(`/events/${event.id}/confirm`).expect(409);
-      await pay(event.id, { kind: 'DEPOSIT', amount: '1' }).expect(201);
+      const manual = await createEvent({ startAt: at(31, 13), endAt: at(31, 18) });
+      const confirmed = await post(`/events/${manual.id}/confirm`).expect(200);
+      expect(confirmed.body.data).toMatchObject({ status: 'CONFIRMED', paidAmount: '0.00' });
+      await post(`/events/${manual.id}/confirm`).expect(409);
 
-      await t
+      const audit = await t
         .http()
-        .put('/api/v1/settings/booking')
+        .get(`/api/v1/audit-logs?resource=event&resourceId=${paid.id}`)
         .set(admin.auth)
-        .send({ minDepositPercent: 50 })
         .expect(200);
-      const stricter = await post(`/events/${event.id}/confirm`).expect(409);
-      expect(stricter.body.error.details.required).toBe('34500000.00');
-
-      await t
-        .http()
-        .put('/api/v1/settings/booking')
-        .set(admin.auth)
-        .send({ minDepositPercent: 20 })
-        .expect(200);
-      const confirmed = await post(`/events/${event.id}/confirm`).expect(200);
-      expect(confirmed.body.data).toMatchObject({ status: 'CONFIRMED', paidAmount: '13800000.00' });
+      expect(audit.body.data.map((log: { action: string }) => log.action)).toContain(
+        'event.auto_confirm',
+      );
     });
 
-    it("to'liq oqim: so'rov → tasdiqlangan → o'tkazildi → yakunlandi", async () => {
+    it("to'y kuni kelmaguncha yakunlanmaydi; qarzi bor to'y yakunlanadi va qarz undiriladi", async () => {
       const future = await createEvent();
-      await pay(future.id, { kind: 'DEPOSIT', amount: '20000000' }).expect(201);
-      await post(`/events/${future.id}/confirm`).expect(200);
-      const early = await post(`/events/${future.id}/hold`).expect(409);
+      const early = await post(`/events/${future.id}/complete`).expect(409);
       expect(early.body.error.code).toBe('EVENT_NOT_STARTED');
 
-      // Kecha bo'lib o'tgan tadbir.
-      const past = await createEvent({ startAt: at(-1, 13), endAt: at(-1, 18) });
-      await pay(past.id, { kind: 'DEPOSIT', amount: '20000000' }).expect(201);
-      await post(`/events/${past.id}/hold`).expect(409); // hali tasdiqlanmagan
-      await post(`/events/${past.id}/confirm`).expect(200);
-      await post(`/events/${past.id}/hold`).expect(200);
-
-      const debt = await post(`/events/${past.id}/complete`).expect(409);
-      expect(debt.body.error).toMatchObject({
-        code: 'EVENT_HAS_DEBT',
-        details: { debt: '49000000.00' },
-      });
-
-      // O'tkazilgan tadbirda mehmon soni aniqlashtirilishi mumkin, vaqti esa yo'q.
-      await t
-        .http()
-        .patch(`/api/v1/events/${past.id}`)
-        .set(admin.auth)
-        .send({ guestCount: 280 })
-        .expect(200);
-      await t
-        .http()
-        .patch(`/api/v1/events/${past.id}`)
-        .set(admin.auth)
-        .send({ startAt: at(-1, 14) })
-        .expect(409);
-
-      await pay(past.id, { amount: '44400000', method: 'TRANSFER' }).expect(201);
+      const past = await pastEvent();
+      await pay(past.id, { amount: '20000000' }).expect(201);
       const done = await post(`/events/${past.id}/complete`).expect(200);
-      expect(done.body.data).toMatchObject({ status: 'COMPLETED', debt: '0.00' });
+      expect(done.body.data).toMatchObject({ status: 'COMPLETED', debt: '49000000.00' });
 
-      // Yopilgan bron o'zgarmaydi.
-      await t
-        .http()
-        .patch(`/api/v1/events/${past.id}`)
-        .set(admin.auth)
-        .send({ guestCount: 10 })
-        .expect(409);
-      await pay(past.id, { amount: '1000' }).expect(409);
+      // Yakunlangan to'y tahrirlanmaydi va bekor qilinmaydi, lekin qarz to'lanaveradi.
+      const locked = await patch(`/events/${past.id}`, { guestCount: 10 }).expect(409);
+      expect(locked.body.error.code).toBe('EVENT_NOT_EDITABLE');
       await post(`/events/${past.id}/cancel`, { reason: 'Kech qoldi' }).expect(409);
+      const collected = await pay(past.id, { amount: '49000000' }).expect(201);
+      expect(collected.body.data).toMatchObject({ status: 'COMPLETED', debt: '0.00' });
+
+      // Xato bilan yakunlangani qayta ochiladi.
+      const reopened = await post(`/events/${past.id}/reopen`).expect(200);
+      expect(reopened.body.data.status).toBe('CONFIRMED');
     });
 
-    it('bekor qilish sabab talab qiladi; bekor qilingan bronга faqat pul qaytariladi', async () => {
+    it('bekor qilish sabab talab qiladi; bekor qilingan to‘yga faqat pul qaytariladi', async () => {
       const event = await createEvent();
-      await pay(event.id, { kind: 'DEPOSIT', amount: '14000000' }).expect(201);
+      await pay(event.id, { amount: '14000000' }).expect(201);
 
       await post(`/events/${event.id}/cancel`, { reason: '' }).expect(400);
       const cancelled = await post(`/events/${event.id}/cancel`, {
@@ -343,34 +279,52 @@ describe('Bronlar (e2e)', () => {
 
       const more = await pay(event.id, { amount: '1000' }).expect(409);
       expect(more.body.error.code).toBe('EVENT_CANCELLED');
-      await pay(event.id, { kind: 'REFUND', amount: '14000001' }).expect(409);
-      const refunded = await pay(event.id, { kind: 'REFUND', amount: '14000000' }).expect(201);
-      expect(refunded.body.data.paidAmount).toBe('0.00');
+      const tooMuch = await pay(event.id, { kind: 'REFUND', amount: '14000001' }).expect(409);
+      expect(tooMuch.body.error.code).toBe('REFUND_EXCEEDS_PAID');
+      const refunded = await pay(event.id, { kind: 'REFUND', amount: '4000000' }).expect(201);
+      expect(refunded.body.data).toMatchObject({
+        paidAmount: '10000000.00',
+        receivedAmount: '14000000.00',
+        refundedAmount: '4000000.00',
+      });
+
+      // Qayta ochilgan bron — "kutilmoqda", sababi tozalanadi.
+      const reopened = await post(`/events/${event.id}/reopen`).expect(200);
+      expect(reopened.body.data).toMatchObject({ status: 'REQUEST', cancelReason: null });
+    });
+
+    it("pulli, xarajatli yoki tasdiqlangan bron o'chirilmaydi — bekor qilinadi", async () => {
+      const clean = await createEvent();
+      const withPayment = await createEvent({ startAt: at(31, 13), endAt: at(31, 18) });
+      const confirmed = await createEvent({ startAt: at(32, 13), endAt: at(32, 18) });
+
+      const payment = await pay(withPayment.id, { amount: '1000000' }).expect(201);
+      // Bekor qilingan to'lov ham tarix — bron baribir o'chirilmaydi.
+      await t
+        .http()
+        .delete(`/api/v1/events/${withPayment.id}/payments/${payment.body.data.payments[0].id}`)
+        .set(admin.auth)
+        .expect(200);
+      const money = await t
+        .http()
+        .delete(`/api/v1/events/${withPayment.id}`)
+        .set(admin.auth)
+        .expect(409);
+      expect(money.body.error.code).toBe('EVENT_HAS_MONEY');
+
+      await post(`/events/${confirmed.id}/confirm`).expect(200);
+      const locked = await t
+        .http()
+        .delete(`/api/v1/events/${confirmed.id}`)
+        .set(admin.auth)
+        .expect(409);
+      expect(locked.body.error.code).toBe('EVENT_DELETE_FORBIDDEN');
+
+      await t.http().delete(`/api/v1/events/${clean.id}`).set(admin.auth).expect(204);
     });
   });
 
   describe("to'lovlar", () => {
-    it("dollardagi to'lov kurs bo'yicha so'mga o'giriladi; kurs va valyuta saqlanadi", async () => {
-      const event = await createEvent();
-
-      await pay(event.id, { currency: 'USD', amount: '1000' }).expect(400);
-      const res = await pay(event.id, {
-        currency: 'USD',
-        amount: '1000.50',
-        exchangeRate: '12650.25',
-        method: 'CARD',
-      }).expect(201);
-
-      expect(res.body.data.paidAmount).toBe('12656575.13');
-      expect(res.body.data.payments[0]).toMatchObject({
-        currency: 'USD',
-        amount: '1000.50',
-        exchangeRate: '12650.25',
-        amountUzs: '12656575.13',
-        method: 'CARD',
-      });
-    });
-
     it("qarzdan ortiq to'lov qabul qilinmaydi; bekor qilingan to'lov hisobdan chiqadi", async () => {
       const event = await createEvent(); // 69 000 000
 
@@ -381,7 +335,7 @@ describe('Bronlar (e2e)', () => {
       });
 
       const first = await pay(event.id, { amount: '30000000' }).expect(201);
-      await pay(event.id, { amount: '39000000' }).expect(201);
+      await pay(event.id, { amount: '39000000', method: 'CARD' }).expect(201);
       await pay(event.id, { amount: '1' }).expect(409);
 
       const paymentId: string = first.body.data.payments[0].id;
@@ -391,7 +345,9 @@ describe('Bronlar (e2e)', () => {
         .set(admin.auth)
         .expect(200);
       expect(voided.body.data).toMatchObject({ paidAmount: '39000000.00', debt: '30000000.00' });
-      expect(voided.body.data.payments).toHaveLength(1);
+      expect(voided.body.data.payments).toEqual([
+        expect.objectContaining({ kind: 'PAYMENT', method: 'CARD', amount: '39000000.00' }),
+      ]);
       // Yozuv bazadan o'chmaydi — tarix saqlanadi.
       expect(await t.prisma.payment.count()).toBe(2);
     });
@@ -408,18 +364,25 @@ describe('Bronlar (e2e)', () => {
       expect(fresh.body.data).toMatchObject({ paidAmount: '60000000.00', debt: '9000000.00' });
     });
 
-    it("summa to'langandan pastga tushirilmaydi", async () => {
+    it("to'langandan arzon paketga o'tib bo'lmaydi; mehmonlar sonini o'zgartirsa bo'ladi", async () => {
       const event = await createEvent();
       await pay(event.id, { amount: '60000000' }).expect(201);
 
-      const res = await t
-        .http()
-        .patch(`/api/v1/events/${event.id}`)
-        .set(admin.auth)
-        .send({ guestCount: 100 })
-        .expect(409);
-      expect(res.body.error.code).toBe('TOTAL_BELOW_PAID');
+      const res = await patch(`/events/${event.id}`, { menuPackageId: cheaperId }).expect(409);
+      expect(res.body.error).toMatchObject({
+        code: 'TOTAL_BELOW_PAID',
+        details: { paidAmount: '60000000.00', totalAmount: '40000000.00' },
+      });
+      await patch(`/events/${event.id}`, { guestCount: 100 }).expect(200);
     });
+
+    it.each([[{ currency: 'USD' }], [{ kind: 'DEPOSIT' }]])(
+      'olib tashlangan to‘lov turlari qabul qilinmaydi: %j',
+      async (override) => {
+        const event = await createEvent();
+        await pay(event.id, { amount: '1000', ...override }).expect(400);
+      },
+    );
   });
 
   describe("ro'yxat, kalendar va hujjatlar", () => {
@@ -438,7 +401,9 @@ describe('Bronlar (e2e)', () => {
       expect((await list('search=karimov')).data).toHaveLength(2);
       expect((await list('search=2')).data.map((e: { number: number }) => e.number)).toEqual([2]);
       expect((await list(`from=${at(35, 0)}`)).data).toHaveLength(1);
-      expect((await list(`clientId=${clientId}&status=REQUEST`)).meta.total).toBe(2);
+      // To'liq to'langani o'zi tasdiqlangan.
+      expect((await list(`clientId=${clientId}&status=REQUEST`)).meta.total).toBe(1);
+      expect((await list(`clientId=${clientId}&status=CONFIRMED`)).meta.total).toBe(1);
     });
 
     it('kalendar oraliqqa tushgan bronlarni qaytaradi', async () => {
@@ -459,15 +424,9 @@ describe('Bronlar (e2e)', () => {
     });
 
     it('shartnoma va kvitansiya PDF ko‘rinishida beriladi', async () => {
-      const event = await createEvent({
-        services: [{ extraServiceId: decorId, quantity: 1 }],
-        note: 'Sahna oq gullar bilan',
-      });
-      const paidRes = await pay(event.id, {
-        currency: 'USD',
-        amount: '500',
-        exchangeRate: '12650',
-      }).expect(201);
+      const event = await createEvent({ note: 'Sahna oq gullar bilan' });
+      await pay(event.id, { amount: '10000000' }).expect(201);
+      const paidRes = await pay(event.id, { kind: 'REFUND', amount: '2500000' }).expect(201);
 
       const contract = await t
         .http()
@@ -485,7 +444,7 @@ describe('Bronlar (e2e)', () => {
       expect((contract.body as Buffer).subarray(0, 5).toString()).toBe('%PDF-');
       expect((contract.body as Buffer).length).toBeGreaterThan(5000);
 
-      const paymentId: string = paidRes.body.data.payments[0].id;
+      const paymentId: string = paidRes.body.data.payments[1].id;
       const receipt = await t
         .http()
         .get(`/api/v1/events/${event.id}/payments/${paymentId}/receipt`)
@@ -517,7 +476,8 @@ describe('Bronlar (e2e)', () => {
       const delHall = await t.http().delete(`/api/v1/halls/${hallId}`).set(admin.auth).expect(409);
       expect(delHall.body.error.code).toBe('HALL_HAS_EVENTS');
       // To'lovi bor bron o'chirilmaydi, to'lovsiz bekor qilingani — o'chiriladi.
-      await t.http().delete(`/api/v1/events/${event.id}`).set(admin.auth).expect(409);
+      const del = await t.http().delete(`/api/v1/events/${event.id}`).set(admin.auth).expect(409);
+      expect(del.body.error.code).toBe('EVENT_HAS_MONEY');
       await t.http().delete(`/api/v1/events/${cancelled.id}`).set(admin.auth).expect(204);
     });
   });
@@ -538,24 +498,14 @@ describe('Bronlar (e2e)', () => {
       const manager = await userWith('Menejer', ['events:read', 'events:create', 'events:update']);
       const cashier = await userWith('Kassir', ['events:read', 'finance:create']);
 
-      // Menejer pulni ko'rmaydi — narx menyu paketidan olinadi.
-      const pkg = await post('/menu/packages', {
-        name: 'Premium',
-        pricePerGuest: '230000',
-        sections: [],
-      }).expect(201);
-      await post('/events', booking(), manager.auth).expect(400);
-      const created = await post(
-        '/events',
-        booking({ menuPackageId: pkg.body.data.id }),
-        manager.auth,
-      ).expect(201);
+      // Menejer pulni ko'rmaydi: narx baribir menyu paketidan olinadi.
+      const created = await post('/events', booking(), manager.auth).expect(201);
       const eventId: string = created.body.data.id;
       expect(created.body.data).not.toHaveProperty('totalAmount');
 
       const denied = await pay(eventId, { amount: '14000000' }).set(manager.auth).expect(403);
       expect(denied.body.error.details.missingPermissions).toEqual(['finance:create']);
-      await pay(eventId, { kind: 'DEPOSIT', amount: '14000000' }).set(cashier.auth).expect(201);
+      await pay(eventId, { amount: '14000000' }).set(cashier.auth).expect(201);
 
       await post(`/events/${eventId}/confirm`, {}, cashier.auth).expect(403);
       await post(
@@ -564,13 +514,6 @@ describe('Bronlar (e2e)', () => {
         cashier.auth,
       ).expect(403);
       await post(`/events/${eventId}/confirm`, {}, manager.auth).expect(200);
-      // Sozlamani faqat ruxsati bor o'zgartiradi.
-      await t
-        .http()
-        .put('/api/v1/settings/booking')
-        .set(manager.auth)
-        .send({ minDepositPercent: 0 })
-        .expect(403);
 
       const audit = await t
         .http()

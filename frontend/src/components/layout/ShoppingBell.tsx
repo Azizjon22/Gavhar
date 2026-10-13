@@ -8,9 +8,10 @@ import { shoppingApi, shoppingKeys } from '@/features/shopping/api/shopping.api'
 import { usePermissions } from '@/hooks/use-permissions';
 
 /**
- * Qo'ng'iroqcha: foydalanuvchidan kutilayotgan bozorlik ro'yxatlari soni.
- * Super adminga — tekshirish va tasdiqlash kerak bo'lganlari, xaridchiga — unga
- * yuborilganlari. Kutilayotgan ish bo'lmasa ko'rinmaydi.
+ * Qo'ng'iroqcha: foydalanuvchidan kutilayotgan bozorlik ro'yxatlari. Qizil son —
+ * hali ochib ko'rilmagan yangilari (super adminga — oshpaz yuborganlari, xaridchiga —
+ * unga yuborilganlari); bozorlik sahifasi ochilgach son o'chadi, qolgan ishlar esa
+ * kichik nuqta bilan eslatib turadi. Kutilayotgan ish bo'lmasa ko'rinmaydi.
  */
 export function ShoppingBell() {
   const { t } = useTranslation();
@@ -26,6 +27,7 @@ export function ShoppingBell() {
   const pending = query.data;
   const total = pending ? pending.toReview + pending.toConfirm + pending.toPurchase : 0;
   if (!pending || total === 0) return null;
+  const unseen = pending.unseen;
 
   const lines = (
     [
@@ -46,9 +48,13 @@ export function ShoppingBell() {
           className="relative flex size-9 items-center justify-center rounded-lg text-foreground outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/40"
         >
           <Bell className="size-[18px]" />
-          <span className="tabular absolute -top-0.5 -right-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] leading-[18px] font-bold text-destructive-foreground">
-            {total > 99 ? '99+' : total}
-          </span>
+          {unseen > 0 ? (
+            <span className="tabular absolute -top-0.5 -right-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] leading-[18px] font-bold text-destructive-foreground">
+              {unseen > 99 ? '99+' : unseen}
+            </span>
+          ) : (
+            <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-gold ring-2 ring-background" />
+          )}
         </Link>
       </TooltipTrigger>
       <TooltipContent className="grid gap-0.5">

@@ -1,6 +1,5 @@
 import { http } from '@/lib/api-client';
 import type {
-  BookingSettings,
   EventDetail,
   EventPayload,
   EventSummary,
@@ -8,7 +7,7 @@ import type {
   PaymentPayload,
 } from '../types/event.types';
 
-export type EventTransition = 'confirm' | 'hold' | 'complete';
+export type EventTransition = 'confirm' | 'complete' | 'reopen';
 
 export const eventsApi = {
   list: (params: ListEventsParams) => http.list<EventSummary>('/events', params),
@@ -33,15 +32,9 @@ export const eventsApi = {
   receiptUrl: (id: string, paymentId: string) => `/events/${id}/payments/${paymentId}/receipt`,
 };
 
-export const bookingSettingsApi = {
-  get: () => http.get<BookingSettings>('/settings/booking'),
-  update: (body: BookingSettings) => http.put<BookingSettings>('/settings/booking', body),
-};
-
 export const eventKeys = {
   all: ['events'] as const,
   list: (params: ListEventsParams) => ['events', 'list', params] as const,
   calendar: (from: string, to: string) => ['events', 'calendar', from, to] as const,
   detail: (id: string) => ['events', 'detail', id] as const,
-  bookingSettings: ['settings', 'booking'] as const,
 };

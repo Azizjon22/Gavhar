@@ -253,7 +253,15 @@ export class AuthService {
     );
   }
 
-  private async completeLogin(userId: string, email: string): Promise<AuthTokens> {
+  /**
+   * Kimligi tasdiqlangan foydalanuvchiga sessiya ochadi. Parol va 2FA tekshiruvi
+   * chaqiruvchining zimmasida (`login`, `verifyTwoFactorLogin`, tezkor kirish).
+   */
+  async completeLogin(
+    userId: string,
+    email: string,
+    action: 'auth.login' | 'auth.dev_login' = 'auth.login',
+  ): Promise<AuthTokens> {
     const { ip } = getRequestContext();
     await this.prisma.user.update({
       where: { id: userId },
@@ -264,7 +272,7 @@ export class AuthService {
     const user = await this.loadActiveUser(userId);
     const session = await this.sessions.create(userId);
     await this.audit.log({
-      action: 'auth.login',
+      action,
       resource: 'session',
       resourceId: session.sessionId,
       actor: { id: userId, email },

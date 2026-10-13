@@ -77,6 +77,54 @@ const routes: RouteObject[] = [
                 }),
               },
               {
+                // Oshpaz ilovasi: o'z qobig'i — pastki tablar, oshxona foni.
+                element: <RequirePermission permission="shopping:create" />,
+                children: [
+                  {
+                    path: ROUTES.kitchen,
+                    lazy: async () => ({
+                      Component: (await import('@/features/kitchen/components/KitchenLayout'))
+                        .KitchenLayout,
+                    }),
+                    children: [
+                      {
+                        index: true,
+                        lazy: async () => ({
+                          Component: (await import('@/features/kitchen/pages/KitchenHomePage'))
+                            .KitchenHomePage,
+                        }),
+                      },
+                      {
+                        path: ROUTES.kitchenEvents,
+                        lazy: async () => ({
+                          Component: (await import('@/features/kitchen/pages/KitchenEventsPage'))
+                            .KitchenEventsPage,
+                        }),
+                      },
+                      {
+                        path: ROUTES.kitchenShopping,
+                        lazy: async () => ({
+                          Component: (await import('@/features/kitchen/pages/KitchenShoppingPage'))
+                            .KitchenShoppingPage,
+                        }),
+                      },
+                      {
+                        element: <RequirePermission permission="warehouse:take" />,
+                        children: [
+                          {
+                            path: ROUTES.kitchenStock,
+                            lazy: async () => ({
+                              Component: (await import('@/features/kitchen/pages/KitchenStockPage'))
+                                .KitchenStockPage,
+                            }),
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
                 element: <AppLayout />,
                 children: [
                   {
@@ -106,14 +154,6 @@ const routes: RouteObject[] = [
                         lazy: async () => ({
                           Component: (await import('@/features/events/pages/EventDetailPage'))
                             .EventDetailPage,
-                        }),
-                      },
-                      {
-                        path: ROUTES.extraServices,
-                        lazy: async () => ({
-                          Component: (
-                            await import('@/features/extra-services/pages/ExtraServicesPage')
-                          ).ExtraServicesPage,
                         }),
                       },
                     ],

@@ -48,6 +48,7 @@ describe('Hisob-kitob va ombor (e2e)', () => {
     let clientId: string;
     let hallId: string;
     let categoryId: string;
+    const packages: Record<number, string> = {};
 
     beforeEach(async () => {
       clientId = (
@@ -55,24 +56,44 @@ describe('Hisob-kitob va ombor (e2e)', () => {
       ).id;
       hallId = (await data(post('/halls', { name: 'Oltin zal', capacity: 400 }))).id;
       categoryId = (await data(post('/finance/categories', { name: 'Ish haqi' }).expect(201))).id;
+      for (const [guestCount, price] of [
+        [100, '20000000'],
+        [150, '30000000'],
+      ] as const) {
+        packages[guestCount] = (
+          await data(
+            post('/menu/packages', {
+              name: `Paket ${guestCount}`,
+              price,
+              guestCount,
+              packageType: 'FOOD_ONLY',
+              sections: [],
+            }).expect(201),
+          )
+        ).id;
+      }
     });
 
+    /**
+     * Paket narxi qat'iy: 100 kishilik — 20 mln, 150 kishilik — 30 mln. O'tgan sanaga bron
+     * ochilmaydi, shuning uchun o'tgan to'y kelajakda ochilib, keyin o'z kuniga ko'chiriladi.
+     */
     const book = async (days: number, paid: string | null, guestCount = 100) => {
       const event = await data(
         post('/events', {
           clientId,
           hallId,
+          menuPackageId: packages[guestCount],
           type: 'WEDDING',
           guestCount,
-          pricePerGuest: '200000',
-          ...slot(days),
+          ...slot(days < 0 ? 100 - days : days),
         }).expect(201),
       );
+      if (days < 0) await patch(`/events/${event.id}`, slot(days)).expect(200);
       if (paid) {
         await post(`/events/${event.id}/payments`, {
-          kind: 'DEPOSIT',
+          kind: 'PAYMENT',
           method: 'CASH',
-          currency: 'UZS',
           amount: paid,
         }).expect(201);
       }
@@ -132,16 +153,15 @@ describe('Hisob-kitob va ombor (e2e)', () => {
           clientId,
           hallId,
           type: 'WEDDING',
+          menuPackageId: packages[100],
           guestCount: 100,
-          pricePerGuest: '200000',
           startAt: tonight.toISOString(),
           endAt: new Date(tonight.getTime() + 20 * 60_000).toISOString(),
         }).expect(201),
       );
       await post(`/events/${today.id}/payments`, {
-        kind: 'DEPOSIT',
+        kind: 'PAYMENT',
         method: 'CASH',
-        currency: 'UZS',
         amount: '6000000',
       }).expect(201);
       const future = await book(5, '4000000');
@@ -156,7 +176,6 @@ describe('Hisob-kitob va ombor (e2e)', () => {
       await post(`/events/${past.id}/payments`, {
         kind: 'REFUND',
         method: 'CASH',
-        currency: 'UZS',
         amount: '1000000',
       }).expect(201);
       // Kelajakdagi to'y ham bekor bo'ldi — uning zakladi kuni kelmaguncha hisobga kirmaydi.

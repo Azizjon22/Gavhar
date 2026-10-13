@@ -21,6 +21,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toApiError } from '@/lib/api-error';
+import { MoneyInput } from '@/components/shared/MoneyInput';
+import { usePermissions } from '@/hooks/use-permissions';
 import { errorMessage } from '@/lib/error-message';
 import { warehouseApi, warehouseKeys } from '../api/warehouse.api';
 import { parseQuantityInput, toQuantityValue } from '../lib/quantity';
@@ -47,11 +49,13 @@ interface Props {
 export function ItemFormDialog({ open, onOpenChange, section, item }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { isSuperAdmin } = usePermissions();
 
   const [name, setName] = useState('');
   const [unit, setUnit] = useState<WarehouseUnit>('PIECE');
   const [category, setCategory] = useState<ProductCategory | ''>('');
   const [initial, setInitial] = useState('');
+  const [initialCost, setInitialCost] = useState('');
   const [minimum, setMinimum] = useState('');
   const [note, setNote] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
@@ -63,6 +67,7 @@ export function ItemFormDialog({ open, onOpenChange, section, item }: Props) {
     setUnit(item?.unit ?? (section === 'FOOD' ? 'KG' : 'PIECE'));
     setCategory(item?.productCategory ?? '');
     setInitial('');
+    setInitialCost('');
     setMinimum(item && Number(item.minQuantity) > 0 ? item.minQuantity : '');
     setNote(item?.note ?? '');
     setNameError(null);
@@ -91,6 +96,7 @@ export function ItemFormDialog({ open, onOpenChange, section, item }: Props) {
         ...body,
         section,
         ...(Number(initialQuantity) > 0 && { initialQuantity }),
+        ...(Number(initialQuantity) > 0 && initialCost !== '' && { initialCost }),
       });
     },
     onSuccess: async () => {
@@ -223,6 +229,17 @@ export function ItemFormDialog({ open, onOpenChange, section, item }: Props) {
                     setInitial(parseQuantityInput(event.target.value, allowFraction))
                   }
                 />
+              </div>
+            )}
+            {!item && isSuperAdmin && Number(toQuantityValue(initial)) > 0 && (
+              <div className="grid content-start gap-2 sm:order-last">
+                <Label htmlFor="item-initial-cost">
+                  {t('warehouse.itemForm.initialCost')} {optional}
+                </Label>
+                <MoneyInput id="item-initial-cost" value={initialCost} onChange={setInitialCost} />
+                <p className="text-xs text-muted-foreground">
+                  {t('warehouse.itemForm.initialCostHint')}
+                </p>
               </div>
             )}
             <div className="grid content-start gap-2">

@@ -53,7 +53,9 @@ describe('Bozorlik (e2e)', () => {
       await data(
         as(admin).post('/menu/packages', {
           name: 'Premium',
-          pricePerGuest: '200000',
+          price: '60000000',
+          guestCount: 300,
+          packageType: 'FULL',
           sections: [{ categoryId: salads.id, kindsCount: 4, items: ['Sezar', 'Olivye'] }],
         }),
       )
@@ -86,7 +88,6 @@ describe('Bozorlik (e2e)', () => {
           type: 'WEDDING',
           title: 'Anvar va Nodira to‘yi',
           guestCount: 300,
-          pricePerGuest: '200000',
           menuPackageId: packageId,
           tableCapacity: 10,
           firstDish: 'Osh',
@@ -114,24 +115,43 @@ describe('Bozorlik (e2e)', () => {
         .get(`/finance/summary?from=${day(-3)}&to=${day(3)}`)
         .expect(200),
     );
-  const prices = (list: { items: { id: string; quantity: string }[] }, values: (string | null)[]) =>
-    list.items.map((item, index) => ({
-      id: item.id,
-      quantity: item.quantity,
-      ...(values[index] === null ? { skipped: true } : { price: values[index] }),
-    }));
+  type ListView = { id: string; status: string; items: { id: string; name: string }[] };
+  /** Har qatorni alohida belgilaydi: summa — sotib olindi, `null` — olinmadi. */
+  const buy = async (
+    list: ListView,
+    values: (string | null | undefined)[],
+    by: Authenticated = buyer,
+  ) => {
+    let last: ListView = list;
+    for (const [index, item] of list.items.entries()) {
+      const value = values[index];
+      if (value === undefined) continue;
+      const path = `/shopping/lists/${list.id}/items/${item.id}`;
+      last = await data(
+        (value === null
+          ? as(by).post(`${path}/skip`)
+          : as(by).post(`${path}/purchase`, { price: value })
+        ).expect(200),
+      );
+    }
+    return last;
+  };
 
   it('tizim rollari: Oshpaz faqat bozorlikni ko‘radi va yozadi, Admin xarid qiladi', async () => {
     const roles = await data(as(admin).get('/roles').expect(200));
     const role = (key: string) =>
       roles.find((item: { key: string }) => item.key === key) as { permissions: string[] };
-    expect([...role('COOK').permissions].sort()).toEqual(['shopping:create', 'shopping:read']);
+    expect([...role('COOK').permissions].sort()).toEqual([
+      'shopping:create',
+      'shopping:read',
+      'warehouse:take',
+    ]);
     expect(role('ADMIN').permissions).toEqual(
       expect.arrayContaining(['shopping:read', 'shopping:create', 'shopping:purchase']),
     );
   });
 
-  it('to‘liq oqim: oshpaz → super admin → admin → super admin tasdig‘i → xarajat', async () => {
+  it('to‘liq oqim: oshpaz → super admin ko‘radi → admin har mahsulotni oladi → tasdiq → xarajat', async () => {
     const event = await book(0);
     const list = await writeList(event.id);
     expect(list).toMatchObject({ status: 'SUBMITTED', createdByName: 'Oshpaz Ali', total: '0.00' });
@@ -152,10 +172,25 @@ describe('Bozorlik (e2e)', () => {
       },
       lists: [{ id: list.id, status: 'SUBMITTED' }],
     });
-    expect(JSON.stringify(seen)).not.toMatch(/totalAmount|paidAmount|pricePerGuest|998901234567/);
+    expect(JSON.stringify(seen)).not.toMatch(/totalAmount|paidAmount|998901234567/);
 
     // Xaridchi (admin) ro'yxatni super admin yubormaguncha ko'rmaydi.
-    expect((await kitchen(buyer))[0]).toMatchObject({ lists: [], shoppingClosed: false });
+    expect((await kitchen(buyer))[0]).toMatchObject({ lists: [] });
+
+    // Super admin bozorlik sahifasini ochdi — ro'yxat "ko'rildi", qo'ng'iroqcha o'chadi.
+    expect(await data(as(admin).get('/shopping/pending'))).toMatchObject({
+      unseen: 1,
+      toReview: 1,
+    });
+    await as(admin).post('/shopping/seen').expect(204);
+    expect(await data(as(admin).get('/shopping/pending'))).toMatchObject({
+      unseen: 0,
+      toReview: 1,
+    });
+    expect((await kitchen(cook))[0].lists).toMatchObject([{ status: 'REVIEWED' }]);
+    // Super admin ko'rgach oshpaz endi o'zgartira olmaydi.
+    const locked = await as(cook).put(`/shopping/lists/${list.id}`, { items: ITEMS }).expect(409);
+    expect(locked.body.error.code).toBe('SHOPPING_LIST_LOCKED');
 
     // Super admin kamaytiradi, bittasini olib tashlaydi, yangisini qo'shadi.
     await as(cook).post(`/shopping/lists/${list.id}/approve`).expect(403);
@@ -182,73 +217,83 @@ describe('Bozorlik (e2e)', () => {
       ['Pomidor', '12.5', null],
     ]);
 
-    await as(buyer)
-      .put(`/shopping/lists/${list.id}/purchase`, {
-        items: prices(reviewed, ['1', '1', '1']),
-        complete: true,
-      })
+    // Yuborilmagan ro'yxatda admin xarid qila olmaydi.
+    const notSent = await as(buyer)
+      .post(`/shopping/lists/${list.id}/items/${reviewed.items[0].id}/purchase`, { price: '1' })
       .expect(409);
+    expect(notSent.body.error.code).toBe('SHOPPING_NOT_SENT');
+
     const approved = await data(as(admin).post(`/shopping/lists/${list.id}/approve`).expect(200));
     expect(approved.status).toBe('APPROVED');
     expect((await kitchen(buyer))[0].lists).toMatchObject([{ id: list.id, status: 'APPROVED' }]);
-    // Ko'rib chiqilgan ro'yxatni oshpaz endi o'zgartira olmaydi.
-    const locked = await as(cook).put(`/shopping/lists/${list.id}`, { items: ITEMS }).expect(409);
-    expect(locked.body.error.code).toBe('SHOPPING_LIST_LOCKED');
+    expect(await data(as(buyer).get('/shopping/pending'))).toMatchObject({
+      unseen: 1,
+      toPurchase: 1,
+    });
+    await as(buyer).post('/shopping/seen').expect(204);
+    expect(await data(as(buyer).get('/shopping/pending'))).toMatchObject({
+      unseen: 0,
+      toPurchase: 1,
+    });
+    // Yuborilgan ro'yxatni oshpaz bekor qila olmaydi.
     await as(cook).del(`/shopping/lists/${list.id}`).expect(409);
 
-    // Admin: oraliq saqlash, keyin yakunlash (bitta mahsulot topilmadi).
+    // Admin: kartoshkani 32 kg oldi (1 kg narxi bilan), aysberg topilmadi.
+    const [potato, iceberg, tomato] = approved.items;
     await as(cook)
-      .put(`/shopping/lists/${list.id}/purchase`, {
-        items: prices(approved, ['1', '1', '1']),
-        complete: true,
-      })
+      .post(`/shopping/lists/${list.id}/items/${potato.id}/purchase`, { price: '1' })
       .expect(403);
+    await as(buyer).post(`/shopping/lists/${list.id}/items/${potato.id}/purchase`, {}).expect(400);
     const partial = await data(
       as(buyer)
-        .put(`/shopping/lists/${list.id}/purchase`, {
-          items: [{ id: approved.items[0].id, quantity: '32', price: '160000' }],
-          complete: false,
+        .post(`/shopping/lists/${list.id}/items/${potato.id}/purchase`, {
+          quantity: '32',
+          unitPrice: '5000',
         })
         .expect(200),
     );
     expect(partial).toMatchObject({ status: 'APPROVED', total: '160000.00' });
-    const missing = await as(buyer)
-      .put(`/shopping/lists/${list.id}/purchase`, {
-        items: [{ id: approved.items[1].id, quantity: '6', skipped: true }],
-        complete: true,
-      })
-      .expect(400);
-    expect(missing.body.error).toMatchObject({
-      code: 'SHOPPING_PRICES_MISSING',
-      details: { items: ['Pomidor'] },
+    expect(partial.items[0]).toMatchObject({
+      quantity: '32',
+      requestedQuantity: '40',
+      price: '160000.00',
+      unitPrice: '5000.00',
+      purchasedByName: 'Admin Vali',
     });
+    const twice = await as(buyer)
+      .post(`/shopping/lists/${list.id}/items/${potato.id}/purchase`, { price: '1' })
+      .expect(409);
+    expect(twice.body.error.code).toBe('SHOPPING_ITEM_DONE');
 
+    // Sotib olingan qatorni super admin ham o'zgartira olmaydi.
+    const itemLocked = await as(admin)
+      .put(`/shopping/lists/${list.id}`, {
+        items: [
+          { id: potato.id, name: 'Kartoshka', unit: 'KG', quantity: '20' },
+          { id: iceberg.id, name: 'Aysberg salat', unit: 'PIECE', quantity: '6' },
+          { id: tomato.id, name: 'Pomidor', unit: 'KG', quantity: '12.5' },
+        ],
+      })
+      .expect(409);
+    expect(itemLocked.body.error.code).toBe('SHOPPING_ITEM_LOCKED');
+
+    await data(as(buyer).post(`/shopping/lists/${list.id}/items/${iceberg.id}/skip`).expect(200));
     const purchased = await data(
       as(buyer)
-        .put(`/shopping/lists/${list.id}/purchase`, {
-          items: prices(partial, ['160000', null, '187500.50']),
-          complete: true,
-        })
+        .post(`/shopping/lists/${list.id}/items/${tomato.id}/purchase`, { price: '187500.50' })
         .expect(200),
     );
+    // Hamma qator tugadi — ro'yxat o'zi "sotib olingan" bo'ldi.
     expect(purchased).toMatchObject({
       status: 'PURCHASED',
       purchasedByName: 'Admin Vali',
       total: '347500.50',
     });
-    expect(purchased.items[0]).toMatchObject({
-      quantity: '32',
-      requestedQuantity: '40',
-      price: '160000.00',
-    });
     expect(purchased.items[1]).toMatchObject({ skipped: true, price: null });
 
-    // Bozorlik qilib bo'lingach, bu to'yga yangi ro'yxat yozilmaydi.
-    expect((await kitchen(cook))[0].shoppingClosed).toBe(true);
-    const closed = await as(cook)
-      .post(`/shopping/events/${event.id}/lists`, { items: ITEMS })
-      .expect(409);
-    expect(closed.body.error.code).toBe('SHOPPING_CLOSED');
+    // Bir to'yga yana ro'yxat yozish mumkin (masalan, yetmay qolgan mahsulotlar).
+    await as(cook).post(`/shopping/events/${event.id}/lists`, { items: ITEMS }).expect(201);
+    expect(await data(as(admin).get('/shopping/pending'))).toMatchObject({ unseen: 1 });
 
     // Tasdiqlanmaguncha sof foydadan ayirilmaydi.
     const before = await finance();
@@ -281,56 +326,77 @@ describe('Bozorlik (e2e)', () => {
     expect(linked.body.error.code).toBe('EXPENSE_LINKED');
     await as(admin).del(`/finance/expenses/${expense.id}`).expect(409);
     await as(admin).del(`/shopping/lists/${list.id}`).expect(409);
+    // Yopilgan ro'yxat narxi tuzatilmaydi.
+    await as(admin)
+      .patch(`/shopping/lists/${list.id}/items/${potato.id}/price`, { price: '150000' })
+      .expect(409);
 
     // Tasdiqni bekor qilish → narxni tuzatish → qayta tasdiqlash.
     await as(admin).post(`/shopping/lists/${list.id}/unconfirm`).expect(200);
     expect((await finance()).totals.expenses).toBe('0.00');
+    const notBought = await as(admin)
+      .patch(`/shopping/lists/${list.id}/items/${iceberg.id}/price`, { price: '1000' })
+      .expect(409);
+    expect(notBought.body.error.code).toBe('SHOPPING_ITEM_NOT_PURCHASED');
     const fixed = await data(
-      as(admin)
-        .put(`/shopping/lists/${list.id}/purchase`, {
-          items: prices(purchased, ['150000', null, '187500.50']),
-          complete: true,
-        })
+      as(buyer)
+        .patch(`/shopping/lists/${list.id}/items/${potato.id}/price`, { price: '150000' })
         .expect(200),
     );
-    expect(fixed).toMatchObject({
-      status: 'PURCHASED',
-      total: '337500.50',
-      purchasedByName: 'Admin Vali',
-    });
+    expect(fixed).toMatchObject({ status: 'PURCHASED', total: '337500.50' });
     await as(admin).post(`/shopping/lists/${list.id}/confirm`).expect(200);
     expect((await finance()).totals.expenses).toBe('337500.50');
 
     const [card] = await kitchen();
-    expect(card).toMatchObject({ total: '337500.50', lists: [{ status: 'CONFIRMED' }] });
-    const audit = await as(admin).get('/audit-logs?resource=shopping_list').expect(200);
+    expect(card).toMatchObject({ total: '337500.50' });
+    const audit = await as(admin)
+      .get(`/audit-logs?resource=shopping_list&resourceId=${list.id}`)
+      .expect(200);
     expect(audit.body.data.map((row: { action: string }) => row.action)).toEqual([
       'shopping.confirm',
-      'shopping.prices_update',
+      'shopping.item_price',
       'shopping.unconfirm',
       'shopping.confirm',
-      'shopping.purchase',
+      'shopping.item_purchase',
+      'shopping.item_skip',
+      'shopping.item_purchase',
       'shopping.approve',
       'shopping.update',
       'shopping.create',
     ]);
   });
 
-  it('bozorlik to‘y kunidan oldin qilinmaydi', async () => {
+  it('super admin o‘zi to‘g‘ridan-to‘g‘ri xarid qiladi; belgini bekor qilish xaridni qayta ochadi', async () => {
     const event = await book(2);
     const list = await writeList(event.id);
-    await as(admin).post(`/shopping/lists/${list.id}/approve`).expect(200);
+    // Kelajakdagi to'y uchun ham bozorlik qilinadi (to'y kuni cheklovi yo'q).
+    const bought = await buy(list, ['200000', null, '30000'], admin);
+    expect(bought).toMatchObject({ status: 'PURCHASED', total: '230000.00' });
 
-    const early = await as(buyer)
-      .put(`/shopping/lists/${list.id}/purchase`, {
-        items: prices(list, ['1000', '1000', '1000']),
-        complete: true,
-      })
+    // Xato bosilgan — belgini bekor qilish: ro'yxat yana xarid holatiga qaytadi.
+    const reopened = await data(
+      as(admin).post(`/shopping/lists/${list.id}/items/${list.items[1].id}/reset`).expect(200),
+    );
+    expect(reopened.status).toBe('REVIEWED');
+    expect(reopened.items[1]).toMatchObject({ skipped: false, price: null, purchasedAt: null });
+    await as(buyer)
+      .post(`/shopping/lists/${list.id}/items/${list.items[1].id}/purchase`, { price: '1' })
       .expect(409);
-    expect(early.body.error).toMatchObject({
-      code: 'SHOPPING_TOO_EARLY',
-      details: { day: day(2) },
-    });
+    const done = await buy(reopened, [undefined, '15000'], admin);
+    expect(done).toMatchObject({ status: 'PURCHASED', total: '245000.00' });
+  });
+
+  it('oshpaz yuborilmagan ro‘yxatini bekor qiladi, xaridi boshlangan ro‘yxatni — yo‘q', async () => {
+    const event = await book(1);
+    const first = await writeList(event.id);
+    await as(admin).post('/shopping/seen').expect(204);
+    // Super admin ko'rgan, lekin hali yubormagan — oshpaz bekor qila oladi.
+    await as(cook).del(`/shopping/lists/${first.id}`).expect(204);
+
+    const second = await writeList(event.id);
+    await buy(second, ['1000'], admin);
+    const started = await as(cook).del(`/shopping/lists/${second.id}`).expect(409);
+    expect(started.body.error.code).toBe('SHOPPING_LIST_LOCKED');
   });
 
   it('oshpaz: o‘z ro‘yxatini tuzatadi va o‘chiradi, birovnikiga tegmaydi, boshqa bo‘limlarga kirmaydi', async () => {
@@ -377,6 +443,50 @@ describe('Bozorlik (e2e)', () => {
     expect(await data(as(cook).get('/shopping/suggestions'))).toEqual(
       expect.arrayContaining([{ name: 'Kartoshka', unit: 'KG' }]),
     );
+  });
+
+  it('oshpaz ilovasi: katalog narxsiz, o‘z ro‘yxatlari mehmon soni bilan, menyu bosqichlari', async () => {
+    const salads = (await data(as(admin).get('/menu/categories')))[0];
+    expect(salads.course).toBe('OTHER');
+    await as(admin).patch(`/menu/categories/${salads.id}`, { course: 'SALAD' }).expect(200);
+    await as(admin).patch(`/menu/categories/${salads.id}`, { course: 'DESSERT' }).expect(400);
+
+    await as(admin)
+      .post('/warehouse/items', {
+        section: 'FOOD',
+        name: 'Mol go‘shti',
+        unit: 'KG',
+        productCategory: 'MEAT',
+        initialQuantity: '10',
+        initialCost: '1000000',
+      })
+      .expect(201);
+    const event = await book(1);
+    await writeList(event.id);
+
+    const catalog = await data(as(cook).get('/shopping/catalog').expect(200));
+    expect(catalog[0]).toEqual({
+      name: 'Mol go‘shti',
+      unit: 'KG',
+      productCategory: 'MEAT',
+      photo: null,
+    });
+    expect(catalog.map((row: { name: string }) => row.name)).toEqual(
+      expect.arrayContaining(['Kartoshka', 'Bodring', 'Aysberg salat']),
+    );
+    expect(JSON.stringify(catalog)).not.toMatch(/price|cost|quantity/i);
+
+    const mine = await data(as(cook).get('/shopping/lists/mine').expect(200));
+    expect(mine).toMatchObject([
+      {
+        status: 'SUBMITTED',
+        event: { id: event.id, guestCount: 300, clientName: 'Karimov Anvar' },
+      },
+    ]);
+    expect(await data(as(buyer).get('/shopping/lists/mine'))).toEqual([]);
+
+    const [card] = await kitchen(cook);
+    expect(card.menu.sections[0]).toMatchObject({ nameUz: 'Salatlar', course: 'SALAD' });
   });
 
   it('validatsiya: bo‘sh, takroriy va noto‘g‘ri miqdorli ro‘yxat rad etiladi', async () => {
@@ -436,20 +546,14 @@ describe('Bozorlik (e2e)', () => {
 
     // Kimdan nima kutilmoqda: avval super admin, yuborilgach — xaridchi.
     expect(await data(as(admin).get('/shopping/pending'))).toEqual({
+      unseen: 1,
       toReview: 1,
       toConfirm: 0,
       toPurchase: 0,
     });
-    expect(await data(as(buyer).get('/shopping/pending'))).toEqual({
-      toReview: 0,
-      toConfirm: 0,
-      toPurchase: 0,
-    });
-    expect(await data(as(cook).get('/shopping/pending'))).toEqual({
-      toReview: 0,
-      toConfirm: 0,
-      toPurchase: 0,
-    });
+    const nothing = { unseen: 0, toReview: 0, toConfirm: 0, toPurchase: 0 };
+    expect(await data(as(buyer).get('/shopping/pending'))).toEqual(nothing);
+    expect(await data(as(cook).get('/shopping/pending'))).toEqual(nothing);
     expect(await data(as(buyer).get('/shopping/lists/general'))).toEqual([]);
     expect(await data(as(cook).get('/shopping/lists/general'))).toHaveLength(1);
 
@@ -457,13 +561,9 @@ describe('Bozorlik (e2e)', () => {
     expect(await data(as(buyer).get('/shopping/pending'))).toMatchObject({ toPurchase: 1 });
     expect(await data(as(buyer).get('/shopping/lists/general'))).toMatchObject([{ id: list.id }]);
 
-    await as(buyer)
-      .put(`/shopping/lists/${list.id}/purchase`, {
-        items: prices(list, ['45000', '120000']),
-        complete: true,
-      })
-      .expect(200);
+    await buy(list, ['45000', '120000']);
     expect(await data(as(admin).get('/shopping/pending'))).toEqual({
+      unseen: 0,
       toReview: 0,
       toConfirm: 1,
       toPurchase: 0,
@@ -489,12 +589,7 @@ describe('Bozorlik (e2e)', () => {
     const event = await book(0);
     const list = await writeList(event.id);
     await as(admin).post(`/shopping/lists/${list.id}/approve`).expect(200);
-    await as(buyer)
-      .put(`/shopping/lists/${list.id}/purchase`, {
-        items: prices(list, ['100000', '50000', '30000']),
-        complete: true,
-      })
-      .expect(200);
+    await buy(list, ['100000', '50000', '30000']);
 
     const results = await Promise.all([
       as(admin).post(`/shopping/lists/${list.id}/confirm`),

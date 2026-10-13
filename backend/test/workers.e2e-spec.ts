@@ -45,7 +45,9 @@ describe('Ishchilar, zavzal va pulni yashirish (e2e)', () => {
       await data(
         as(admin).post('/menu/packages', {
           name: 'Premium',
-          pricePerGuest: '200000',
+          price: '60000000',
+          guestCount: 300,
+          packageType: 'FULL',
           sections: [],
         }),
       )
@@ -68,6 +70,7 @@ describe('Ishchilar, zavzal va pulni yashirish (e2e)', () => {
   const booking = (overrides: object = {}) => ({
     clientId,
     hallId,
+    menuPackageId: packageId,
     type: 'WEDDING',
     title: 'Anvar va Nodira to‘yi',
     startAt: at(20, 13),
@@ -159,11 +162,7 @@ describe('Ishchilar, zavzal va pulni yashirish (e2e)', () => {
   });
 
   it('to‘yga biriktirish: faqat faol ishchi, ikki marta emas; ro‘yxatda oldindagi to‘ylar soni', async () => {
-    const event = await data(
-      as(admin)
-        .post('/events', booking({ pricePerGuest: '200000' }))
-        .expect(201),
-    );
+    const event = await data(as(admin).post('/events', booking()).expect(201));
     const waiter = await data(as(zavzal).post('/workers', WAITER));
     const chef = await data(
       as(zavzal).post('/workers', {
@@ -225,16 +224,11 @@ describe('Ishchilar, zavzal va pulni yashirish (e2e)', () => {
   });
 
   it('pul faqat super admin va moliya ruxsati bor rolga ko‘rinadi', async () => {
-    const event = await data(
-      as(admin)
-        .post('/events', booking({ pricePerGuest: '200000' }))
-        .expect(201),
-    );
+    const event = await data(as(admin).post('/events', booking()).expect(201));
     await as(admin)
       .post(`/events/${event.id}/payments`, {
-        kind: 'DEPOSIT',
+        kind: 'PAYMENT',
         method: 'CASH',
-        currency: 'UZS',
         amount: '12000000',
       })
       .expect(201);
@@ -253,7 +247,7 @@ describe('Ishchilar, zavzal va pulni yashirish (e2e)', () => {
         .expect(200);
       for (const body of [detail, list.body.data, calendar.body.data]) {
         expect(JSON.stringify(body)).not.toMatch(
-          /totalAmount|paidAmount|pricePerGuest|debt|payments|requiredDeposit|discount|000\.00/,
+          /totalAmount|paidAmount|receivedAmount|refundedAmount|debt|payments|000\.00/,
         );
       }
       await as(viewer).get(`/events/${event.id}/contract`).expect(403);
@@ -262,7 +256,6 @@ describe('Ishchilar, zavzal va pulni yashirish (e2e)', () => {
         .post(`/events/${event.id}/payments`, {
           kind: 'PAYMENT',
           method: 'CASH',
-          currency: 'UZS',
           amount: '1000',
         })
         .expect(403);
@@ -285,34 +278,30 @@ describe('Ishchilar, zavzal va pulni yashirish (e2e)', () => {
     };
     const today = await data(
       as(admin)
-        .post(
-          '/events',
-          booking({ ...local(0), pricePerGuest: '200000', tableCapacity: 12, firstDish: 'Osh' }),
-        )
+        .post('/events', booking({ ...local(0), tableCapacity: 12, firstDish: 'Osh' }))
         .expect(201),
     );
     await data(
       as(admin)
-        .post('/events', booking({ ...local(1), pricePerGuest: '200000', guestCount: 100 }))
+        .post('/events', booking({ ...local(1), guestCount: 100 }))
         .expect(201),
     );
     await data(
       as(admin)
-        .post('/events', booking({ ...local(4), pricePerGuest: '200000', guestCount: 50 }))
+        .post('/events', booking({ ...local(4), guestCount: 50 }))
         .expect(201),
     );
     const cancelled = await data(
       as(admin)
-        .post('/events', booking({ ...local(2), pricePerGuest: '200000' }))
+        .post('/events', booking({ ...local(2) }))
         .expect(201),
     );
     await as(admin).post(`/events/${cancelled.id}/cancel`, { reason: 'Bekor' }).expect(200);
 
     await as(admin)
       .post(`/events/${today.id}/payments`, {
-        kind: 'DEPOSIT',
+        kind: 'PAYMENT',
         method: 'CASH',
-        currency: 'UZS',
         amount: '15000000',
       })
       .expect(201);
@@ -370,7 +359,7 @@ describe('Ishchilar, zavzal va pulni yashirish (e2e)', () => {
       1, 1, 0, 0, 1, 0, 0,
     ]);
     expect(full.lowStock).toMatchObject([{ name: 'Yog‘', quantity: '3', minQuantity: '10' }]);
-    expect(full.pendingShopping).toEqual({ toReview: 1, toConfirm: 0, toPurchase: 0 });
+    expect(full.pendingShopping).toEqual({ unseen: 1, toReview: 1, toConfirm: 0, toPurchase: 0 });
     expect(full.monthlyFinancials).toMatchObject({ totalCollected: '15000000.00' });
 
     // Zavzal: to'ylar va ishchilar ko'rinadi; pul, ombor va bozorlik — yo'q.
@@ -390,44 +379,44 @@ describe('Ishchilar, zavzal va pulni yashirish (e2e)', () => {
     expect(forAdmin.lowStock).toHaveLength(1);
   });
 
-  it('admin bron ochadi: narx menyu paketidan olinadi, o‘zi kiritgan narx va chegirma hisobga olinmaydi', async () => {
-    const noPackage = await as(manager).post('/events', booking()).expect(400);
-    expect(noPackage.body.error.code).toBe('MENU_PACKAGE_REQUIRED');
+  it('admin bron ochadi: narx menyu paketidan olinadi va qotib qoladi', async () => {
+    const noPackage = await as(manager)
+      .post('/events', booking({ menuPackageId: undefined }))
+      .expect(400);
+    expect(noPackage.body.error.code).toBe('VALIDATION_ERROR');
 
+    // Narx hamma uchun paketdan olinadi; pulni ko'rmaydigan rol uni javobda ko'rmaydi.
     const created = await data(
       as(manager)
-        .post(
-          '/events',
-          booking({ menuPackageId: packageId, pricePerGuest: '1', discount: '59000000' }),
-        )
+        .post('/events', booking({ menuPackageId: packageId }))
         .expect(201),
     );
     expect(created).toMatchObject({ number: 1, menuPackage: { name: 'Premium' } });
     expect(created).not.toHaveProperty('totalAmount');
     expect(await data(as(admin).get(`/events/${created.id}`))).toMatchObject({
-      pricePerGuest: '200000.00',
-      discount: '0.00',
       totalAmount: '60000000.00',
     });
 
-    // Mehmon soni o'zgarsa, kelishilgan 1 kishilik narx saqlanadi; narxni admin o'zgartira olmaydi.
-    await as(admin).patch(`/menu/packages/${packageId}`, { pricePerGuest: '250000' }).expect(200);
-    await as(manager)
-      .patch(`/events/${created.id}`, { guestCount: 200, pricePerGuest: '5', discount: '39000000' })
-      .expect(200);
+    // Mehmon soni yoki paket narxi o'zgarsa ham kelishilgan narx saqlanadi.
+    await as(admin).patch(`/menu/packages/${packageId}`, { price: '75000000' }).expect(200);
+    await as(manager).patch(`/events/${created.id}`, { guestCount: 200 }).expect(200);
     expect(await data(as(admin).get(`/events/${created.id}`))).toMatchObject({
-      pricePerGuest: '200000.00',
-      discount: '0.00',
-      totalAmount: '40000000.00',
+      guestCount: 200,
+      totalAmount: '60000000.00',
     });
 
     // Boshqa paketga o'tilsa — o'sha paket narxi.
     const vip = await data(
-      as(admin).post('/menu/packages', { name: 'VIP', pricePerGuest: '280000', sections: [] }),
+      as(admin).post('/menu/packages', {
+        name: 'VIP',
+        price: '56000000',
+        guestCount: 200,
+        packageType: 'FULL',
+        sections: [],
+      }),
     );
     await as(manager).patch(`/events/${created.id}`, { menuPackageId: vip.id }).expect(200);
     expect(await data(as(admin).get(`/events/${created.id}`))).toMatchObject({
-      pricePerGuest: '280000.00',
       totalAmount: '56000000.00',
     });
   });

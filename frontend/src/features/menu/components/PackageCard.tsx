@@ -44,11 +44,18 @@ export function PackageCard({ pkg, header, footer, className }: PackageCardProps
         <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{pkg.description}</p>
       )}
 
-      <p className="mt-4 flex items-baseline gap-2">
+      <p className="mt-4 flex flex-wrap items-baseline gap-x-2">
         <span className="tabular font-display text-4xl font-semibold text-gold-dark dark:text-gold-light">
-          {formatAmount(pkg.pricePerGuest)}
+          {formatAmount(pkg.price)}
         </span>
-        <span className="text-sm text-muted-foreground">{t('menu.perGuest')}</span>
+        <span className="text-sm text-muted-foreground">{t('common.currency')}</span>
+      </p>
+      <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        <span className="tabular font-medium text-foreground">
+          {t('menu.forGuests', { count: pkg.guestCount })}
+        </span>
+        <span aria-hidden="true">·</span>
+        <span>{t(`menu.packageType.${pkg.packageType}`)}</span>
       </p>
 
       <ul className="mt-5 grid flex-1 content-start gap-2.5 border-t pt-5 text-sm">

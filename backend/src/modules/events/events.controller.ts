@@ -29,7 +29,7 @@ import {
   ListEventsDto,
   UpdateEventDto,
 } from './dto/event.dto';
-import { EventMoneyInterceptor, canSeeMoney } from './event-money.interceptor';
+import { EventMoneyInterceptor } from './event-money.interceptor';
 import { EventsService } from './events.service';
 import { buildContract, buildReceipt } from './pdf/event-documents';
 
@@ -85,15 +85,15 @@ export class EventsController {
 
   @Post()
   @Permissions('events:create')
-  @ApiOperation({ summary: 'Yangi bron (summa serverda hisoblanadi)' })
+  @ApiOperation({ summary: 'Yangi bron (narx tanlangan menyu paketidan olinadi)' })
   create(@Body() dto: CreateEventDto, @CurrentUser() actor: AuthUser) {
     assertCanSetDishes(dto, actor);
-    return this.eventsService.create(dto, { priceFromPackage: !canSeeMoney(actor) });
+    return this.eventsService.create(dto);
   }
 
   @Get(':id')
   @Permissions('events:read')
-  @ApiOperation({ summary: "Bron tafsiloti: hisob-kitob, xizmatlar, to'lovlar" })
+  @ApiOperation({ summary: "Bron tafsiloti: hisob-kitob va to'lovlar" })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.eventsService.findOne(id);
   }
@@ -107,13 +107,15 @@ export class EventsController {
     @CurrentUser() actor: AuthUser,
   ) {
     assertCanSetDishes(dto, actor);
-    return this.eventsService.update(id, dto, { priceFromPackage: !canSeeMoney(actor) });
+    return this.eventsService.update(id, dto);
   }
 
   @Delete(':id')
   @Permissions('events:delete')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: "To'lovsiz so'rovni yoki bekor qilingan bronni o'chirish" })
+  @ApiOperation({
+    summary: "Bronni o'chirish (tasdiqlanmagan, to'lovi va xarajati yo'q bo'lsa)",
+  })
   async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.eventsService.remove(id);
   }
@@ -121,25 +123,27 @@ export class EventsController {
   @Post(':id/confirm')
   @Permissions('events:update')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Tasdiqlash (zaklad to'langan bo'lishi shart)" })
+  @ApiOperation({ summary: "Qo'lda tasdiqlash (to'liq to'langanda o'zi tasdiqlanadi)" })
   confirm(@Param('id', ParseUUIDPipe) id: string) {
     return this.eventsService.confirm(id);
-  }
-
-  @Post(':id/hold')
-  @Permissions('events:update')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Tadbir o'tkazildi deb belgilash" })
-  hold(@Param('id', ParseUUIDPipe) id: string) {
-    return this.eventsService.hold(id);
   }
 
   @Post(':id/complete')
   @Permissions('events:update')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: "Yakunlash (qarz to'liq yopilgan bo'lishi shart)" })
+  @ApiOperation({ summary: "Yakunlash (to'y kuni kelgan bo'lishi kerak)" })
   complete(@Param('id', ParseUUIDPipe) id: string) {
     return this.eventsService.complete(id);
+  }
+
+  @Post(':id/reopen')
+  @Permissions('events:update')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Qayta ochish: bekor qilingan — kutilmoqdaga, yakunlangan — tasdiqlanganga',
+  })
+  reopen(@Param('id', ParseUUIDPipe) id: string) {
+    return this.eventsService.reopen(id);
   }
 
   @Post(':id/cancel')
@@ -152,7 +156,7 @@ export class EventsController {
 
   @Post(':id/payments')
   @Permissions('finance:create')
-  @ApiOperation({ summary: "To'lov qabul qilish: zaklad, to'lov yoki qaytarish" })
+  @ApiOperation({ summary: "To'lov qabul qilish yoki mijozga pul qaytarish" })
   addPayment(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreatePaymentDto,

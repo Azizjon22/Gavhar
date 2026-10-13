@@ -6,8 +6,7 @@ import type { Dish } from '@/features/menu/api/dishes.api';
 import type { MenuPackage } from '@/features/menu/types/menu.types';
 import { formatAmount } from '@/lib/money';
 import { cn } from '@/lib/utils';
-import { useGuests } from '../lib/guests';
-import { dishCount, packageCover, packageTotal, romanNumeral } from '../lib/package';
+import { dishCount, packageCover, romanNumeral } from '../lib/package';
 import { PackageCoverArt } from './Ornaments';
 
 interface PackageShowCardProps {
@@ -22,7 +21,6 @@ interface PackageShowCardProps {
  */
 export function PackageShowCard({ pkg, index, dishes }: PackageShowCardProps) {
   const { t } = useTranslation();
-  const guests = useGuests((state) => state.guests);
   const featured = Boolean(pkg.badge);
 
   return (
@@ -70,10 +68,10 @@ export function PackageShowCard({ pkg, index, dishes }: PackageShowCardProps) {
         <div className="mt-4 flex items-end justify-between gap-3">
           <p>
             <span className="text-gilded tabular block font-display text-[clamp(2.1rem,13cqw,3.75rem)] leading-none font-semibold">
-              {formatAmount(pkg.pricePerGuest)}
+              {formatAmount(pkg.price)}
             </span>
             <span className="mt-2 block text-[11px] font-medium tracking-[0.2em] text-white/60 uppercase">
-              {t('showcase.menu.perGuest')}
+              {t('showcase.menu.priceFor', { count: pkg.guestCount })}
             </span>
           </p>
           <span
@@ -85,11 +83,9 @@ export function PackageShowCard({ pkg, index, dishes }: PackageShowCardProps) {
         </div>
 
         <p className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3 backdrop-blur-md">
-          <span className="text-xs text-white/60">
-            {t('showcase.menu.totalFor', { count: guests })}
-          </span>
-          <span className="tabular text-sm font-semibold whitespace-nowrap text-white">
-            {formatAmount(packageTotal(pkg.pricePerGuest, guests))} {t('common.currency')}
+          <span className="text-xs text-white/60">{t('showcase.menu.includes')}</span>
+          <span className="text-sm font-semibold text-white">
+            {t(`menu.packageType.${pkg.packageType}`)}
           </span>
         </p>
         <p className="mt-3 text-xs text-white/50">

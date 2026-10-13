@@ -279,6 +279,18 @@ To'y kuni qilinadigan xarid. Oqim to'rt qadamdan iborat va har bir qadamni o'z r
 
 Production'da frontend va API bir xil "site"da bo'lishi kerak (masalan `admin.gavhar.uz` va `api.gavhar.uz`) — aks holda `SameSite=Strict` cookie yuborilmaydi.
 
+## Tezkor kirish (faqat ishlab chiqish uchun)
+
+Ishlab chiqish paytida har safar parol kiritmaslik va rollarni tez sinash uchun `.env` da `DEV_LOGIN_ENABLED=true` qilib, backend'ni qayta ishga tushiring:
+
+- kirish sahifasida «Tezkor kirish» paneli chiqadi — rolni bosib parolsiz kirasiz;
+- tepadagi hisob menyusida «Rolni almashtirish» paydo bo'ladi;
+- har sahifada «Sinov rejimi» belgisi eslatib turadi.
+
+Har bir rol uchun alohida sinov hisobi ochiladi (`dev-…@dev-login.invalid`); haqiqiy hisoblarga tegilmaydi, parol, 2FA va majburiy parol almashtirish so'ralmaydi. Sinov hisobi «oxirgi SUPER_ADMIN» himoyasida hisobga olinmaydi.
+
+**Bu rejim xavfsizlikni butunlay o'chiradi.** `NODE_ENV=production` bo'lsa, `DEV_LOGIN_ENABLED=true` bilan server ishga tushmaydi. Ishni tugatgach `false` qiling — server keyingi ishga tushishda sinov hisoblarini bloklaydi va sessiyalarini bekor qiladi.
+
 ## Commit qoidalari
 
 [Conventional Commits](https://www.conventionalcommits.org/): `feat(backend): …`, `fix(frontend): …`. Husky commit'dan oldin lint-staged (ESLint + Prettier) va commitlint'ni ishga tushiradi.

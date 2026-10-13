@@ -24,6 +24,7 @@ const categoryView = (category: MenuCategory) => ({
   id: category.id,
   nameUz: category.nameUz,
   nameRu: category.nameRu,
+  course: category.course,
   sortOrder: category.sortOrder,
 });
 
@@ -32,7 +33,10 @@ const packageView = (pkg: PackageRecord) => ({
   id: pkg.id,
   name: pkg.name,
   description: pkg.description,
-  pricePerGuest: moneyString(pkg.pricePerGuest),
+  /** Butun paket narxi `guestCount` mehmon uchun. */
+  price: moneyString(pkg.price),
+  guestCount: pkg.guestCount,
+  packageType: pkg.packageType,
   badge: pkg.badge,
   isActive: pkg.isActive,
   sortOrder: pkg.sortOrder,
@@ -43,6 +47,7 @@ const packageView = (pkg: PackageRecord) => ({
       categoryId: section.categoryId,
       nameUz: section.category.nameUz,
       nameRu: section.category.nameRu,
+      course: section.category.course,
       kindsCount: section.kindsCount,
       items: section.items,
     })),
@@ -52,7 +57,9 @@ const packageView = (pkg: PackageRecord) => ({
 const packageAudit = (pkg: ReturnType<typeof packageView>) => ({
   name: pkg.name,
   description: pkg.description,
-  pricePerGuest: pkg.pricePerGuest,
+  price: pkg.price,
+  guestCount: pkg.guestCount,
+  packageType: pkg.packageType,
   badge: pkg.badge,
   isActive: pkg.isActive,
   sections: pkg.sections.map(
@@ -117,8 +124,8 @@ export class MenuService {
     return this.prisma.$transaction(async (tx) => {
       const category = await tx.menuCategory.update({ where: { id }, data: dto });
       const diff = auditDiff(
-        { nameUz: before.nameUz, nameRu: before.nameRu },
-        { nameUz: category.nameUz, nameRu: category.nameRu },
+        { nameUz: before.nameUz, nameRu: before.nameRu, course: before.course },
+        { nameUz: category.nameUz, nameRu: category.nameRu, course: category.course },
       );
       if (diff) {
         await this.audit.log(
@@ -172,7 +179,13 @@ export class MenuService {
     const packages = await this.prisma.menuPackage.findMany({
       where: { deletedAt: null, ...(options.activeOnly && { isActive: true }) },
       include: PACKAGE_INCLUDE,
-      orderBy: [{ sortOrder: 'asc' }, { pricePerGuest: 'asc' }],
+      // To'liq paketlar avval, keyin mehmonlar soni va narx bo'yicha (Shodiyora tartibi).
+      orderBy: [
+        { sortOrder: 'asc' },
+        { packageType: 'asc' },
+        { guestCount: 'asc' },
+        { price: 'asc' },
+      ],
     });
     return Promise.all(packages.map((pkg) => this.withCover(pkg)));
   }
@@ -184,14 +197,16 @@ export class MenuService {
       where: { deletedAt: null },
       _max: { sortOrder: true },
     });
-    const price = money(dto.pricePerGuest);
+    const price = money(dto.price);
 
     const created = await this.prisma.$transaction(async (tx) => {
       const pkg = await tx.menuPackage.create({
         data: {
           name: dto.name,
           description: dto.description || null,
-          pricePerGuest: price,
+          price,
+          guestCount: dto.guestCount,
+          packageType: dto.packageType,
           badge: dto.badge || null,
           isActive: dto.isActive,
           sortOrder: (last._max.sortOrder ?? -1) + 1,
@@ -221,8 +236,8 @@ export class MenuService {
       await this.assertPackageNameFree(dto.name, id);
     }
     const sections = dto.sections ? await this.validSections(dto.sections) : undefined;
-    const price = dto.pricePerGuest !== undefined ? money(dto.pricePerGuest) : undefined;
-    const priceChanged = price !== undefined && !price.eq(before.pricePerGuest);
+    const price = dto.price !== undefined ? money(dto.price) : undefined;
+    const priceChanged = price !== undefined && !price.eq(before.price);
 
     const updated = await this.prisma.$transaction(async (tx) => {
       if (sections) await tx.menuPackageSection.deleteMany({ where: { packageId: id } });
@@ -233,7 +248,9 @@ export class MenuService {
           ...(dto.description !== undefined && { description: dto.description || null }),
           ...(dto.badge !== undefined && { badge: dto.badge || null }),
           ...(dto.isActive !== undefined && { isActive: dto.isActive }),
-          ...(price && { pricePerGuest: price }),
+          ...(price && { price }),
+          ...(dto.guestCount !== undefined && { guestCount: dto.guestCount }),
+          ...(dto.packageType !== undefined && { packageType: dto.packageType }),
           ...(sections && { sections: { create: sections } }),
           // Narx tarixi: eski bronlar o'z narxida qoladi, o'zgarish esa shu yerda ko'rinadi.
           ...(priceChanged && { prices: { create: { price } } }),

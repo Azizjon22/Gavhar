@@ -34,6 +34,11 @@ export const envSchema = z
     COOKIE_SECURE: booleanString('true'),
     /** SUPER_ADMIN uchun ikki bosqichli himoya majburiymi. Productionda `true` tavsiya etiladi. */
     SUPER_ADMIN_2FA_REQUIRED: booleanString('true'),
+    /**
+     * Ishlab chiqish uchun parolsiz "tezkor kirish" (rol tanlab kirish). Xavfsizlikni
+     * butunlay o'chiradi — production'da yoqib bo'lmaydi.
+     */
+    DEV_LOGIN_ENABLED: booleanString('false'),
 
     S3_ENDPOINT: z.string().url(),
     S3_PUBLIC_ENDPOINT: z.string().url(),
@@ -47,6 +52,13 @@ export const envSchema = z
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return;
 
+    if (env.DEV_LOGIN_ENABLED) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['DEV_LOGIN_ENABLED'],
+        message: "production'da false bo'lishi shart (parolsiz kirish)",
+      });
+    }
     if (!env.COOKIE_SECURE) {
       ctx.addIssue({
         code: 'custom',

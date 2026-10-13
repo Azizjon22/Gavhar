@@ -65,8 +65,13 @@ export class TestApp {
 
   /** Toza holat: bo'sh baza, bo'sh Redis, faqat seed qilingan SUPER_ADMIN. */
   async reset(): Promise<void> {
+    // Barcha jadvallar (migratsiyalar jurnalidan tashqari) — yangi jadval qo'shilsa ham ro'yxatni
+    // qo'lda yangilash shart emas.
+    const tables = await this.prisma.$queryRaw<{ tablename: string }[]>`
+      SELECT tablename FROM pg_tables
+      WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'`;
     await this.prisma.$executeRawUnsafe(
-      'TRUNCATE TABLE dishes, event_workers, workers, shopping_items, shopping_lists, expenses, expense_categories, stock_movements, warehouse_items, audit_logs, backup_codes, refresh_tokens, sessions, users, role_permissions, permissions, roles, gallery_items, gallery_albums, menu_package_prices, menu_package_sections, menu_packages, menu_categories, payments, event_services, events, extra_services, settings, hall_images, halls, clients RESTART IDENTITY CASCADE',
+      `TRUNCATE TABLE ${tables.map(({ tablename }) => `"${tablename}"`).join(', ')} RESTART IDENTITY CASCADE`,
     );
     await this.redis.flushdb();
     await bootstrapAccessControl(this.prisma, SUPER_ADMIN, process.env.PASSWORD_PEPPER as string);

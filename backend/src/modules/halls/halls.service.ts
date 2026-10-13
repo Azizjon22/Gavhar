@@ -120,7 +120,7 @@ export class HallsService {
   async remove(id: string): Promise<void> {
     const hall = await this.findRecord(id);
     const activeEvents = await this.prisma.event.count({
-      where: { hallId: id, deletedAt: null, status: { in: ['REQUEST', 'CONFIRMED', 'HELD'] } },
+      where: { hallId: id, deletedAt: null, status: { in: ['REQUEST', 'CONFIRMED'] } },
     });
     if (activeEvents > 0) {
       throw AppException.conflict(

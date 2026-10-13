@@ -5,12 +5,6 @@ import { AppException } from '@/common/errors/app.exception';
 import { PhotoService } from '@/infrastructure/storage/photo.service';
 import { AuditService } from '@/modules/audit/audit.service';
 
-export interface BookingSettings {
-  /** Bron tasdiqlanishi uchun to'lanishi shart bo'lgan zaklad, jami summadan foizda. */
-  minDepositPercent: number;
-}
-
-const BOOKING_DEPOSIT_KEY = 'booking.minDepositPercent';
 const BRAND_KEY = 'brand';
 export const DEFAULT_BRAND_NAME = 'Gavhar';
 
@@ -19,7 +13,6 @@ interface StoredBrand {
   logoKey: string | null;
   logoThumbKey: string | null;
 }
-export const DEFAULT_MIN_DEPOSIT_PERCENT = 20;
 
 @Injectable()
 export class SettingsService {
@@ -29,49 +22,6 @@ export class SettingsService {
     private readonly photos: PhotoService,
   ) {}
 
-  async getBooking(): Promise<BookingSettings> {
-    const row = await this.prisma.setting.findUnique({ where: { key: BOOKING_DEPOSIT_KEY } });
-    const value = row?.value;
-    return {
-      minDepositPercent:
-        typeof value === 'number' && value >= 0 && value <= 100
-          ? value
-          : DEFAULT_MIN_DEPOSIT_PERCENT,
-    };
-  }
-
-  async updateBooking(next: BookingSettings): Promise<BookingSettings> {
-    const before = await this.getBooking();
-
-    await this.prisma.$transaction(async (tx) => {
-      const value: Prisma.InputJsonValue = next.minDepositPercent;
-      await tx.setting.upsert({
-        where: { key: BOOKING_DEPOSIT_KEY },
-        update: { value },
-        create: { key: BOOKING_DEPOSIT_KEY, value },
-      });
-      if (before.minDepositPercent !== next.minDepositPercent) {
-        await this.audit.log(
-          {
-            action: 'settings.update',
-            resource: 'settings',
-            resourceId: 'booking',
-            before,
-            after: next,
-          },
-          tx,
-        );
-      }
-    });
-    return next;
-  }
-
-  // ── Brend ────────────────────────────────────────────────────────────────
-
-  /**
-   * Hamma ekranda ko'rinadigan nom va logotip (kirish sahifasi, yon menyu, taqdimot).
-   * Kirish sahifasida ham kerak bo'lgani uchun autentifikatsiyasiz o'qiladi.
-   */
   async getBrand() {
     const brand = await this.storedBrand();
     return {

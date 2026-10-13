@@ -87,7 +87,7 @@ describe('Menyu va galereya (e2e)', () => {
   const videos = () => t.app.get(VideoProcessingService);
 
   describe('menyu', () => {
-    it('boshlang‘ich kontent: 11 bo‘lim va 160/200/280 minglik uchta paket', async () => {
+    it('boshlang‘ich kontent: 11 bo‘lim va 100/150/200 kishilik oltita paket', async () => {
       const first = await seedDemoContent(t.prisma);
       const second = await seedDemoContent(t.prisma);
       expect(first).toEqual({ menuCreated: true, albumsCreated: true });
@@ -95,11 +95,21 @@ describe('Menyu va galereya (e2e)', () => {
 
       const packages = (await get('/menu/packages').expect(200)).body.data;
       expect(
-        packages.map((p: { name: string; pricePerGuest: string }) => [p.name, p.pricePerGuest]),
+        packages.map(
+          (p: { name: string; price: string; guestCount: number; packageType: string }) => [
+            p.name,
+            p.price,
+            p.guestCount,
+            p.packageType,
+          ],
+        ),
       ).toEqual([
-        ['Standart', '160000.00'],
-        ['Premium', '200000.00'],
-        ['VIP', '280000.00'],
+        ['To‘liq paket — 100 kishi', '32000000.00', 100, 'FULL'],
+        ['To‘liq paket — 150 kishi', '38000000.00', 150, 'FULL'],
+        ['To‘liq paket — 200 kishi', '46000000.00', 200, 'FULL'],
+        ['Taomlar — 100 kishi', '24000000.00', 100, 'FOOD_ONLY'],
+        ['Taomlar — 150 kishi', '29000000.00', 150, 'FOOD_ONLY'],
+        ['Taomlar — 200 kishi', '37000000.00', 200, 'FOOD_ONLY'],
       ]);
       expect(packages[2].badge).toBe('VIP');
       expect(packages[0].sections).toHaveLength(11);
@@ -123,7 +133,9 @@ describe('Menyu va galereya (e2e)', () => {
 
       const created = await post('/menu/packages', {
         name: 'Gold',
-        pricePerGuest: '240000',
+        price: '24000000',
+        guestCount: 100,
+        packageType: 'FOOD_ONLY',
         badge: 'Yangi',
         sections: [
           { categoryId: drinks.id, kindsCount: 3 },
@@ -140,9 +152,19 @@ describe('Menyu va galereya (e2e)', () => {
       const updated = await api()
         .patch(`/api/v1/menu/packages/${pkg.id}`)
         .set(admin.auth)
-        .send({ pricePerGuest: '260000', sections: [{ categoryId: salads.id, kindsCount: 5 }] })
+        .send({
+          price: '26000000',
+          guestCount: 120,
+          packageType: 'FULL',
+          sections: [{ categoryId: salads.id, kindsCount: 5 }],
+        })
         .expect(200);
-      expect(updated.body.data).toMatchObject({ pricePerGuest: '260000.00', badge: 'Yangi' });
+      expect(updated.body.data).toMatchObject({
+        price: '26000000.00',
+        guestCount: 120,
+        packageType: 'FULL',
+        badge: 'Yangi',
+      });
       expect(updated.body.data.sections).toHaveLength(1);
 
       // Narx o'zgarmagan tahrir tarixga yozilmaydi.
@@ -153,8 +175,8 @@ describe('Menyu va galereya (e2e)', () => {
         .expect(200);
       const history = (await get(`/menu/packages/${pkg.id}/prices`).expect(200)).body.data;
       expect(history.map((row: { price: string }) => row.price)).toEqual([
-        '260000.00',
-        '240000.00',
+        '26000000.00',
+        '24000000.00',
       ]);
 
       // Bo'lim o'chirilsa, paket tarkibidan ham chiqadi.
@@ -162,11 +184,14 @@ describe('Menyu va galereya (e2e)', () => {
       const afterDelete = (await get('/menu/packages').expect(200)).body.data;
       expect(afterDelete[0].sections).toEqual([]);
 
-      await post('/menu/packages', { name: 'gold', pricePerGuest: '1', sections: [] }).expect(409);
-      await post('/menu/packages', { name: 'Xato', pricePerGuest: '-5', sections: [] }).expect(400);
+      const valid = { price: '1000000', guestCount: 100, packageType: 'FOOD_ONLY', sections: [] };
+      await post('/menu/packages', { ...valid, name: 'gold' }).expect(409);
+      await post('/menu/packages', { ...valid, name: 'Xato', price: '-5' }).expect(400);
+      await post('/menu/packages', { ...valid, name: 'Xato', guestCount: 0 }).expect(400);
+      await post('/menu/packages', { ...valid, name: 'Xato', packageType: 'ALL' }).expect(400);
       await post('/menu/packages', {
+        ...valid,
         name: 'Xato',
-        pricePerGuest: '100',
         sections: [{ categoryId: salads.id, kindsCount: 1 }],
       }).expect(404);
     });
@@ -178,7 +203,9 @@ describe('Menyu va galereya (e2e)', () => {
       for (const name of ['Standart', 'Premium']) {
         await post('/menu/packages', {
           name,
-          pricePerGuest: '200000',
+          price: '1000000',
+          guestCount: 100,
+          packageType: 'FOOD_ONLY',
           sections: [
             {
               categoryId: salads.id,
@@ -244,7 +271,9 @@ describe('Menyu va galereya (e2e)', () => {
       const pkg = (
         await post('/menu/packages', {
           name: 'VIP',
-          pricePerGuest: '280000',
+          price: '28000000',
+          guestCount: 100,
+          packageType: 'FULL',
           sections: [{ categoryId: salads.id, kindsCount: 4 }],
         }).expect(201)
       ).body.data;
@@ -332,9 +361,13 @@ describe('Menyu va galereya (e2e)', () => {
         await post('/clients', { fullName: 'Karimov Anvar', phone: '+998901234567' }).expect(201)
       ).body.data;
       const pkg = (
-        await post('/menu/packages', { name: 'VIP', pricePerGuest: '280000', sections: [] }).expect(
-          201,
-        )
+        await post('/menu/packages', {
+          name: 'VIP',
+          price: '28000000',
+          guestCount: 100,
+          packageType: 'FULL',
+          sections: [],
+        }).expect(201)
       ).body.data;
       const start = new Date(Date.now() + 20 * 86_400_000);
       const booking = {
@@ -344,7 +377,6 @@ describe('Menyu va galereya (e2e)', () => {
         startAt: start.toISOString(),
         endAt: new Date(start.getTime() + 5 * 3_600_000).toISOString(),
         guestCount: 100,
-        pricePerGuest: pkg.pricePerGuest,
         menuPackageId: pkg.id,
       };
 
@@ -357,12 +389,11 @@ describe('Menyu va galereya (e2e)', () => {
       await api()
         .patch(`/api/v1/menu/packages/${pkg.id}`)
         .set(admin.auth)
-        .send({ name: 'VIP Gold', pricePerGuest: '350000' })
+        .send({ name: 'VIP Gold', price: '35000000' })
         .expect(200);
       const same = (await get(`/events/${event.id}`).expect(200)).body.data;
       expect(same).toMatchObject({
         menuPackage: { name: 'VIP' },
-        pricePerGuest: '280000.00',
         totalAmount: '28000000.00',
       });
 
@@ -381,12 +412,12 @@ describe('Menyu va galereya (e2e)', () => {
       await api().delete(`/api/v1/menu/packages/${pkg.id}`).set(admin.auth).expect(204);
       await get(`/events/${event.id}`).expect(200);
 
-      const cleared = await api()
+      // Paketsiz bron bo'lmaydi: narx paketdan olinadi.
+      await api()
         .patch(`/api/v1/events/${event.id}`)
         .set(admin.auth)
         .send({ menuPackageId: null })
-        .expect(200);
-      expect(cleared.body.data.menuPackage).toBeNull();
+        .expect(400);
     });
   });
 
@@ -435,7 +466,9 @@ describe('Menyu va galereya (e2e)', () => {
       const pkg = (
         await post('/menu/packages', {
           name: 'VIP',
-          pricePerGuest: '280000',
+          price: '28000000',
+          guestCount: 100,
+          packageType: 'FULL',
           sections: [{ categoryId: category.id, kindsCount: 4 }],
         }).expect(201)
       ).body.data;
@@ -751,7 +784,7 @@ describe('Menyu va galereya (e2e)', () => {
       await viewer.agent
         .post('/api/v1/menu/packages')
         .set(viewer.auth)
-        .send({ name: 'X', pricePerGuest: '1', sections: [] })
+        .send({ name: 'X', price: '1', guestCount: 100, packageType: 'FULL', sections: [] })
         .expect(403);
     });
   });

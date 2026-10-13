@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { MenuCourse, MenuPackageType } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -6,6 +7,7 @@ import {
   ArrayUnique,
   IsArray,
   IsBoolean,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -39,6 +41,14 @@ export class CreateMenuCategoryDto {
   @MinLength(2)
   @MaxLength(60)
   nameRu: string;
+
+  @ApiPropertyOptional({
+    enum: MenuCourse,
+    description: 'Oshxona bosqichi: oshpaz bozorlikni salat, 1-ovqat, 2-ovqat tartibida yozadi',
+  })
+  @IsOptional()
+  @IsEnum(MenuCourse)
+  course?: MenuCourse;
 }
 
 export class UpdateMenuCategoryDto extends PartialType(CreateMenuCategoryDto) {}
@@ -91,9 +101,26 @@ export class CreateMenuPackageDto {
   @MaxLength(500)
   description?: string | null;
 
-  @ApiProperty({ example: '280000', description: "1 kishilik narx, so'mda" })
+  @ApiProperty({
+    example: '32000000',
+    description: "Butun paket narxi `guestCount` mehmon uchun, so'mda (1 kishilik narx emas)",
+  })
   @IsMoney()
-  pricePerGuest: string;
+  price: string;
+
+  @ApiProperty({ example: 100, description: 'Paket necha mehmonga mo‘ljallangan' })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(2000)
+  guestCount: number;
+
+  @ApiProperty({
+    enum: MenuPackageType,
+    description: "FULL — taomlar, kortej, san'atkor va kamerachi; FOOD_ONLY — faqat taomlar",
+  })
+  @IsEnum(MenuPackageType)
+  packageType: MenuPackageType;
 
   @ApiPropertyOptional({ example: 'VIP', nullable: true })
   @IsOptional()

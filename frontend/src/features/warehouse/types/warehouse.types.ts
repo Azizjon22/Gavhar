@@ -40,6 +40,55 @@ export interface WarehouseItem {
   isLow: boolean;
   note: string | null;
   updatedAt: string;
+  /** Faqat SUPER_ADMIN uchun: partiyalar (eng eskisi birinchi) va ombordagi qiymat. */
+  lots?: WarehouseLot[];
+  stockValue?: string;
+  /** Narxi kiritilmagan miqdor — qiymatga qo'shilmagan. */
+  unpricedQuantity?: string;
+}
+
+/** Bir narxda kirgan mahsulot qismi; chiqim eng eski partiyadan sarflanadi. */
+export interface WarehouseLot {
+  id: string;
+  quantity: string;
+  /** 1 birlik narxi; bo'sh — narx kiritilmagan. */
+  unitPrice: string | null;
+  createdAt: string;
+}
+
+/** Oshpaz uchun ombor ko'rinishi — narxsiz. */
+export interface StockItem {
+  id: string;
+  name: string;
+  productCategory: ProductCategory | null;
+  unit: WarehouseUnit;
+  quantity: string;
+  photo: { url: string; thumbUrl: string } | null;
+}
+
+/** To'y uchun ombordan olingan mahsulotlar (narx — faqat SUPER_ADMIN'ga). */
+export interface StockUsage {
+  id: string;
+  createdAt: string;
+  takenById: string;
+  takenByName: string;
+  event: { id: string; number: number; title: string | null; clientName: string; startAt: string };
+  items: {
+    id: string;
+    itemId: string;
+    name: string;
+    unit: WarehouseUnit;
+    quantity: string;
+    totalCost?: string | null;
+  }[];
+  totalCost?: string;
+  /** Bir qismining narxi omborga hali kiritilmagan. */
+  unpriced?: boolean;
+}
+
+export interface TakeStockPayload {
+  eventId: string;
+  items: { itemId: string; quantity: string }[];
 }
 
 export interface StockMovement {
@@ -64,6 +113,8 @@ export interface ItemPayload {
 export interface CreateItemPayload extends ItemPayload {
   section: WarehouseSection;
   initialQuantity?: string;
+  /** Boshlang'ich qoldiqning jami xarid summasi (faqat SUPER_ADMIN). */
+  initialCost?: string;
 }
 
 /** Butun ombor lentasidagi harakat — qaysi mahsulotniki ekani bilan. */

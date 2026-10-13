@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, ShoppingBasket, Trash2 } from 'lucide-react';
+import { PackageOpen, Plus, ShoppingBasket, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -53,7 +53,23 @@ export function EventExpensesCard({ event, revision }: Props) {
     onError: (error) => toast.error(errorMessage(error)),
   });
 
+  const stockMutation = useMutation({
+    mutationFn: () => financeApi.recordStockExpense(event.id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: financeKeys.all });
+      toast.success(t('finance.eventCard.stockRecorded'));
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+
   const data = query.data;
+  const stock = data?.stock;
+  // Ombordan olingan, lekin xarajatga yozilmagan (yoki qiymati o'zgargan) mahsulotlar.
+  const stockPending =
+    stock !== null &&
+    stock !== undefined &&
+    Number(stock.cost) > 0 &&
+    stock.recordedAmount !== stock.cost;
   const profit = Number(data?.netProfit ?? 0);
   const currency = t('common.currency');
 
@@ -116,6 +132,33 @@ export function EventExpensesCard({ event, revision }: Props) {
                   </li>
                 ))}
               </ul>
+            )}
+
+            {stockPending && (
+              <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-gold/40 bg-gold/8 px-3.5 py-3">
+                <PackageOpen className="size-5 shrink-0 text-gold-dark dark:text-gold-light" />
+                <p className="min-w-0 flex-1 text-sm">
+                  {t(
+                    stock.recordedAmount
+                      ? 'finance.eventCard.stockChanged'
+                      : 'finance.eventCard.stockSuggest',
+                    { amount: formatAmount(stock.cost) },
+                  )}
+                  {stock.unpriced && (
+                    <span className="block text-xs text-muted-foreground">
+                      {t('finance.eventCard.stockUnpriced')}
+                    </span>
+                  )}
+                </p>
+                <Button
+                  size="sm"
+                  variant="gold"
+                  loading={stockMutation.isPending}
+                  onClick={() => stockMutation.mutate()}
+                >
+                  {t('finance.eventCard.stockRecord')}
+                </Button>
+              </div>
             )}
 
             <dl className="mt-4 grid gap-2 border-t pt-4 text-sm">

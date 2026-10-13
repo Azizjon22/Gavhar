@@ -21,9 +21,11 @@ import { RateLimitGuard } from '@/common/guards/rate-limit.guard';
 import { AuthUser } from '@/common/types/auth-user';
 import { AuthService, AuthTokens } from '../auth.service';
 import { ChangePasswordDto } from '../dto/change-password.dto';
+import { DevLoginDto } from '../dto/dev-login.dto';
 import { LoginDto } from '../dto/login.dto';
 import { TwoFactorLoginDto } from '../dto/two-factor.dto';
 import { AuthCookieService } from '../services/auth-cookie.service';
+import { DevLoginService } from '../services/dev-login.service';
 
 @ApiTags('Auth')
 @UseGuards(RateLimitGuard)
@@ -32,6 +34,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly cookies: AuthCookieService,
+    private readonly devLogin: DevLoginService,
   ) {}
 
   @Public()
@@ -60,6 +63,31 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const tokens = await this.authService.verifyTwoFactorLogin(dto);
+    return { requiresTwoFactor: false, ...this.respondWithTokens(req, res, tokens) };
+  }
+
+  @Public()
+  @Get('dev-login')
+  @ApiOperation({ summary: 'Tezkor kirish yoqilganmi va qaysi rollar bilan kirish mumkin' })
+  devLoginOptions() {
+    return this.devLogin.options();
+  }
+
+  @Public()
+  @Post('dev-login')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit({ name: 'dev-login', limit: 30, windowSeconds: 60 })
+  @ApiOperation({
+    summary: 'Tezkor kirish: tanlangan rol bilan parolsiz (faqat DEV_LOGIN_ENABLED=true)',
+  })
+  async devLoginAs(
+    @Body() dto: DevLoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const tokens = await this.devLogin.login(dto.roleId);
+    // Rol almashtirilganda oldingi sessiya ochiq qolib ketmasin.
+    await this.authService.logout(this.cookies.readRefreshToken(req));
     return { requiresTwoFactor: false, ...this.respondWithTokens(req, res, tokens) };
   }
 

@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CircleAlert,
+  FlaskConical,
   KeyRound,
   Lock,
   Mail,
@@ -34,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { useBrand } from '@/features/settings/api/brand.api';
 import { useAuthStore } from '@/stores/auth.store';
 import { authApi } from '../api/auth.api';
+import { enterAsRole, useDevLogin } from '../api/dev-login.api';
 import { AnimatedGem } from '../components/AnimatedGem';
 import { AuthBackdrop } from '../components/AuthBackdrop';
 import { AuthHeader } from '../components/AuthHeader';
@@ -144,6 +146,55 @@ interface SubmitButtonProps {
   disabled: boolean;
 }
 
+/**
+ * Sinov rejimi (`DEV_LOGIN_ENABLED`): rolni tanlab, parolsiz kirish. Server bu
+ * rejimni faqat ishlab chiqish muhitida yoqadi; aks holda panel umuman chiqmaydi.
+ */
+function DevLoginPanel() {
+  const { t } = useTranslation();
+  const devLogin = useDevLogin();
+  const mutation = useMutation({
+    mutationFn: enterAsRole,
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+  if (!devLogin.enabled) return null;
+
+  return (
+    <section
+      aria-label={t('devLogin.title')}
+      className="grid gap-3 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-4"
+    >
+      <div className="flex items-start gap-2.5">
+        <FlaskConical className="mt-0.5 size-4 shrink-0 text-amber-200" />
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold text-amber-100">{t('devLogin.title')}</h2>
+          <p className="mt-0.5 text-xs leading-relaxed text-amber-100/70">{t('devLogin.hint')}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {devLogin.roles.map((role) => (
+          <Button
+            key={role.id}
+            type="button"
+            variant="gold"
+            loading={mutation.isPending && mutation.variables === role.id}
+            disabled={mutation.isPending}
+            onClick={() => mutation.mutate(role.id)}
+            className="w-full"
+          >
+            {role.name}
+          </Button>
+        ))}
+      </div>
+      <p className="flex items-center gap-3 text-[11px] font-semibold tracking-[0.16em] text-white/40 uppercase">
+        <span className="h-px flex-1 bg-white/15" />
+        {t('devLogin.or')}
+        <span className="h-px flex-1 bg-white/15" />
+      </p>
+    </section>
+  );
+}
+
 function CredentialsStep({ onChallenge }: { onChallenge: (challengeToken: string) => void }) {
   const { t } = useTranslation();
   const failure = useAuthFailure();
@@ -181,6 +232,8 @@ function CredentialsStep({ onChallenge }: { onChallenge: (challengeToken: string
           <p className="text-sm text-white/60">{t('auth.login.subtitle')}</p>
         </div>
       </div>
+
+      <DevLoginPanel />
 
       <Form {...form}>
         <form onSubmit={submit} className="grid gap-5" noValidate>

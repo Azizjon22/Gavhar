@@ -25,3 +25,9 @@ export const redisKeys = {
   twoFactorChallenge: (token: string) => `auth:2fa:challenge:${sha256Hex(token)}`,
   totpUsed: (userId: string, code: string) => `auth:2fa:used:${userId}:${code}`,
 } as const;
+
+/**
+ * Tezkor kirish (`DEV_LOGIN_ENABLED`) ochadigan sinov hisoblarining email domeni.
+ * `.invalid` — hech qachon haqiqiy pochta bo'lmaydigan zaxiralangan zona (RFC 2606).
+ */
+export const DEV_LOGIN_EMAIL_DOMAIN = 'dev-login.invalid';

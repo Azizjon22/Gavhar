@@ -15,11 +15,13 @@ import { ZERO, money, moneyString } from '@/common/utils/money.util';
 import { parseQuantity, quantityString } from '@/common/utils/quantity.util';
 import { AppConfigService } from '@/config/app-config.service';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
+import { PhotoService } from '@/infrastructure/storage/photo.service';
 import { AuditService } from '@/modules/audit/audit.service';
 import { ensureSystemCategory } from '@/modules/finance/expense-categories';
 import {
+  FixItemPriceDto,
   KitchenEventsQueryDto,
-  PurchaseDto,
+  PurchaseItemDto,
   SaveShoppingListDto,
   ShoppingItemDto,
 } from './dto/shopping.dto';
@@ -49,6 +51,9 @@ type ItemRecord = ShoppingListRecord['items'][number];
 const listTotal = (items: readonly ItemRecord[]): Prisma.Decimal =>
   items.reduce((sum, item) => (item.skipped || !item.price ? sum : sum.add(item.price)), ZERO);
 
+/** Sotib olingan yoki "olinmadi" deb belgilangan qator — endi o'zgartirilmaydi. */
+const isDone = (item: ItemRecord): boolean => item.skipped || item.price !== null;
+
 const listView = (list: Omit<ShoppingListRecord, 'event'>) => ({
   id: list.id,
   eventId: list.eventId,
@@ -57,6 +62,7 @@ const listView = (list: Omit<ShoppingListRecord, 'event'>) => ({
   createdById: list.createdById,
   createdByName: list.createdByName,
   createdAt: list.createdAt,
+  reviewedAt: list.reviewedAt,
   approvedAt: list.approvedAt,
   purchasedAt: list.purchasedAt,
   purchasedByName: list.purchasedByName,
@@ -72,7 +78,15 @@ const listView = (list: Omit<ShoppingListRecord, 'event'>) => ({
       item.requestedQuantity && !item.requestedQuantity.eq(item.quantity)
         ? quantityString(item.requestedQuantity)
         : null,
+    /** Shu qator uchun to'langan aniq jami; bo'sh — hali sotib olinmagan. */
     price: item.price ? moneyString(item.price) : null,
+    /** Faqat ko'rsatish uchun: jami ÷ miqdor. */
+    unitPrice:
+      item.price && !item.quantity.isZero()
+        ? moneyString(item.price.div(item.quantity).toDecimalPlaces(2))
+        : null,
+    purchasedAt: item.purchasedAt,
+    purchasedByName: item.purchasedByName,
     skipped: item.skipped,
     note: item.note,
   })),
@@ -105,10 +119,10 @@ const SENT_STATUSES: readonly ShoppingListStatus[] = [
   ShoppingListStatus.PURCHASED,
   ShoppingListStatus.CONFIRMED,
 ];
-/** Shu holatdagi ro'yxat bo'lsa, to'yning bozorligi tugagan — yangi ro'yxat yozilmaydi. */
-const DONE_STATUSES: readonly ShoppingListStatus[] = [
-  ShoppingListStatus.PURCHASED,
-  ShoppingListStatus.CONFIRMED,
+/** Hali adminga yuborilmagan — SUPER_ADMIN tekshirmoqda. */
+const NOT_SENT_STATUSES: readonly ShoppingListStatus[] = [
+  ShoppingListStatus.SUBMITTED,
+  ShoppingListStatus.REVIEWED,
 ];
 
 /**
@@ -138,10 +152,12 @@ export function mergeSameProduct<
 }
 
 /**
- * Bozorlik oqimi:
- *   oshpaz yozadi (SUBMITTED) → SUPER_ADMIN tekshirib adminga yuboradi (APPROVED) →
- *   admin sotib olib narx kiritadi (PURCHASED) → SUPER_ADMIN tasdiqlaydi (CONFIRMED).
- * Faqat oxirgi qadamda summa xarajatlarga yoziladi va sof foydadan ayiriladi.
+ * Bozorlik oqimi (Shodiyora):
+ *   oshpaz yozadi (SUBMITTED) → SUPER_ADMIN sahifani ochadi (REVIEWED), kerak bo'lsa
+ *   tuzatadi va adminga yuboradi (APPROVED) → har bir mahsulot alohida sotib olinadi,
+ *   hammasi olingach ro'yxat PURCHASED bo'ladi → SUPER_ADMIN tasdiqlab yopadi (CONFIRMED).
+ * SUPER_ADMIN yangi ro'yxatdan to'g'ridan-to'g'ri o'zi ham xarid qila oladi. Faqat
+ * oxirgi qadamda summa xarajatlarga yoziladi va sof foydadan ayiriladi.
  */
 @Injectable()
 export class ShoppingService {
@@ -149,6 +165,7 @@ export class ShoppingService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly config: AppConfigService,
+    private readonly photos: PhotoService,
   ) {}
 
   private get timeZone(): string {
@@ -204,7 +221,9 @@ export class ShoppingService {
               select: {
                 kindsCount: true,
                 items: true,
-                category: { select: { nameUz: true, nameRu: true, sortOrder: true } },
+                category: {
+                  select: { nameUz: true, nameRu: true, course: true, sortOrder: true },
+                },
               },
             },
           },
@@ -250,6 +269,8 @@ export class ShoppingService {
                     .map((section) => ({
                       nameUz: section.category.nameUz,
                       nameRu: section.category.nameRu,
+                      /** Oshxona bosqichi — oshpaz ro'yxatni taom bo'yicha yozadi. */
+                      course: section.category.course,
                       kindsCount: section.kindsCount,
                       items: section.items,
                     }))
@@ -259,8 +280,6 @@ export class ShoppingService {
       // Ro'yxat yozilishi bilan faqat SUPER_ADMIN ko'radi. Oshpaz o'zinikini, xaridchi
       // esa SUPER_ADMIN ko'rib chiqib yuborganlarini ko'radi.
       lists: event.shoppingLists.filter((list) => canSee(list)).map(listView),
-      /** Bozorlik qilib bo'lingan — bu to'yga yangi ro'yxat yozilmaydi. */
-      shoppingClosed: event.shoppingLists.some((list) => DONE_STATUSES.includes(list.status)),
       total: moneyString(
         event.shoppingLists
           .filter((list) => canSee(list))
@@ -296,24 +315,49 @@ export class ShoppingService {
   }
 
   /**
-   * Kimdan nima kutilmoqda (qo'ng'iroqcha uchun): SUPER_ADMIN — tekshirish va
-   * tasdiqlash kerak bo'lgan ro'yxatlar; xaridchi — unga yuborilgan, hali sotib
-   * olinmaganlari.
+   * Kimdan nima kutilmoqda: SUPER_ADMIN — tekshirish va tasdiqlash kerak bo'lgan
+   * ro'yxatlar; xaridchi — unga yuborilgan, hali sotib olinmaganlari. `unseen` —
+   * qo'ng'iroqcha uchun: SUPER_ADMIN hali ochmagan yangi ro'yxatlar, xaridchi esa
+   * yuborilganidan keyin bozorlik sahifasini hali ochmaganlari.
    */
   async pending(actor: AuthUser) {
-    const count = (status: ShoppingListStatus) =>
-      this.prisma.shoppingList.count({ where: { deletedAt: null, status } });
+    const count = (where: Prisma.ShoppingListWhereInput) =>
+      this.prisma.shoppingList.count({ where: { deletedAt: null, ...where } });
     if (isSuperAdmin(actor)) {
-      const [toReview, toConfirm] = await Promise.all([
-        count(ShoppingListStatus.SUBMITTED),
-        count(ShoppingListStatus.PURCHASED),
+      const [unseen, toReview, toConfirm] = await Promise.all([
+        count({ status: ShoppingListStatus.SUBMITTED }),
+        count({ status: { in: [...NOT_SENT_STATUSES] } }),
+        count({ status: ShoppingListStatus.PURCHASED }),
       ]);
-      return { toReview, toConfirm, toPurchase: 0 };
+      return { unseen, toReview, toConfirm, toPurchase: 0 };
     }
-    const toPurchase = actor.permissions.includes('shopping:purchase')
-      ? await count(ShoppingListStatus.APPROVED)
-      : 0;
-    return { toReview: 0, toConfirm: 0, toPurchase };
+    if (!actor.permissions.includes('shopping:purchase')) {
+      return { unseen: 0, toReview: 0, toConfirm: 0, toPurchase: 0 };
+    }
+    const [unseen, toPurchase] = await Promise.all([
+      count({ status: ShoppingListStatus.APPROVED, adminSeenAt: null }),
+      count({ status: ShoppingListStatus.APPROVED }),
+    ]);
+    return { unseen, toReview: 0, toConfirm: 0, toPurchase };
+  }
+
+  /**
+   * Bozorlik sahifasi ochildi: SUPER_ADMIN uchun yangi ro'yxatlar "ko'rildi" bo'ladi,
+   * xaridchi uchun — unga yuborilganlar. Qo'ng'iroqcha keyingi yuklashda o'chadi.
+   */
+  async markSeen(actor: AuthUser): Promise<void> {
+    const now = new Date();
+    if (isSuperAdmin(actor)) {
+      await this.prisma.shoppingList.updateMany({
+        where: { deletedAt: null, status: ShoppingListStatus.SUBMITTED },
+        data: { status: ShoppingListStatus.REVIEWED, reviewedAt: now },
+      });
+    } else if (actor.permissions.includes('shopping:purchase')) {
+      await this.prisma.shoppingList.updateMany({
+        where: { deletedAt: null, status: ShoppingListStatus.APPROVED, adminSeenAt: null },
+        data: { adminSeenAt: now },
+      });
+    }
   }
 
   /**
@@ -346,6 +390,82 @@ export class ShoppingService {
       .map((row) => ({ name: row.name, unit: row.unit }));
   }
 
+  /**
+   * Oshpaz uchun mahsulot katalogi: ombordagi oziq-ovqat (turi va rasmi bilan) hamda
+   * ilgari yozilgan, omborda yo'q mahsulotlar. Narx ham, qoldiq ham qaytarilmaydi.
+   */
+  async catalog() {
+    const [items, used] = await Promise.all([
+      this.prisma.warehouseItem.findMany({
+        where: { deletedAt: null, section: WarehouseSection.FOOD },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.shoppingItem.groupBy({
+        by: ['name', 'unit'],
+        where: { list: { deletedAt: null } },
+        _count: { _all: true },
+        orderBy: { _count: { name: 'desc' } },
+        take: SUGGESTION_LIMIT,
+      }),
+    ]);
+    const known = new Set(items.map((item) => item.name.toLowerCase()));
+    const fromStock = await Promise.all(
+      items.map(async (item) => ({
+        name: item.name,
+        unit: item.unit,
+        productCategory: item.productCategory,
+        photo: await this.photos.urls(item.photoKey, item.photoThumbKey),
+      })),
+    );
+    const written = used
+      .filter((row) => {
+        const key = row.name.toLowerCase();
+        if (known.has(key)) return false;
+        known.add(key);
+        return true;
+      })
+      .map((row) => ({ name: row.name, unit: row.unit, productCategory: null, photo: null }));
+    return [...fromStock, ...written];
+  }
+
+  /**
+   * Foydalanuvchining o'zi yozgan ro'yxatlari (oxirgi 30 tasi) — holati bilan; to'y
+   * mehmonlari soni oldingi ro'yxatdan nusxa olishda miqdorni moslash uchun kerak.
+   */
+  async mine(actor: AuthUser) {
+    const lists = await this.prisma.shoppingList.findMany({
+      where: { deletedAt: null, createdById: actor.id },
+      include: {
+        ...LIST_INCLUDE,
+        event: {
+          select: {
+            id: true,
+            number: true,
+            title: true,
+            startAt: true,
+            guestCount: true,
+            client: { select: { fullName: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+    });
+    return lists.map((list) => ({
+      ...listView(list),
+      event: list.event
+        ? {
+            id: list.event.id,
+            number: list.event.number,
+            title: list.event.title,
+            clientName: list.event.client.fullName,
+            startAt: list.event.startAt,
+            guestCount: list.event.guestCount,
+          }
+        : null,
+    }));
+  }
+
   /** `eventId` bo'sh bo'lsa — to'yga bog'lanmagan umumiy bozorlik. */
   async create(eventId: string | null, dto: SaveShoppingListDto, actor: AuthUser) {
     if (eventId) {
@@ -358,15 +478,6 @@ export class ShoppingService {
         throw AppException.conflict(
           'EVENT_CANCELLED',
           'Bekor qilingan bron uchun bozorlik yozilmaydi',
-        );
-      }
-      const done = await this.prisma.shoppingList.count({
-        where: { eventId, deletedAt: null, status: { in: [...DONE_STATUSES] } },
-      });
-      if (done > 0) {
-        throw AppException.conflict(
-          'SHOPPING_CLOSED',
-          "Bu to'yning bozorligi qilib bo'lingan — yangi ro'yxat yozib bo'lmaydi",
         );
       }
     }
@@ -403,9 +514,10 @@ export class ShoppingService {
   }
 
   /**
-   * Ro'yxat mazmunini o'zgartirish — faqat tekshiruv bosqichida: oshpaz o'zinikini
-   * tuzatadi, SUPER_ADMIN esa kamaytiradi, qo'shadi yoki olib tashlaydi (oshpaz
-   * so'ragan miqdor farqni ko'rsatish uchun saqlanadi).
+   * Ro'yxat mazmunini o'zgartirish. Oshpaz o'zinikini SUPER_ADMIN ko'rmasidan oldin
+   * tuzatadi; SUPER_ADMIN esa xarid tugaguncha kamaytiradi, qo'shadi yoki olib tashlaydi
+   * (oshpaz so'ragan miqdor farqni ko'rsatish uchun saqlanadi). Sotib olingan yoki
+   * "olinmadi" deb belgilangan qatorlar qulflangan — yuborilmasa ham o'chmaydi.
    */
   async update(id: string, dto: SaveShoppingListDto, actor: AuthUser) {
     const items = this.buildItems(dto.items);
@@ -416,10 +528,15 @@ export class ShoppingService {
       if (!reviewing && before.createdById !== actor.id) {
         throw AppException.forbidden('FORBIDDEN', "Faqat o'z ro'yxatingizni o'zgartira olasiz");
       }
-      if (before.status !== ShoppingListStatus.SUBMITTED) {
+      const editable: readonly ShoppingListStatus[] = reviewing
+        ? [...NOT_SENT_STATUSES, ShoppingListStatus.APPROVED]
+        : [ShoppingListStatus.SUBMITTED];
+      if (!editable.includes(before.status)) {
         throw AppException.conflict(
           'SHOPPING_LIST_LOCKED',
-          "Ro'yxat ko'rib chiqilgan — endi o'zgartirib bo'lmaydi",
+          reviewing
+            ? "Xarid qilingan yoki yopilgan ro'yxatni o'zgartirib bo'lmaydi"
+            : "Ro'yxat ko'rib chiqilgan — endi o'zgartirib bo'lmaydi",
         );
       }
 
@@ -437,6 +554,21 @@ export class ShoppingService {
           note: item.note,
           sortOrder: index,
         };
+        if (current && isDone(current)) {
+          const unchanged =
+            current.name === item.name &&
+            current.unit === item.unit &&
+            current.quantity.eq(item.quantity);
+          if (!unchanged) {
+            throw AppException.conflict(
+              'SHOPPING_ITEM_LOCKED',
+              `"${current.name}" sotib olingan — uni o'zgartirib bo'lmaydi`,
+              { name: current.name },
+            );
+          }
+          keptIds.add(current.id);
+          continue;
+        }
         if (current) {
           keptIds.add(current.id);
           await tx.shoppingItem.update({
@@ -456,9 +588,12 @@ export class ShoppingService {
           });
         }
       }
-      await tx.shoppingItem.deleteMany({
-        where: { listId: id, id: { notIn: [...keptIds], in: [...existing.keys()] } },
-      });
+      // Sotib olinganlari tegilmaydi; qolganidan yuborilmaganlari olib tashlanadi.
+      const removable = before.items
+        .filter((item) => !isDone(item) && !keptIds.has(item.id))
+        .map((item) => item.id);
+      await tx.shoppingItem.deleteMany({ where: { id: { in: removable } } });
+      await this.settle(tx, before, actor);
 
       const list = await tx.shoppingList.update({
         where: { id },
@@ -480,97 +615,165 @@ export class ShoppingService {
   }
 
   /** SUPER_ADMIN ko'rib chiqdi — ro'yxat xarid uchun adminga o'tadi. */
-  approve(id: string) {
-    return this.transition(id, 'shopping.approve', ShoppingListStatus.SUBMITTED, {
-      status: ShoppingListStatus.APPROVED,
-      approvedAt: new Date(),
+  async approve(id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const before = await this.lock(tx, id);
+      if (!NOT_SENT_STATUSES.includes(before.status)) throw wrongStatus();
+      if (before.items.length === 0) {
+        throw AppException.badRequest('SHOPPING_LIST_EMPTY', "Bo'sh ro'yxatni yuborib bo'lmaydi");
+      }
+      const now = new Date();
+      const list = await tx.shoppingList.update({
+        where: { id },
+        data: {
+          status: ShoppingListStatus.APPROVED,
+          approvedAt: now,
+          reviewedAt: before.reviewedAt ?? now,
+        },
+        include: LIST_INCLUDE,
+      });
+      await this.audit.log(
+        {
+          action: 'shopping.approve',
+          resource: 'shopping_list',
+          resourceId: id,
+          before: { status: before.status },
+          after: { status: list.status },
+        },
+        tx,
+      );
+      return listView(list);
     });
   }
 
   /**
-   * Admin narxlarni kiritadi. `complete: false` — oraliq saqlash (bozorda yurganda),
-   * `complete: true` — xarid tugadi: har bir qatorda narx bo'lishi yoki
-   * "olinmadi" deb belgilanishi shart. Bozorlik tadbir kunidan oldin qilinmaydi.
+   * Bitta mahsulot sotib olindi: amaldagi miqdor va narx (jami yoki 1 birlik). Admin
+   * faqat unga yuborilgan ro'yxatda, SUPER_ADMIN esa yopilmagan istalgan ro'yxatda
+   * xarid qiladi. Hamma qator tugagach ro'yxat o'zi "sotib olingan" bo'ladi.
    */
-  async purchase(id: string, dto: PurchaseDto, actor: AuthUser) {
+  async purchaseItem(id: string, itemId: string, dto: PurchaseItemDto, actor: AuthUser) {
     return this.prisma.$transaction(async (tx) => {
       const before = await this.lock(tx, id);
-      const fixing = before.status === ShoppingListStatus.PURCHASED && isSuperAdmin(actor);
-      if (before.status !== ShoppingListStatus.APPROVED && !fixing) throw wrongStatus();
-
-      // Umumiy bozorlik biror kunga bog'lanmagan — unda bu cheklov yo'q.
-      const eventDay = before.event ? localDate(before.event.startAt, this.timeZone) : null;
-      if (eventDay && localDate(new Date(), this.timeZone) < eventDay) {
+      this.assertCanBuy(before, actor);
+      const item = this.findItem(before, itemId);
+      if (isDone(item)) {
         throw AppException.conflict(
-          'SHOPPING_TOO_EARLY',
-          'Bozorlik tadbir kuni qilinadi — narxlarni shu kundan boshlab kiritish mumkin',
-          { day: eventDay },
+          'SHOPPING_ITEM_DONE',
+          `"${item.name}" allaqachon belgilangan — narxni "tuzatish" orqali o'zgartiring`,
         );
       }
+      const quantity =
+        dto.quantity !== undefined ? parseQuantity(dto.quantity, item.unit) : item.quantity;
+      const price = this.resolvePrice(dto, quantity);
+      await tx.shoppingItem.update({
+        where: { id: item.id },
+        data: {
+          quantity,
+          price,
+          // Ro'yxatdagidan boshqa miqdor olinsa, rejadagi miqdor farq sifatida ko'rinadi.
+          ...(!quantity.eq(item.quantity) && {
+            requestedQuantity: item.requestedQuantity ?? item.quantity,
+          }),
+          purchasedAt: new Date(),
+          purchasedByName: actor.fullName,
+        },
+      });
+      return this.afterItemChange(tx, before, actor, 'shopping.item_purchase', {
+        item: item.name,
+        quantity: quantityString(quantity),
+        price: moneyString(price),
+      });
+    });
+  }
 
-      const existing = new Map(before.items.map((item) => [item.id, item]));
-      const seen = new Set<string>();
-      for (const input of dto.items) {
-        const current = existing.get(input.id);
-        if (!current || seen.has(input.id)) {
-          throw AppException.badRequest('SHOPPING_ITEM_NOT_FOUND', "Ro'yxatda bunday qator yo'q");
-        }
-        seen.add(input.id);
-        const skipped = input.skipped === true;
-        const price = !skipped && input.price ? money(input.price) : null;
-        if (price?.isZero()) {
-          throw AppException.badRequest('INVALID_AMOUNT', "Summa noldan katta bo'lishi kerak");
-        }
-        await tx.shoppingItem.update({
-          where: { id: current.id },
-          data: { quantity: parseQuantity(input.quantity, current.unit), price, skipped },
+  /** Mahsulot topilmadi yoki kerak bo'lmadi — "olinmadi" deb belgilanadi. */
+  async skipItem(id: string, itemId: string, actor: AuthUser) {
+    return this.prisma.$transaction(async (tx) => {
+      const before = await this.lock(tx, id);
+      this.assertCanBuy(before, actor);
+      const item = this.findItem(before, itemId);
+      if (isDone(item)) throw wrongStatus();
+      await tx.shoppingItem.update({
+        where: { id: item.id },
+        data: {
+          skipped: true,
+          price: null,
+          purchasedAt: new Date(),
+          purchasedByName: actor.fullName,
+        },
+      });
+      return this.afterItemChange(tx, before, actor, 'shopping.item_skip', { item: item.name });
+    });
+  }
+
+  /**
+   * Belgini bekor qilish (xato bosilgan bo'lsa): qator yana "olinmagan" bo'ladi. Ro'yxat
+   * sotib olingan holatda bo'lsa, xarid davom etayotgan holatga qaytadi.
+   */
+  async resetItem(id: string, itemId: string, actor: AuthUser) {
+    return this.prisma.$transaction(async (tx) => {
+      const before = await this.lock(tx, id);
+      const reopening = before.status === ShoppingListStatus.PURCHASED;
+      if (!reopening) this.assertCanBuy(before, actor);
+      else if (!isSuperAdmin(actor) && !actor.permissions.includes('shopping:purchase')) {
+        throw AppException.forbidden('FORBIDDEN', "Bu amal uchun ruxsatingiz yo'q");
+      }
+      const item = this.findItem(before, itemId);
+      if (!isDone(item)) throw wrongStatus();
+      await tx.shoppingItem.update({
+        where: { id: item.id },
+        data: {
+          skipped: false,
+          price: null,
+          purchasedAt: null,
+          purchasedByName: null,
+          // Olingan miqdor rejadagidan farq qilgan bo'lsa — rejadagisiga qaytadi.
+          ...(item.requestedQuantity && { quantity: item.requestedQuantity }),
+        },
+      });
+      if (reopening) {
+        await tx.shoppingList.update({
+          where: { id },
+          data: {
+            status: before.approvedAt ? ShoppingListStatus.APPROVED : ShoppingListStatus.REVIEWED,
+            purchasedAt: null,
+            purchasedByName: null,
+          },
         });
       }
+      return this.afterItemChange(tx, before, actor, 'shopping.item_reset', { item: item.name });
+    });
+  }
 
-      const complete = dto.complete || fixing;
-      if (complete) {
-        const items = await tx.shoppingItem.findMany({ where: { listId: id } });
-        const missing = items.filter((item) => !item.skipped && !item.price);
-        if (missing.length > 0) {
-          throw AppException.badRequest(
-            'SHOPPING_PRICES_MISSING',
-            'Har bir mahsulot narxini kiriting yoki "olinmadi" deb belgilang',
-            { items: missing.map((item) => item.name) },
-          );
-        }
-        if (items.every((item) => item.skipped)) {
-          throw AppException.badRequest(
-            'SHOPPING_NOTHING_PURCHASED',
-            'Hech narsa sotib olinmagan — kamida bitta mahsulot narxini kiriting',
-          );
-        }
-      }
-
-      const list = await tx.shoppingList.update({
-        where: { id },
-        data:
-          complete && !fixing
-            ? {
-                status: ShoppingListStatus.PURCHASED,
-                purchasedAt: new Date(),
-                purchasedByName: actor.fullName,
-              }
-            : {},
-        include: LIST_INCLUDE,
-      });
-      if (complete) {
-        await this.audit.log(
-          {
-            action: fixing ? 'shopping.prices_update' : 'shopping.purchase',
-            resource: 'shopping_list',
-            resourceId: id,
-            before: auditFields(before),
-            after: auditFields(list),
-          },
-          tx,
+  /** Sotib olingan mahsulot narxini tuzatish (xato yozilgan bo'lsa). */
+  async fixItemPrice(id: string, itemId: string, dto: FixItemPriceDto, actor: AuthUser) {
+    return this.prisma.$transaction(async (tx) => {
+      const before = await this.lock(tx, id);
+      const allowed = isSuperAdmin(actor)
+        ? before.status !== ShoppingListStatus.CONFIRMED
+        : actor.permissions.includes('shopping:purchase') &&
+          (before.status === ShoppingListStatus.APPROVED ||
+            before.status === ShoppingListStatus.PURCHASED);
+      if (!allowed) {
+        throw AppException.conflict(
+          'SHOPPING_LIST_LOCKED',
+          "Yopilgan ro'yxat narxini o'zgartirib bo'lmaydi — avval tasdiqni bekor qiling",
         );
       }
-      return listView(list);
+      const item = this.findItem(before, itemId);
+      if (item.price === null) {
+        throw AppException.conflict(
+          'SHOPPING_ITEM_NOT_PURCHASED',
+          'Narxni faqat sotib olingan mahsulot uchun tuzatish mumkin',
+        );
+      }
+      const price = this.resolvePrice(dto, item.quantity);
+      await tx.shoppingItem.update({ where: { id: item.id }, data: { price } });
+      return this.afterItemChange(tx, before, actor, 'shopping.item_price', {
+        item: item.name,
+        before: moneyString(item.price),
+        price: moneyString(price),
+      });
     });
   }
 
@@ -648,7 +851,7 @@ export class ShoppingService {
     });
   }
 
-  /** Oshpaz o'z ro'yxatini tekshiruvgacha, SUPER_ADMIN esa tasdiqlanmaganini o'chira oladi. */
+  /** Oshpaz o'z ro'yxatini adminga yuborilguncha, SUPER_ADMIN esa yopilmaganini o'chira oladi. */
   async remove(id: string, actor: AuthUser): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       const list = await this.lock(tx, id);
@@ -661,10 +864,11 @@ export class ShoppingService {
         }
       } else if (list.createdById !== actor.id) {
         throw AppException.forbidden('FORBIDDEN', "Faqat o'z ro'yxatingizni o'chira olasiz");
-      } else if (list.status !== ShoppingListStatus.SUBMITTED) {
+      } else if (!NOT_SENT_STATUSES.includes(list.status) || list.items.some(isDone)) {
+        // Oshpaz xato yuborganini faqat adminga yuborilmaguncha bekor qila oladi.
         throw AppException.conflict(
           'SHOPPING_LIST_LOCKED',
-          "Ro'yxat ko'rib chiqilgan — endi o'chirib bo'lmaydi",
+          "Ro'yxat allaqachon adminga yuborilgan — endi uni bekor qilib bo'lmaydi",
         );
       }
 
@@ -693,28 +897,95 @@ export class ShoppingService {
 
   // ── Yordamchi ────────────────────────────────────────────────────────────
 
-  private async transition(
-    id: string,
-    action: string,
-    from: ShoppingListStatus,
-    data: Prisma.ShoppingListUpdateInput,
-  ) {
-    return this.prisma.$transaction(async (tx) => {
-      const before = await this.lock(tx, id);
-      if (before.status !== from) throw wrongStatus();
-      const list = await tx.shoppingList.update({ where: { id }, data, include: LIST_INCLUDE });
-      await this.audit.log(
-        {
-          action,
-          resource: 'shopping_list',
-          resourceId: id,
-          before: { status: before.status },
-          after: { status: list.status },
-        },
-        tx,
+  /** Admin faqat unga yuborilgan ro'yxatda, SUPER_ADMIN — yopilmagan har qandayida. */
+  private assertCanBuy(list: ShoppingListRecord, actor: AuthUser): void {
+    if (isSuperAdmin(actor)) {
+      if (![...NOT_SENT_STATUSES, ShoppingListStatus.APPROVED].includes(list.status)) {
+        throw wrongStatus();
+      }
+      return;
+    }
+    if (!actor.permissions.includes('shopping:purchase')) {
+      throw AppException.forbidden('FORBIDDEN', "Bu amal uchun ruxsatingiz yo'q");
+    }
+    if (list.status !== ShoppingListStatus.APPROVED) {
+      throw AppException.conflict(
+        'SHOPPING_NOT_SENT',
+        "Xarid faqat super admin yuborgan ro'yxatda qilinadi",
       );
-      return listView(list);
+    }
+  }
+
+  private findItem(list: ShoppingListRecord, itemId: string): ItemRecord {
+    const item = list.items.find((row) => row.id === itemId);
+    if (!item) {
+      throw AppException.notFound('SHOPPING_ITEM_NOT_FOUND', "Ro'yxatda bunday qator yo'q");
+    }
+    return item;
+  }
+
+  /** Jami summa aynan saqlanadi; 1 birlik narxi berilsa — narx × miqdor. */
+  private resolvePrice(dto: { price?: string; unitPrice?: string }, quantity: Prisma.Decimal) {
+    const price =
+      dto.price !== undefined
+        ? money(dto.price)
+        : money(dto.unitPrice ?? '0')
+            .mul(quantity)
+            .toDecimalPlaces(2);
+    if (price.isZero()) {
+      throw AppException.badRequest('INVALID_AMOUNT', "Summa noldan katta bo'lishi kerak");
+    }
+    return price;
+  }
+
+  /** Hamma qator tugagan bo'lsa (kamida bittasi sotib olingan) — ro'yxat "sotib olingan". */
+  private async settle(
+    tx: Prisma.TransactionClient,
+    before: ShoppingListRecord,
+    actor: AuthUser,
+  ): Promise<void> {
+    const open: readonly ShoppingListStatus[] = [...NOT_SENT_STATUSES, ShoppingListStatus.APPROVED];
+    if (!open.includes(before.status)) return;
+    const items = await tx.shoppingItem.findMany({ where: { listId: before.id } });
+    const allDone = items.length > 0 && items.every((item) => item.skipped || item.price !== null);
+    const anyBought = items.some((item) => !item.skipped && item.price !== null);
+    if (!allDone || !anyBought) return;
+    await tx.shoppingList.update({
+      where: { id: before.id },
+      data: {
+        status: ShoppingListStatus.PURCHASED,
+        purchasedAt: new Date(),
+        purchasedByName: actor.fullName,
+      },
     });
+  }
+
+  /**
+   * Qator o'zgargandan keyin: hamma qator tugagan bo'lsa (kamida bittasi sotib olingan)
+   * ro'yxat "sotib olingan" holatiga o'tadi. Audit yoziladi va yangi ko'rinish qaytadi.
+   */
+  private async afterItemChange(
+    tx: Prisma.TransactionClient,
+    before: ShoppingListRecord,
+    actor: AuthUser,
+    action: string,
+    details: Record<string, string>,
+  ) {
+    await this.settle(tx, before, actor);
+    const list = await tx.shoppingList.findUniqueOrThrow({
+      where: { id: before.id },
+      include: LIST_INCLUDE,
+    });
+    await this.audit.log(
+      {
+        action,
+        resource: 'shopping_list',
+        resourceId: before.id,
+        after: { ...details, status: list.status },
+      },
+      tx,
+    );
+    return listView(list);
   }
 
   /** Qatorni qulflab o'qiydi — bir vaqtda kelgan ikki tasdiq ikki xarajat yozmasin. */

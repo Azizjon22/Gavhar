@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { usePermissions } from '@/hooks/use-permissions';
 import { errorMessage } from '@/lib/error-message';
 import { cn } from '@/lib/utils';
 import { warehouseApi, warehouseKeys } from '../api/warehouse.api';
@@ -36,6 +37,8 @@ interface Props {
 export function MovementDialog({ target, onClose }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  // Narxni faqat SUPER_ADMIN kiritadi va ko'radi.
+  const { isSuperAdmin } = usePermissions();
   const [quantity, setQuantity] = useState('');
   const [cost, setCost] = useState('');
   const [note, setNote] = useState('');
@@ -159,7 +162,7 @@ export function MovementDialog({ target, onClose }: Props) {
             </span>
           </p>
 
-          {isIn && (
+          {isIn && isSuperAdmin && (
             <div className="grid content-start gap-2">
               <Label htmlFor="movement-cost">
                 {t('warehouse.movement.cost')}{' '}

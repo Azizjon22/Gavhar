@@ -16,13 +16,26 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toApiError } from '@/lib/api-error';
 import { errorMessage } from '@/lib/error-message';
 import { amountToInput } from '@/lib/money';
 import { useLocaleStore } from '@/stores/locale.store';
 import { type Dish, dishKeys, dishesApi } from '../api/dishes.api';
 import { menuApi, menuKeys } from '../api/menu.api';
-import { type MenuCategory, type MenuPackage, localizedName } from '../types/menu.types';
+import {
+  type MenuCategory,
+  type MenuPackage,
+  type MenuPackageType,
+  PACKAGE_TYPES,
+  localizedName,
+} from '../types/menu.types';
 
 interface SectionDraft {
   kindsCount: number;
@@ -44,7 +57,10 @@ const splitItems = (value: string): string[] =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-/** Paket: nom, 1 kishilik narx va tarkib (qaysi bo'limdan necha xil). */
+/**
+ * Paket: nom, belgilangan mehmonlar soni uchun qat'iy narx, turi (to'liq yoki faqat
+ * taomlar) va tarkib (qaysi bo'limdan necha xil).
+ */
 export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -53,6 +69,8 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
+  const [guestCount, setGuestCount] = useState('');
+  const [packageType, setPackageType] = useState<MenuPackageType>('FOOD_ONLY');
   const [badge, setBadge] = useState('');
   const [description, setDescription] = useState('');
   const [isActive, setIsActive] = useState(true);
@@ -87,7 +105,9 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
   useEffect(() => {
     if (!open) return;
     setName(pkg?.name ?? '');
-    setPrice(pkg ? amountToInput(pkg.pricePerGuest) : '');
+    setPrice(pkg ? amountToInput(pkg.price) : '');
+    setGuestCount(pkg ? String(pkg.guestCount) : '100');
+    setPackageType(pkg?.packageType ?? 'FOOD_ONLY');
     setBadge(pkg?.badge ?? '');
     setDescription(pkg?.description ?? '');
     setIsActive(pkg?.isActive ?? true);
@@ -105,13 +125,16 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
 
   const nameValid = name.trim().length >= 2;
   const priceValid = /^(0|[1-9]\d{0,12})$/.test(price);
+  const guestsValid = /^[1-9]\d{0,3}$/.test(guestCount) && Number(guestCount) <= 2000;
 
   const mutation = useMutation({
     mutationFn: () => {
       const payload = {
         name: name.trim(),
         description: description.trim() || null,
-        pricePerGuest: price,
+        price,
+        guestCount: Number(guestCount),
+        packageType,
         badge: badge.trim() || null,
         isActive,
         // Bo'limlar ro'yxat tartibida yuboriladi.
@@ -179,7 +202,7 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
             event.preventDefault();
             setSubmitted(true);
             setNameError(null);
-            if (nameValid && priceValid) mutation.mutate();
+            if (nameValid && priceValid && guestsValid) mutation.mutate();
           }}
         >
           <div className="grid shrink-0 gap-5 sm:grid-cols-2">
@@ -212,6 +235,44 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
                   {t('validation.amount')}
                 </p>
               )}
+            </div>
+            <div className="grid content-start gap-2">
+              <Label htmlFor="package-guests">{t('menu.packageForm.guestCount')}</Label>
+              <Input
+                id="package-guests"
+                inputMode="numeric"
+                maxLength={4}
+                value={guestCount}
+                className="tabular"
+                aria-invalid={submitted && !guestsValid}
+                onChange={(event) => setGuestCount(event.target.value.replace(/\D/g, ''))}
+              />
+              {submitted && !guestsValid && (
+                <p role="alert" className="text-xs font-medium text-destructive">
+                  {t('validation.packageGuests')}
+                </p>
+              )}
+            </div>
+            <div className="grid content-start gap-2">
+              <Label htmlFor="package-type">{t('menu.packageForm.type')}</Label>
+              <Select
+                value={packageType}
+                onValueChange={(value) => setPackageType(value as MenuPackageType)}
+              >
+                <SelectTrigger id="package-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PACKAGE_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {t(`menu.packageType.${type}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {t(`menu.packageTypeHint.${packageType}`)}
+              </p>
             </div>
             <div className="grid content-start gap-2">
               <Label htmlFor="package-badge">

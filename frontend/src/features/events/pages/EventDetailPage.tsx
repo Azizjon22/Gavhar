@@ -11,6 +11,7 @@ import {
   HandCoins,
   Pencil,
   Phone,
+  RotateCcw,
   Trash2,
   Soup,
   Users,
@@ -33,12 +34,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EventExpensesCard } from '@/features/finance/components/EventExpensesCard';
+import { EventStockCard } from '@/features/warehouse/components/EventStockCard';
 import { EventWorkersCard } from '@/features/workers/components/EventWorkersCard';
 import { usePermissions } from '@/hooks/use-permissions';
 import { downloadFile } from '@/lib/download';
 import { errorMessage } from '@/lib/error-message';
-import { formatDate, formatDateTime, formatTime } from '@/lib/format';
-import { formatAmount } from '@/lib/money';
+import { formatDate, formatDateTime, formatTime, inAppZone } from '@/lib/format';
+import { formatAmount, toSum } from '@/lib/money';
 import { formatPhone } from '@/lib/phone';
 import { cn } from '@/lib/utils';
 import { type EventTransition, eventKeys, eventsApi } from '../api/events.api';
@@ -46,14 +48,15 @@ import { CancelEventDialog } from '../components/CancelEventDialog';
 import { EventFormDialog } from '../components/EventFormDialog';
 import { EventStatusBadge } from '../components/EventStatusBadge';
 import { PaymentDialog } from '../components/PaymentDialog';
-import { toSum } from '../lib/pricing';
 import { type EventDetail, type EventStatus, type Payment, isEditable } from '../types/event.types';
 
-/** Har bir holatdan keyingi qadam. */
+/**
+ * Asosiy keyingi qadam: kutilayotgan — tasdiqlash (to'liq to'langanda o'zi tasdiqlanadi),
+ * tasdiqlangan — kuni kelgach yakunlash.
+ */
 const NEXT_STEP: Partial<Record<EventStatus, EventTransition>> = {
   REQUEST: 'confirm',
-  CONFIRMED: 'hold',
-  HELD: 'complete',
+  CONFIRMED: 'complete',
 };
 
 type DialogName = 'edit' | 'payment' | 'cancel' | 'delete' | null;
@@ -174,19 +177,26 @@ export function EventDetailPage() {
 
   const canUpdate = can('events:update');
   const editable = isEditable(event.status);
-  const closed = event.status === 'COMPLETED';
-  const nextStep = NEXT_STEP[event.status];
+  // To'y kuni kelmaguncha yakunlab bo'lmaydi.
+  const dayArrived =
+    inAppZone(event.startAt).format('YYYY-MM-DD') <= inAppZone().format('YYYY-MM-DD');
+  const step = NEXT_STEP[event.status];
+  const nextStep = step === 'complete' && !dayArrived ? undefined : step;
   // Pul (summa, to'lovlar, shartnoma) faqat moliya ruxsati bor foydalanuvchiga ko'rinadi.
   const showMoney = can('finance:read');
   const paid = toSum(event.paidAmount);
   const total = toSum(event.totalAmount);
-  const depositMissing = Math.max(0, toSum(event.requiredDeposit) - paid);
   const cancellable = event.status === 'REQUEST' || event.status === 'CONFIRMED';
-  const removable = paid === 0 && (event.status === 'REQUEST' || event.status === 'CANCELLED');
-  const canPay = can('finance:create') && !closed && (event.status !== 'CANCELLED' || paid > 0);
+  const reopenable = event.status === 'CANCELLED' || event.status === 'COMPLETED';
+  // Tasdiqlangan, yakunlangan yoki pulli bron o'chirilmaydi (server oxirgi so'zni aytadi).
+  const removable =
+    (event.status === 'REQUEST' || event.status === 'CANCELLED') &&
+    (event.payments ?? []).length === 0;
+  // Yakunlangan to'yning qarzi ham undiriladi; bekor qilinganida — faqat qaytarish.
+  const canPay = can('finance:create') && (event.status !== 'CANCELLED' || paid > 0);
   const currency = t('common.currency');
   const money = (value: string | undefined) => `${formatAmount(value)} ${currency}`;
-  const secondaryActions = canUpdate && (cancellable || removable);
+  const secondaryActions = canUpdate && (cancellable || reopenable || removable);
 
   return (
     <>
@@ -242,6 +252,12 @@ export function EventDetailPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {reopenable && (
+                  <DropdownMenuItem onSelect={() => transition.mutate('reopen')}>
+                    <RotateCcw />
+                    {t('events.actions.reopen')}
+                  </DropdownMenuItem>
+                )}
                 {cancellable && (
                   <DropdownMenuItem variant="destructive" onSelect={() => setDialog('cancel')}>
                     <Ban />
@@ -260,14 +276,6 @@ export function EventDetailPage() {
         </div>
       </div>
 
-      {showMoney && event.status === 'REQUEST' && depositMissing > 0 && (
-        <p className="mb-6 rounded-xl border border-gold/40 bg-gold/10 p-4 text-sm leading-relaxed">
-          {t('events.detail.depositNeeded', {
-            amount: formatAmount(depositMissing),
-            percent: event.minDepositPercent,
-          })}
-        </p>
-      )}
       {event.status === 'CANCELLED' && event.cancelReason && (
         <p className="mb-6 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm leading-relaxed">
           <span className="font-semibold">{t('events.detail.cancelReason')}:</span>{' '}
@@ -315,14 +323,6 @@ export function EventDetailPage() {
                 {event.menuPackage && (
                   <InfoRow icon={<UtensilsCrossed />} label={t('events.form.menuPackage')}>
                     {event.menuPackage.name}
-                    {showMoney && (
-                      <>
-                        {' · '}
-                        <span className="tabular">
-                          {formatAmount(event.pricePerGuest)} {t('common.currency')}
-                        </span>
-                      </>
-                    )}
                   </InfoRow>
                 )}
               </dl>
@@ -359,27 +359,17 @@ export function EventDetailPage() {
                       >
                         <div className="min-w-0 flex-1">
                           <p className="flex flex-wrap items-center gap-2 font-semibold">
-                            <Badge
-                              variant={
-                                payment.kind === 'REFUND'
-                                  ? 'destructive'
-                                  : payment.kind === 'DEPOSIT'
-                                    ? 'gold'
-                                    : 'success'
-                              }
-                            >
+                            <Badge variant={payment.kind === 'REFUND' ? 'destructive' : 'success'}>
                               {t(`payments.kind.${payment.kind}`)}
                             </Badge>
                             <span className="tabular whitespace-nowrap">
                               {payment.kind === 'REFUND' ? '− ' : ''}
-                              {money(payment.amountUzs)}
+                              {money(payment.amount)}
                             </span>
                           </p>
                           <p className="tabular mt-1 truncate text-xs text-muted-foreground">
                             {formatDateTime(payment.paidAt)} ·{' '}
                             {t(`payments.method.${payment.method}`)}
-                            {payment.currency === 'USD' &&
-                              ` · ${formatAmount(payment.amount)} $ × ${formatAmount(payment.exchangeRate)}`}
                             {payment.note && ` · ${payment.note}`}
                           </p>
                         </div>
@@ -405,7 +395,7 @@ export function EventDetailPage() {
                               <Download />
                               {t('payments.receipt')}
                             </DropdownMenuItem>
-                            {can('finance:delete') && !closed && (
+                            {can('finance:delete') && (
                               <DropdownMenuItem
                                 variant="destructive"
                                 onSelect={() => setVoiding(payment)}
@@ -428,6 +418,8 @@ export function EventDetailPage() {
             <EventWorkersCard eventId={event.id} locked={event.status === 'CANCELLED'} />
           )}
 
+          <EventStockCard eventId={event.id} />
+
           {can('finance:read') && (
             <EventExpensesCard
               revision={event.paidAmount}
@@ -447,27 +439,9 @@ export function EventDetailPage() {
             <CardContent>
               <dl className="grid gap-3 text-sm">
                 <AmountRow
-                  label={t('events.summary.guests', {
-                    count: event.guestCount,
-                    price: formatAmount(event.pricePerGuest),
-                  })}
-                  amount={formatAmount(event.guestsTotal)}
+                  label={t('events.summary.package')}
+                  amount={event.menuPackage?.name ?? '—'}
                 />
-                {event.services.map((service) => (
-                  <AmountRow
-                    key={service.extraServiceId}
-                    label={
-                      service.quantity > 1 ? `${service.name} × ${service.quantity}` : service.name
-                    }
-                    amount={formatAmount(service.total)}
-                  />
-                ))}
-                {toSum(event.discount) > 0 && (
-                  <AmountRow
-                    label={t('events.summary.discount')}
-                    amount={`− ${formatAmount(event.discount)}`}
-                  />
-                )}
                 <div className="my-1 h-px bg-border" />
                 <div className="flex items-baseline justify-between gap-3">
                   <dt className="font-semibold">{t('events.summary.total')}</dt>
@@ -490,6 +464,16 @@ export function EventDetailPage() {
                     style={{ width: `${total > 0 ? Math.min(100, (paid / total) * 100) : 0}%` }}
                   />
                 </div>
+                <AmountRow
+                  label={t('events.summary.received')}
+                  amount={money(event.receivedAmount)}
+                />
+                {toSum(event.refundedAmount) > 0 && (
+                  <AmountRow
+                    label={t('events.summary.refunded')}
+                    amount={`− ${money(event.refundedAmount)}`}
+                  />
+                )}
                 <AmountRow label={t('events.summary.paid')} amount={money(event.paidAmount)} />
                 <div
                   className={cn(
@@ -541,7 +525,7 @@ export function EventDetailPage() {
         onOpenChange={(open) => !open && setVoiding(null)}
         title={t('payments.confirm.voidTitle')}
         description={t('payments.confirm.voidText', {
-          amount: voiding ? formatAmount(voiding.amountUzs) : '',
+          amount: voiding ? formatAmount(voiding.amount) : '',
         })}
         confirmLabel={t('payments.void')}
         variant="destructive"

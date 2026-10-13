@@ -24,7 +24,10 @@ const RESOURCES = {
     'manage-categories': 'Moliya — kategoriyalarni boshqarish',
   },
   menu: crud('Menyu'),
-  warehouse: crud('Ombor'),
+  warehouse: {
+    ...crud('Ombor'),
+    take: 'Ombor — to‘y uchun mahsulot olish (oshpaz)',
+  },
   shopping: {
     read: "Bozorlik — ko'rish",
     create: "Bozorlik — ro'yxat yozish",
@@ -99,8 +102,12 @@ export const DEFAULT_ZAVZAL_PERMISSIONS: readonly PermissionKey[] = [
   'staff:update',
 ];
 
-/** Oshpaz: to'ylar ro'yxatini (pulsiz) ko'radi va bozorlik yozadi — boshqa hech narsa. */
+/**
+ * Oshpaz: to'ylarni (pulsiz) ko'radi, bozorlik yozadi va to'y uchun ombordan mahsulot
+ * oladi (narxsiz) — boshqa hech narsa.
+ */
 export const DEFAULT_COOK_PERMISSIONS: readonly PermissionKey[] = [
   'shopping:read',
   'shopping:create',
+  'warehouse:take',
 ];

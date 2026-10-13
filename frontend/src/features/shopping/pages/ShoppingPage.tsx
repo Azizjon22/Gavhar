@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BadgeCheck, ClipboardCheck, type LucideIcon, Plus, ShoppingCart } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -40,8 +40,9 @@ type ConfirmState = {
 
 /**
  * Bozorlik: har bir to'y kartasida menyu va bozorlik ro'yxatlari.
- * Oshpaz yozadi → SUPER_ADMIN tekshiradi → admin sotib olib narx kiritadi →
- * SUPER_ADMIN tasdiqlaydi (shundan keyingina xarajatga yoziladi).
+ * Oshpaz yozadi → SUPER_ADMIN ko'rib, adminga yuboradi (yoki o'zi xarid qiladi) →
+ * har mahsulot alohida sotib olinadi → SUPER_ADMIN tasdiqlaydi (shundan keyingina
+ * xarajatga yoziladi).
  */
 export function ShoppingPage() {
   const { t } = useTranslation();
@@ -73,6 +74,14 @@ export function ShoppingPage() {
   const [editor, setEditor] = useState<EditorTarget | null>(null);
   const [purchase, setPurchase] = useState<PurchaseTarget | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState>(null);
+
+  // Sahifa ochildi — yangi ro'yxatlar "ko'rildi" bo'ladi va qo'ng'iroqcha o'chadi.
+  useEffect(() => {
+    void shoppingApi
+      .markSeen()
+      .then(() => queryClient.invalidateQueries({ queryKey: shoppingKeys.all }))
+      .catch(() => undefined);
+  }, [queryClient]);
 
   const query = useQuery({
     queryKey: shoppingKeys.events(range),
@@ -128,14 +137,14 @@ export function ShoppingPage() {
   });
   const general = generalQuery.data;
   // To'y ro'yxatlari ham, umumiy ro'yxatlar ham sanaladi — qo'ng'iroqchadagi son bilan bir xil.
-  const countByStatus = (status: ShoppingStatus) =>
-    [...(query.data ?? []).flatMap((event) => event.lists), ...(general ?? [])].filter(
-      (list) => list.status === status,
+  const countByStatus = (...statuses: ShoppingStatus[]) =>
+    [...(query.data ?? []).flatMap((event) => event.lists), ...(general ?? [])].filter((list) =>
+      statuses.includes(list.status),
     ).length;
   const tasks: { key: string; icon: LucideIcon; count: number }[] = [
     ...(isSuperAdmin
       ? [
-          { key: 'review', icon: ClipboardCheck, count: countByStatus('SUBMITTED') },
+          { key: 'review', icon: ClipboardCheck, count: countByStatus('SUBMITTED', 'REVIEWED') },
           { key: 'confirm', icon: BadgeCheck, count: countByStatus('PURCHASED') },
         ]
       : []),
@@ -205,7 +214,6 @@ export function ShoppingPage() {
                 key={list.id}
                 list={list}
                 viewer={viewer}
-                today={today}
                 onAction={(action, target) => handleAction(action, undefined, target)}
               />
             ))

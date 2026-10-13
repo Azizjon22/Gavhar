@@ -12,7 +12,8 @@ import {
 import { ShoppingListRecord } from '../shopping.service';
 
 const STATUS_LABELS: Record<ShoppingListRecord['status'], string> = {
-  SUBMITTED: 'Tekshiruvda',
+  SUBMITTED: 'Yangi',
+  REVIEWED: 'Ko‘rib chiqilmoqda',
   APPROVED: 'Xarid uchun',
   PURCHASED: 'Sotib olingan',
   CONFIRMED: 'Tasdiqlangan',

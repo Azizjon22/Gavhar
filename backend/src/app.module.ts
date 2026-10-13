@@ -18,7 +18,6 @@ import { AuthModule } from '@/modules/auth/auth.module';
 import { ClientsModule } from '@/modules/clients/clients.module';
 import { DashboardModule } from '@/modules/dashboard/dashboard.module';
 import { EventsModule } from '@/modules/events/events.module';
-import { ExtraServicesModule } from '@/modules/extra-services/extra-services.module';
 import { FinanceModule } from '@/modules/finance/finance.module';
 import { GalleryModule } from '@/modules/gallery/gallery.module';
 import { HallsModule } from '@/modules/halls/halls.module';
@@ -83,7 +82,6 @@ const REQUEST_ID_PATTERN = /^[a-zA-Z0-9-]{8,64}$/;
     SettingsModule,
     HallsModule,
     ClientsModule,
-    ExtraServicesModule,
     EventsModule,
     MenuModule,
     GalleryModule,

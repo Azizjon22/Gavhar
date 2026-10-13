@@ -14,6 +14,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Permissions } from '@/common/decorators/permissions.decorator';
+import { SuperAdminOnly } from '@/common/decorators/super-admin-only.decorator';
 import { AuthUser } from '@/common/types/auth-user';
 import {
   CreateExpenseDto,
@@ -44,8 +45,22 @@ export class FinanceController {
   @Get('events/:eventId')
   @Permissions('finance:read')
   @ApiOperation({ summary: 'Bitta to‘yning hisobi: olingan pul, xarajatlar, sof foyda' })
-  eventFinance(@Param('eventId', ParseUUIDPipe) eventId: string) {
-    return this.service.eventFinance(eventId);
+  eventFinance(@Param('eventId', ParseUUIDPipe) eventId: string, @CurrentUser() actor: AuthUser) {
+    return this.service.eventFinance(eventId, actor);
+  }
+
+  @Post('events/:eventId/stock-expense')
+  @SuperAdminOnly()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Ombordan olingan mahsulotlar qiymatini to‘y xarajatiga yozish (SUPER_ADMIN)',
+    description: 'Yozilgan bo‘lsa, summasi hozirgi qiymatga tenglashtiriladi.',
+  })
+  recordStockExpense(
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @CurrentUser() actor: AuthUser,
+  ) {
+    return this.service.recordStockExpense(eventId, actor);
   }
 
   @Get('expenses')

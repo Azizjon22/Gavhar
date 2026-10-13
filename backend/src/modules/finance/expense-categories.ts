@@ -1,14 +1,19 @@
 import { ExpenseCategory, Prisma } from '@prisma/client';
 
-/** Tizim kategoriyalari: tasdiqlangan bozorlik shu kategoriyaga yoziladi. */
+/**
+ * Tizim kategoriyalari: tasdiqlangan bozorlik va to'y uchun ombordan olingan mahsulotlar
+ * shu kategoriyalarga yoziladi.
+ */
 export const SYSTEM_CATEGORIES = {
   SHOPPING: 'Bozorlik',
+  STOCK: 'Ombor mahsulotlari',
 } as const;
 export type SystemCategoryCode = keyof typeof SYSTEM_CATEGORIES;
 
 /** Yangi o'rnatilgan tizim uchun boshlang'ich xarajat turlari. */
 export const DEFAULT_CATEGORIES: readonly { name: string; code?: SystemCategoryCode }[] = [
   { name: SYSTEM_CATEGORIES.SHOPPING, code: 'SHOPPING' },
+  { name: SYSTEM_CATEGORIES.STOCK, code: 'STOCK' },
   // To'y xarajatlari.
   { name: 'Kamerachi' },
   { name: 'San’atkor' },

@@ -7,15 +7,20 @@ import {
 } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
   IsEnum,
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
   MinLength,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { IsMoney } from '@/common/validators/money';
 import { IsQuantity } from '@/common/validators/quantity';
@@ -65,6 +70,15 @@ export class CreateItemDto {
   @IsQuantity()
   initialQuantity?: string;
 
+  @ApiPropertyOptional({
+    example: '4500000',
+    description:
+      "Boshlang'ich qoldiqning xarid summasi — faqat SUPER_ADMIN (boshqalarniki e'tiborga olinmaydi)",
+  })
+  @IsOptional()
+  @IsMoney()
+  initialCost?: string;
+
   @ApiPropertyOptional({ nullable: true })
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
@@ -76,8 +90,14 @@ export class CreateItemDto {
 
 /** Bo'lim va qoldiq o'zgartirilmaydi: qoldiq faqat kirim/chiqim orqali. */
 export class UpdateItemDto extends PartialType(
-  OmitType(CreateItemDto, ['section', 'initialQuantity'] as const),
+  OmitType(CreateItemDto, ['section', 'initialQuantity', 'initialCost'] as const),
 ) {}
+
+export class SetLotPriceDto {
+  @ApiProperty({ example: '18000', description: "1 birlik narxi, so'mda" })
+  @IsMoney()
+  unitPrice: string;
+}
 
 export class CreateMovementDto {
   @ApiProperty({ enum: StockMovementType })
@@ -90,7 +110,8 @@ export class CreateMovementDto {
 
   @ApiPropertyOptional({
     example: '4500000',
-    description: 'Faqat kirimda: xarid summasi. Tarixda saqlanadi, hisob-kitobga qo‘shilmaydi',
+    description:
+      "Faqat kirimda va faqat SUPER_ADMIN: xarid summasi — undan 1 birlik narxi (partiya) olinadi. Hisob-kitobga qo'shilmaydi",
   })
   @IsOptional()
   @IsMoney()
@@ -127,4 +148,29 @@ export class RecentMovementsQueryDto {
   @Min(1)
   @Max(100)
   limit: number = 20;
+}
+
+export class TakeStockItemDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  itemId: string;
+
+  @ApiProperty({ example: '12.5' })
+  @IsQuantity()
+  quantity: string;
+}
+
+/** Oshpaz bitta to'y uchun ombordan oladigan mahsulotlar. */
+export class TakeStockDto {
+  @ApiProperty({ format: 'uuid', description: "Bugungi yoki ertangi to'y" })
+  @IsUUID()
+  eventId: string;
+
+  @ApiProperty({ type: [TakeStockItemDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @ValidateNested({ each: true })
+  @Type(() => TakeStockItemDto)
+  items: TakeStockItemDto[];
 }

@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Dish } from '@/features/menu/api/dishes.api';
 import type { MenuPackage } from '@/features/menu/types/menu.types';
-import { MAX_GUESTS, MIN_GUESTS, clampGuests } from './guests';
 import {
   cardsPerRow,
   dishCount,
   packageCover,
   packagePhotos,
-  packageTotal,
   romanNumeral,
   sectionDishes,
 } from './package';
@@ -22,7 +20,9 @@ const pkg = (overrides: Partial<MenuPackage> = {}): MenuPackage => ({
   id: 'p1',
   name: 'Premium',
   description: null,
-  pricePerGuest: '200000.00',
+  price: '60000000.00',
+  guestCount: 300,
+  packageType: 'FULL',
   badge: null,
   isActive: true,
   sortOrder: 0,
@@ -41,16 +41,6 @@ const pkg = (overrides: Partial<MenuPackage> = {}): MenuPackage => ({
     { categoryId: 'c4', nameUz: 'Milliy', nameRu: 'Нац.', kindsCount: 1, items: ['Sezar'] },
   ],
   ...overrides,
-});
-
-describe('clampGuests', () => {
-  it('mehmonlar sonini ruxsat etilgan oraliqda ushlaydi', () => {
-    expect(clampGuests(300)).toBe(300);
-    expect(clampGuests(3)).toBe(MIN_GUESTS);
-    expect(clampGuests(99_999)).toBe(MAX_GUESTS);
-    expect(clampGuests(310.4)).toBe(310);
-    expect(clampGuests(Number.NaN)).toBe(300);
-  });
 });
 
 describe('paket yordamchilari', () => {
@@ -84,11 +74,6 @@ describe('paket yordamchilari', () => {
     expect(packageCover(pkg({ cover: photo('cover') }), dishes)).toBe('/cover.webp');
     expect(packageCover(pkg(), dishes)).toBe('/sezar.webp');
     expect(packageCover(pkg(), new Map())).toBeNull();
-  });
-
-  it('jami summani aniq hisoblaydi', () => {
-    expect(packageTotal('200000.00', 300)).toBe('60000000');
-    expect(packageTotal('280000', 2000)).toBe('560000000');
   });
 
   it('rim raqami va qatordagi kartalar soni', () => {

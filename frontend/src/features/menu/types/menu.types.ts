@@ -4,7 +4,18 @@ export interface MenuCategory {
   id: string;
   nameUz: string;
   nameRu: string;
+  /** Oshxona bosqichi: oshpaz bozorlikni shu tartibda yozadi. */
+  course: MenuCourse;
   sortOrder: number;
+}
+
+export const MENU_COURSES = ['SALAD', 'FIRST_DISH', 'SECOND_DISH', 'OTHER'] as const;
+export type MenuCourse = (typeof MENU_COURSES)[number];
+
+export interface CategoryPayload {
+  nameUz: string;
+  nameRu: string;
+  course: MenuCourse;
 }
 
 export interface MenuSection {
@@ -17,12 +28,18 @@ export interface MenuSection {
   items: string[];
 }
 
+/** FULL — taomlar, kortej, san'atkor va kamerachi; FOOD_ONLY — faqat to'yxona taomlari. */
+export const PACKAGE_TYPES = ['FULL', 'FOOD_ONLY'] as const;
+export type MenuPackageType = (typeof PACKAGE_TYPES)[number];
+
 export interface MenuPackage {
   id: string;
   name: string;
   description: string | null;
-  /** 1 kishilik narx, so'mda, satr ko'rinishida. */
-  pricePerGuest: string;
+  /** Butun paket narxi `guestCount` mehmon uchun, so'mda (1 kishilik narx emas). */
+  price: string;
+  guestCount: number;
+  packageType: MenuPackageType;
   badge: string | null;
   isActive: boolean;
   sortOrder: number;
@@ -35,7 +52,9 @@ export interface MenuPackage {
 export interface MenuPackagePayload {
   name: string;
   description: string | null;
-  pricePerGuest: string;
+  price: string;
+  guestCount: number;
+  packageType: MenuPackageType;
   badge: string | null;
   isActive: boolean;
   sections: { categoryId: string; kindsCount: number; items: string[] }[];

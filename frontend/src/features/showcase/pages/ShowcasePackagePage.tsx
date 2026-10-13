@@ -295,10 +295,10 @@ export function ShowcasePackagePage() {
               className="mt-6"
             >
               <span className="text-gilded tabular block pb-1 font-display text-[clamp(3.25rem,min(9vw,11svh),7.5rem)] leading-none font-semibold">
-                {formatAmount(pkg.pricePerGuest)}
+                {formatAmount(pkg.price)}
               </span>
               <span className="mt-2 block text-sm font-medium tracking-[0.3em] text-white/70 uppercase">
-                {t('showcase.menu.perGuest')}
+                {t('showcase.menu.priceFor', { count: pkg.guestCount })}
               </span>
             </motion.p>
             {pkg.description && (
@@ -342,10 +342,10 @@ export function ShowcasePackagePage() {
 
                 <p className="absolute top-8 right-6 text-right sm:top-10 sm:right-10">
                   <span className="block font-display text-lg leading-none font-semibold text-[#f3e6c4] tabular-nums sm:text-xl">
-                    {formatAmount(pkg.pricePerGuest)}
+                    {formatAmount(pkg.price)}
                   </span>
                   <span className="mt-1 block text-[10px] tracking-[0.14em] text-[#cbb892]/80 uppercase">
-                    {t('menu.perGuest')}
+                    {t('menu.forGuests', { count: pkg.guestCount })}
                   </span>
                 </p>
 
@@ -508,10 +508,10 @@ export function ShowcasePackagePage() {
                         {item.name}
                       </span>
                       <span className="text-gilded tabular mt-1 block font-display text-3xl leading-none font-semibold">
-                        {formatAmount(item.pricePerGuest)}
+                        {formatAmount(item.price)}
                       </span>
                       <span className="mt-1.5 block text-[10px] font-medium tracking-[0.2em] text-white/55 uppercase">
-                        {t('showcase.menu.perGuest')}
+                        {t('showcase.menu.priceFor', { count: item.guestCount })}
                       </span>
                     </p>
                     <span

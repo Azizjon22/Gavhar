@@ -1,7 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import {
   BadgeCheck,
-  CalendarClock,
   Check,
   ClipboardCheck,
   FileDown,
@@ -18,12 +17,12 @@ import { Button } from '@/components/ui/button';
 import { formatQuantity } from '@/features/warehouse/lib/quantity';
 import { downloadFile } from '@/lib/download';
 import { errorMessage } from '@/lib/error-message';
-import { formatDate, formatDateTime } from '@/lib/format';
+import { formatDateTime } from '@/lib/format';
 import { formatAmount } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import { shoppingApi } from '../api/shopping.api';
 import { STATUS_VARIANT } from '../lib/status';
-import type { KitchenEvent, ShoppingList } from '../types/shopping.types';
+import { type KitchenEvent, type ShoppingList, isItemDone } from '../types/shopping.types';
 
 export type ListAction = 'edit' | 'review' | 'purchase' | 'confirm' | 'unconfirm' | 'delete';
 
@@ -33,12 +32,11 @@ interface Props {
   list: ShoppingList;
   /** Joriy foydalanuvchi shu ro'yxat ustida nima qila oladi. */
   viewer: { id: string; isSuperAdmin: boolean; canWrite: boolean; canPurchase: boolean };
-  today: string;
   onAction: (action: ListAction, list: ShoppingList) => void;
 }
 
 /** Bitta bozorlik ro'yxati: kim yozgan, holati, mahsulotlar va narxlar. */
-export function ShoppingListBlock({ event, list, viewer, today, onAction }: Props) {
+export function ShoppingListBlock({ event, list, viewer, onAction }: Props) {
   const { t } = useTranslation();
   const pdfMutation = useMutation({
     mutationFn: () =>
@@ -47,8 +45,8 @@ export function ShoppingListBlock({ event, list, viewer, today, onAction }: Prop
   });
 
   const isOwner = list.createdById === viewer.id;
-  // Umumiy bozorlik biror kunga bog'lanmagan — unda "to'y kuni" cheklovi yo'q.
-  const tooEarly = event !== undefined && today < event.day;
+  const started = list.items.some(isItemDone);
+  const notSent = list.status === 'SUBMITTED' || list.status === 'REVIEWED';
   const button = (action: ListAction, icon: ReactNode, label: string, primary = false) => (
     <Button
       key={action}
@@ -62,37 +60,37 @@ export function ShoppingListBlock({ event, list, viewer, today, onAction }: Prop
   );
 
   const actions: ReactNode[] = [];
-  if (list.status === 'SUBMITTED') {
-    if (viewer.isSuperAdmin) {
+  if (viewer.isSuperAdmin) {
+    // Super admin tekshiradi va adminga yuboradi yoki o'zi to'g'ridan-to'g'ri xarid qiladi.
+    if (notSent) {
+      actions.push(button('purchase', <ShoppingCart />, t('shopping.actions.buySelf')));
       actions.push(button('review', <ClipboardCheck />, t('shopping.actions.review'), true));
-    } else if (isOwner && viewer.canWrite) {
+    } else if (list.status === 'APPROVED') {
+      actions.push(button('review', <Pencil />, t('common.edit')));
+      actions.push(button('purchase', <ShoppingCart />, t('shopping.actions.purchase'), true));
+    } else if (list.status === 'PURCHASED') {
+      actions.push(button('purchase', <Pencil />, t('shopping.actions.fixPrices')));
+      actions.push(button('confirm', <BadgeCheck />, t('shopping.actions.confirm'), true));
+    } else {
+      actions.push(button('unconfirm', <Undo2 />, t('shopping.actions.unconfirm')));
+    }
+  } else {
+    if (list.status === 'SUBMITTED' && isOwner && viewer.canWrite) {
       actions.push(button('edit', <Pencil />, t('common.edit')));
     }
+    if (list.status === 'APPROVED' && viewer.canPurchase) {
+      actions.push(button('purchase', <ShoppingCart />, t('shopping.actions.purchase'), true));
+    }
+    if (list.status === 'PURCHASED' && viewer.canPurchase) {
+      actions.push(button('purchase', <Pencil />, t('shopping.actions.fixPrices')));
+    }
   }
-  // Bozorlik to'y kuni qilinadi: undan oldin tugma o'chiq turadi va sababi yonida yoziladi.
-  const waitingForDay = list.status === 'APPROVED' && viewer.canPurchase && tooEarly;
-  if (list.status === 'APPROVED' && viewer.canPurchase) {
-    actions.push(
-      tooEarly ? (
-        <Button key="purchase" size="sm" disabled>
-          <ShoppingCart />
-          {t('shopping.actions.purchase')}
-        </Button>
-      ) : (
-        button('purchase', <ShoppingCart />, t('shopping.actions.purchase'), true)
-      ),
-    );
-  }
-  if (list.status === 'PURCHASED' && viewer.isSuperAdmin) {
-    actions.push(button('purchase', <Pencil />, t('shopping.actions.fixPrices')));
-    actions.push(button('confirm', <BadgeCheck />, t('shopping.actions.confirm'), true));
-  }
-  if (list.status === 'CONFIRMED' && viewer.isSuperAdmin) {
-    actions.push(button('unconfirm', <Undo2 />, t('shopping.actions.unconfirm')));
-  }
+  // Oshpaz xato yuborgan ro'yxatini adminga yuborilmaguncha bekor qila oladi.
   const canDelete =
     (viewer.isSuperAdmin && list.status !== 'CONFIRMED') ||
-    (isOwner && viewer.canWrite && list.status === 'SUBMITTED');
+    (isOwner && viewer.canWrite && notSent && !started);
+  const progress = list.status === 'APPROVED' || (notSent && started);
+  const doneCount = list.items.filter(isItemDone).length;
 
   return (
     <article className="rounded-xl border bg-card/60 p-3.5 sm:p-4">
@@ -189,12 +187,11 @@ export function ShoppingListBlock({ event, list, viewer, today, onAction }: Prop
         </p>
       )}
 
-      {actions.length > 0 && (
+      {(actions.length > 0 || progress) && (
         <div className="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
-          {waitingForDay && (
-            <p className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted-foreground">
-              <CalendarClock className="size-4 shrink-0 text-gold-dark dark:text-gold-light" />
-              {t('shopping.tooEarly', { date: formatDate(event?.startAt) })}
+          {progress && (
+            <p className="tabular min-w-0 flex-1 text-sm text-muted-foreground">
+              {t('shopping.progress', { done: doneCount, total: list.items.length })}
             </p>
           )}
           {actions}

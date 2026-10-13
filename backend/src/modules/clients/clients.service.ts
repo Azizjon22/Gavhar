@@ -162,7 +162,7 @@ export class ClientsService {
   async remove(id: string): Promise<void> {
     const client = await this.findOne(id);
     const activeEvents = await this.prisma.event.count({
-      where: { clientId: id, deletedAt: null, status: { in: ['REQUEST', 'CONFIRMED', 'HELD'] } },
+      where: { clientId: id, deletedAt: null, status: { in: ['REQUEST', 'CONFIRMED'] } },
     });
     if (activeEvents > 0) {
       throw AppException.conflict(
