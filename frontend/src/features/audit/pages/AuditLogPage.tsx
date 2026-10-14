@@ -41,6 +41,7 @@ const CATEGORIES = [
   'warehouse',
   'shopping',
   'worker',
+  'telegram',
 ] as const;
 const ALERT_ACTIONS = new Set([
   'auth.login_failed',

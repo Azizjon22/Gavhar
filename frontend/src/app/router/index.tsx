@@ -22,6 +22,13 @@ const routes: RouteObject[] = [
     HydrateFallback: FullPageLoader,
     children: [
       {
+        // Telegram ichida ochiladi: o'zi kiritadi, kirgan bo'lsa — darhol o'tkazadi.
+        path: ROUTES.telegramApp,
+        lazy: async () => ({
+          Component: (await import('@/features/telegram/pages/TelegramAppPage')).TelegramAppPage,
+        }),
+      },
+      {
         element: <GuestOnly />,
         children: [
           {

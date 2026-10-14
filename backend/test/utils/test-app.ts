@@ -1,5 +1,5 @@
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { Test } from '@nestjs/testing';
+import { Test, TestingModuleBuilder } from '@nestjs/testing';
 import { Redis } from 'ioredis';
 import { authenticator } from 'otplib';
 import request from 'supertest';
@@ -43,8 +43,11 @@ export class TestApp {
     readonly redis: Redis,
   ) {}
 
-  static async create(): Promise<TestApp> {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+  /** `configure` — provayderlarni almashtirish uchun (masalan, soxta Telegram API). */
+  static async create(
+    configure: (builder: TestingModuleBuilder) => TestingModuleBuilder = (builder) => builder,
+  ): Promise<TestApp> {
+    const moduleRef = await configure(Test.createTestingModule({ imports: [AppModule] })).compile();
     const app = moduleRef.createNestApplication<NestExpressApplication>();
     configureApp(app);
     await app.init();

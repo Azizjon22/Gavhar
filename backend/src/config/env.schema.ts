@@ -40,6 +40,27 @@ export const envSchema = z
      */
     DEV_LOGIN_ENABLED: booleanString('false'),
 
+    /** @BotFather bergan token; bo'sh bo'lsa Telegram bot o'chiq. */
+    TELEGRAM_BOT_TOKEN: z.string().trim().default(''),
+    /**
+     * Bot tugmalari ochadigan sayt manzili (bo'sh bo'lsa — APP_URL). https bo'lsa,
+     * tugmalar Telegram ichida Mini App bo'lib ochiladi.
+     */
+    TELEGRAM_WEB_URL: z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      z.string().url().optional(),
+    ),
+    /** Kunlik eslatmalar vaqti (Toshkent), vergul bilan: "09:00,20:00". */
+    TELEGRAM_REMINDER_TIMES: z
+      .string()
+      .default('09:00,20:00')
+      .refine(
+        (value) =>
+          value.trim() === '' ||
+          value.split(',').every((time) => /^([01]\d|2[0-3]):[0-5]\d$/.test(time.trim())),
+        'Vaqtlar SS:DD ko‘rinishida, vergul bilan ajratilgan bo‘lsin',
+      ),
+
     S3_ENDPOINT: z.string().url(),
     S3_PUBLIC_ENDPOINT: z.string().url(),
     S3_REGION: z.string().min(1).default('us-east-1'),

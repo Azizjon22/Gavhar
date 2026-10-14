@@ -28,6 +28,18 @@ export class AppConfigService {
     } as const;
   }
 
+  get telegram() {
+    const times = this.get('TELEGRAM_REMINDER_TIMES');
+    return {
+      token: this.get('TELEGRAM_BOT_TOKEN'),
+      webUrl: (this.get('TELEGRAM_WEB_URL') ?? this.get('APP_URL')).replace(/\/+$/, ''),
+      reminderTimes: times
+        .split(',')
+        .map((time) => time.trim())
+        .filter(Boolean),
+    } as const;
+  }
+
   get database() {
     return { url: this.get('DATABASE_URL') } as const;
   }

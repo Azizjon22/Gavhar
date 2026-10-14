@@ -80,7 +80,7 @@ export function KitchenHomePage() {
         )}
       </section>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <section className="grid gap-3 min-[360px]:grid-cols-2 sm:grid-cols-3">
         <Link
           to={ROUTES.kitchenShopping}
           className="group flex items-center gap-3 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/12 via-card to-card p-4 shadow-soft transition hover:-translate-y-0.5"
@@ -107,7 +107,7 @@ export function KitchenHomePage() {
         {can('warehouse:take') && (
           <Link
             to={ROUTES.kitchenStock}
-            className="col-span-2 flex items-center gap-3 rounded-2xl border bg-card p-4 shadow-soft transition hover:-translate-y-0.5 sm:col-span-1"
+            className="flex items-center gap-3 rounded-2xl border bg-card p-4 shadow-soft transition hover:-translate-y-0.5 min-[360px]:col-span-2 sm:col-span-1"
           >
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-success/12 text-success">
               <Warehouse className="size-5" />

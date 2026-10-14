@@ -56,7 +56,7 @@ export function AppLayout() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="mx-auto w-full max-w-7xl"
+            className="mx-auto w-full max-w-7xl min-[1800px]:max-w-[1560px]"
           >
             <Outlet />
           </motion.div>

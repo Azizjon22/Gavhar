@@ -9,6 +9,8 @@ import { AppConfigService } from '@/config/app-config.service';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import { PhotoService } from '@/infrastructure/storage/photo.service';
 import { AuditService } from '@/modules/audit/audit.service';
+import { TelegramService } from '@/modules/telegram/telegram.service';
+import { defaultPhoto, defaultProduct } from '@/modules/shopping/default-catalog';
 import { TakeStockDto } from './dto/warehouse.dto';
 import { Allocation, applyMovement, costOf, lockItem } from './stock-ledger';
 import { seesPrices } from './warehouse.service';
@@ -44,6 +46,7 @@ export class StockUsageService {
     private readonly audit: AuditService,
     private readonly config: AppConfigService,
     private readonly photos: PhotoService,
+    private readonly telegram: TelegramService,
   ) {}
 
   private today(): string {
@@ -60,10 +63,12 @@ export class StockUsageService {
       items.map(async (item) => ({
         id: item.id,
         name: item.name,
-        productCategory: item.productCategory,
+        productCategory: item.productCategory ?? defaultProduct(item.name)?.productCategory ?? null,
         unit: item.unit,
         quantity: quantityString(item.quantity),
-        photo: await this.photos.urls(item.photoKey, item.photoThumbKey),
+        // Ombordagi mahsulotga rasm yuklanmagan bo'lsa — nomiga mos standart rasm.
+        photo:
+          (await this.photos.urls(item.photoKey, item.photoThumbKey)) ?? defaultPhoto(item.name),
       })),
     );
   }
@@ -155,6 +160,7 @@ export class StockUsageService {
       );
       return full;
     });
+    void this.telegram.notifyStockUsage(usage.id);
     return this.view(usage, seesPrices(actor));
   }
 
@@ -219,6 +225,8 @@ export class StockUsageService {
         tx,
       );
     });
+    // Super admindagi "olindi" xabariga javob qilib yoziladi.
+    void this.telegram.notifyStockReturned(usage.telegramMessages, actor.fullName);
   }
 
   /** Oshpazning o'zi olganlari (oxirgi 30 tasi) — narxsiz. */

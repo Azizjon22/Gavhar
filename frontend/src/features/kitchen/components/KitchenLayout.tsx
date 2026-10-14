@@ -54,7 +54,9 @@ export function KitchenLayout() {
 
       <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-2 px-4">
-          <Logo />
+          {/* Eng tor telefonda faqat belgi — tugmalar sig'ishi uchun. */}
+          <Logo compact className="min-[380px]:hidden" />
+          <Logo className="hidden min-[380px]:flex" />
           <nav aria-label={t('kitchen.nav.label')} className="hidden items-center gap-1 lg:flex">
             {tabs.map((tab) => (
               <NavLink

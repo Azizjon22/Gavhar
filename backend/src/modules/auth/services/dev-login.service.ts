@@ -109,7 +109,13 @@ export class DevLoginService implements OnApplicationBootstrap {
     const ids = accounts.map((account) => account.id);
     await this.prisma.user.updateMany({
       where: { id: { in: ids } },
-      data: { status: UserStatus.BLOCKED, deletedAt: new Date() },
+      // Telegram ham uziladi — chat haqiqiy hisobga ulanishi uchun bo'shaydi.
+      data: {
+        status: UserStatus.BLOCKED,
+        deletedAt: new Date(),
+        telegramChatId: null,
+        telegramLinkedAt: null,
+      },
     });
     for (const id of ids) {
       await this.sessions.revokeAllForUser(id, SessionRevokeReason.USER_BLOCKED);

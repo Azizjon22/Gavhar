@@ -44,6 +44,22 @@ describe('validateEnv', () => {
     expect(() => validateEnv({ ...validEnv, ENCRYPTION_KEY: 'zz' })).toThrow(/ENCRYPTION_KEY/);
   });
 
+  it('Telegram: token bo‘lmasa bot o‘chiq; bo‘sh manzil berilmagan hisoblanadi; vaqtlar tekshiriladi', () => {
+    const env = validateEnv({ ...validEnv, TELEGRAM_WEB_URL: '' });
+    expect(env.TELEGRAM_BOT_TOKEN).toBe('');
+    expect(env.TELEGRAM_WEB_URL).toBeUndefined();
+    expect(env.TELEGRAM_REMINDER_TIMES).toBe('09:00,20:00');
+    expect(validateEnv({ ...validEnv, TELEGRAM_REMINDER_TIMES: '' }).TELEGRAM_REMINDER_TIMES).toBe(
+      '',
+    );
+    expect(() => validateEnv({ ...validEnv, TELEGRAM_REMINDER_TIMES: '9:00' })).toThrow(
+      /TELEGRAM_REMINDER_TIMES/,
+    );
+    expect(() => validateEnv({ ...validEnv, TELEGRAM_WEB_URL: 'sayt' })).toThrow(
+      /TELEGRAM_WEB_URL/,
+    );
+  });
+
   it("yetishmayotgan majburiy o'zgaruvchilarni sanab beradi", () => {
     const { DATABASE_URL: _db, REDIS_URL: _redis, ...rest } = validEnv;
 

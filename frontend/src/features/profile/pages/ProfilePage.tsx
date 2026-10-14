@@ -9,6 +9,7 @@ import { BrandCard } from '@/features/settings/components/BrandCard';
 import { PasswordCard } from '../components/PasswordCard';
 import { SessionsCard } from '../components/SessionsCard';
 import { TwoFactorCard } from '../components/TwoFactorCard';
+import { TelegramCard } from '@/features/telegram/components/TelegramCard';
 
 const TABS = [
   { value: 'account', icon: CircleUser },
@@ -49,7 +50,10 @@ export function ProfilePage() {
         </TabsList>
 
         <TabsContent value="account">
-          <AccountCard user={user} />
+          <div className="grid items-start gap-6 xl:grid-cols-2">
+            <AccountCard user={user} />
+            <TelegramCard />
+          </div>
         </TabsContent>
         <TabsContent value="security">
           <div className="grid items-start gap-6 xl:grid-cols-2">

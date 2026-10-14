@@ -267,7 +267,7 @@ export function ListBuilder({ catalog, events, previous, initialEventId, onSent 
       {/* 1. Qaysi to'y uchun */}
       <section>
         <p className="mb-2 text-sm font-semibold">{t('kitchen.builder.forWhich')}</p>
-        <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1">
+        <div className="-mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 pb-1">
           {events.map((item) => {
             const date = inAppZone(item.startAt);
             const selected = item.id === target;

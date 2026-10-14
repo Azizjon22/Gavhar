@@ -260,7 +260,7 @@ export class AuthService {
   async completeLogin(
     userId: string,
     email: string,
-    action: 'auth.login' | 'auth.dev_login' = 'auth.login',
+    action: 'auth.login' | 'auth.dev_login' | 'auth.telegram_login' = 'auth.login',
   ): Promise<AuthTokens> {
     const { ip } = getRequestContext();
     await this.prisma.user.update({

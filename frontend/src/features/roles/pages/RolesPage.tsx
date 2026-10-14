@@ -117,15 +117,15 @@ function RoleCard({ role, onEdit, onDelete }: RoleCardProps) {
       <dl className="mt-5 grid grid-cols-2 gap-3">
         <div className="rounded-xl bg-muted/60 p-3">
           <dt className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Users className="size-3.5" />
-            {t('roles.users')}
+            <Users className="size-3.5 shrink-0" />
+            <span className="min-w-0 truncate">{t('roles.users')}</span>
           </dt>
           <dd className="tabular mt-1 text-xl font-bold">{role.usersCount}</dd>
         </div>
         <div className="rounded-xl bg-muted/60 p-3">
           <dt className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <KeyRound className="size-3.5" />
-            {t('roles.permissions')}
+            <KeyRound className="size-3.5 shrink-0" />
+            <span className="min-w-0 truncate">{t('roles.permissions')}</span>
           </dt>
           <dd className="tabular mt-1 text-xl font-bold">
             {isSuperAdmin ? t('roles.allPermissions') : role.permissions.length}

@@ -37,6 +37,8 @@ import { TwoFactorService } from './services/two-factor.service';
     { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
   exports: [
+    AuthService,
+    AuthCookieService,
     AuthContextService,
     LoginAttemptsService,
     SessionsService,

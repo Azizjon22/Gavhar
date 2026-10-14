@@ -16,6 +16,9 @@ import { parseQuantity, quantityString } from '@/common/utils/quantity.util';
 import { AppConfigService } from '@/config/app-config.service';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import { PhotoService } from '@/infrastructure/storage/photo.service';
+import { TelegramService } from '@/modules/telegram/telegram.service';
+import { defaultPhoto, defaultProduct, productKey } from './default-catalog';
+import { DEFAULT_PRODUCTS } from './default-products';
 import { AuditService } from '@/modules/audit/audit.service';
 import { ensureSystemCategory } from '@/modules/finance/expense-categories';
 import {
@@ -166,6 +169,7 @@ export class ShoppingService {
     private readonly audit: AuditService,
     private readonly config: AppConfigService,
     private readonly photos: PhotoService,
+    private readonly telegram: TelegramService,
   ) {}
 
   private get timeZone(): string {
@@ -391,8 +395,9 @@ export class ShoppingService {
   }
 
   /**
-   * Oshpaz uchun mahsulot katalogi: ombordagi oziq-ovqat (turi va rasmi bilan) hamda
-   * ilgari yozilgan, omborda yo'q mahsulotlar. Narx ham, qoldiq ham qaytarilmaydi.
+   * Oshpaz uchun mahsulot katalogi: ombordagi oziq-ovqat, ilgari yozilgan mahsulotlar va
+   * standart to'y oshxonasi ro'yxati (omborda yo'q bo'lsa ham). Rasm: mahsulotning o'zi
+   * yuklagani, bo'lmasa nomiga mos standart rasm. Narx ham, qoldiq ham qaytarilmaydi.
    */
   async catalog() {
     const [items, used] = await Promise.all([
@@ -408,24 +413,37 @@ export class ShoppingService {
         take: SUGGESTION_LIMIT,
       }),
     ]);
-    const known = new Set(items.map((item) => item.name.toLowerCase()));
+    const known = new Set(items.map((item) => productKey(item.name)));
+    const fresh = (name: string) => {
+      const key = productKey(name);
+      if (known.has(key)) return false;
+      known.add(key);
+      return true;
+    };
     const fromStock = await Promise.all(
       items.map(async (item) => ({
         name: item.name,
         unit: item.unit,
-        productCategory: item.productCategory,
-        photo: await this.photos.urls(item.photoKey, item.photoThumbKey),
+        productCategory: item.productCategory ?? defaultProduct(item.name)?.productCategory ?? null,
+        photo:
+          (await this.photos.urls(item.photoKey, item.photoThumbKey)) ?? defaultPhoto(item.name),
       })),
     );
     const written = used
-      .filter((row) => {
-        const key = row.name.toLowerCase();
-        if (known.has(key)) return false;
-        known.add(key);
-        return true;
-      })
-      .map((row) => ({ name: row.name, unit: row.unit, productCategory: null, photo: null }));
-    return [...fromStock, ...written];
+      .filter((row) => fresh(row.name))
+      .map((row) => ({
+        name: row.name,
+        unit: row.unit,
+        productCategory: defaultProduct(row.name)?.productCategory ?? null,
+        photo: defaultPhoto(row.name),
+      }));
+    const standard = DEFAULT_PRODUCTS.filter((product) => fresh(product.name)).map((product) => ({
+      name: product.name,
+      unit: product.unit,
+      productCategory: product.productCategory,
+      photo: defaultPhoto(product.name),
+    }));
+    return [...fromStock, ...written, ...standard];
   }
 
   /**
@@ -483,7 +501,7 @@ export class ShoppingService {
     }
     const items = this.buildItems(mergeSameProduct(dto.items));
 
-    return this.prisma.$transaction(async (tx) => {
+    const view = await this.prisma.$transaction(async (tx) => {
       const list = await tx.shoppingList.create({
         data: {
           eventId,
@@ -511,6 +529,8 @@ export class ShoppingService {
       );
       return listView(list);
     });
+    void this.telegram.notifyListSubmitted(view.id);
+    return view;
   }
 
   /**
@@ -522,7 +542,7 @@ export class ShoppingService {
   async update(id: string, dto: SaveShoppingListDto, actor: AuthUser) {
     const items = this.buildItems(dto.items);
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const before = await this.lock(tx, id);
       const reviewing = isSuperAdmin(actor);
       if (!reviewing && before.createdById !== actor.id) {
@@ -593,7 +613,7 @@ export class ShoppingService {
         .filter((item) => !isDone(item) && !keptIds.has(item.id))
         .map((item) => item.id);
       await tx.shoppingItem.deleteMany({ where: { id: { in: removable } } });
-      await this.settle(tx, before, actor);
+      const purchased = await this.settle(tx, before, actor);
 
       const list = await tx.shoppingList.update({
         where: { id },
@@ -610,13 +630,16 @@ export class ShoppingService {
         },
         tx,
       );
-      return listView(list);
+      return { view: listView(list), purchased };
     });
+    void this.telegram.notifyListEdited(id);
+    if (result.purchased) void this.telegram.notifyListPurchased(id);
+    return result.view;
   }
 
   /** SUPER_ADMIN ko'rib chiqdi — ro'yxat xarid uchun adminga o'tadi. */
   async approve(id: string) {
-    return this.prisma.$transaction(async (tx) => {
+    const view = await this.prisma.$transaction(async (tx) => {
       const before = await this.lock(tx, id);
       if (!NOT_SENT_STATUSES.includes(before.status)) throw wrongStatus();
       if (before.items.length === 0) {
@@ -644,6 +667,8 @@ export class ShoppingService {
       );
       return listView(list);
     });
+    void this.telegram.notifyListApproved(id);
+    return view;
   }
 
   /**
@@ -652,7 +677,7 @@ export class ShoppingService {
    * xarid qiladi. Hamma qator tugagach ro'yxat o'zi "sotib olingan" bo'ladi.
    */
   async purchaseItem(id: string, itemId: string, dto: PurchaseItemDto, actor: AuthUser) {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const before = await this.lock(tx, id);
       this.assertCanBuy(before, actor);
       const item = this.findItem(before, itemId);
@@ -684,11 +709,13 @@ export class ShoppingService {
         price: moneyString(price),
       });
     });
+    if (result.purchased) void this.telegram.notifyListPurchased(id);
+    return result.view;
   }
 
   /** Mahsulot topilmadi yoki kerak bo'lmadi — "olinmadi" deb belgilanadi. */
   async skipItem(id: string, itemId: string, actor: AuthUser) {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const before = await this.lock(tx, id);
       this.assertCanBuy(before, actor);
       const item = this.findItem(before, itemId);
@@ -704,6 +731,8 @@ export class ShoppingService {
       });
       return this.afterItemChange(tx, before, actor, 'shopping.item_skip', { item: item.name });
     });
+    if (result.purchased) void this.telegram.notifyListPurchased(id);
+    return result.view;
   }
 
   /**
@@ -711,7 +740,7 @@ export class ShoppingService {
    * sotib olingan holatda bo'lsa, xarid davom etayotgan holatga qaytadi.
    */
   async resetItem(id: string, itemId: string, actor: AuthUser) {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const before = await this.lock(tx, id);
       const reopening = before.status === ShoppingListStatus.PURCHASED;
       if (!reopening) this.assertCanBuy(before, actor);
@@ -743,11 +772,13 @@ export class ShoppingService {
       }
       return this.afterItemChange(tx, before, actor, 'shopping.item_reset', { item: item.name });
     });
+    if (result.purchased) void this.telegram.notifyListPurchased(id);
+    return result.view;
   }
 
   /** Sotib olingan mahsulot narxini tuzatish (xato yozilgan bo'lsa). */
   async fixItemPrice(id: string, itemId: string, dto: FixItemPriceDto, actor: AuthUser) {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const before = await this.lock(tx, id);
       const allowed = isSuperAdmin(actor)
         ? before.status !== ShoppingListStatus.CONFIRMED
@@ -775,6 +806,8 @@ export class ShoppingService {
         price: moneyString(price),
       });
     });
+    void this.telegram.notifyPriceFixed(id);
+    return result.view;
   }
 
   /**
@@ -883,6 +916,8 @@ export class ShoppingService {
         tx,
       );
     });
+    // Super admindagi e'lon "bekor qilindi" bo'lib tahrirlanadi.
+    void this.telegram.notifyListEdited(id);
   }
 
   /** PDF uchun to'liq yozuv. */
@@ -943,13 +978,13 @@ export class ShoppingService {
     tx: Prisma.TransactionClient,
     before: ShoppingListRecord,
     actor: AuthUser,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const open: readonly ShoppingListStatus[] = [...NOT_SENT_STATUSES, ShoppingListStatus.APPROVED];
-    if (!open.includes(before.status)) return;
+    if (!open.includes(before.status)) return false;
     const items = await tx.shoppingItem.findMany({ where: { listId: before.id } });
     const allDone = items.length > 0 && items.every((item) => item.skipped || item.price !== null);
     const anyBought = items.some((item) => !item.skipped && item.price !== null);
-    if (!allDone || !anyBought) return;
+    if (!allDone || !anyBought) return false;
     await tx.shoppingList.update({
       where: { id: before.id },
       data: {
@@ -958,6 +993,7 @@ export class ShoppingService {
         purchasedByName: actor.fullName,
       },
     });
+    return true;
   }
 
   /**
@@ -971,7 +1007,7 @@ export class ShoppingService {
     action: string,
     details: Record<string, string>,
   ) {
-    await this.settle(tx, before, actor);
+    const purchased = await this.settle(tx, before, actor);
     const list = await tx.shoppingList.findUniqueOrThrow({
       where: { id: before.id },
       include: LIST_INCLUDE,
@@ -985,7 +1021,7 @@ export class ShoppingService {
       },
       tx,
     );
-    return listView(list);
+    return { view: listView(list), purchased };
   }
 
   /** Qatorni qulflab o'qiydi — bir vaqtda kelgan ikki tasdiq ikki xarajat yozmasin. */

@@ -75,7 +75,7 @@ export function EventExpensesCard({ event, revision }: Props) {
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between gap-3">
+      <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
         <CardTitle>{t('finance.eventCard.title')}</CardTitle>
         {can('finance:create') && (
           <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
@@ -137,7 +137,7 @@ export function EventExpensesCard({ event, revision }: Props) {
             {stockPending && (
               <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-gold/40 bg-gold/8 px-3.5 py-3">
                 <PackageOpen className="size-5 shrink-0 text-gold-dark dark:text-gold-light" />
-                <p className="min-w-0 flex-1 text-sm">
+                <p className="min-w-48 flex-1 text-sm">
                   {t(
                     stock.recordedAmount
                       ? 'finance.eventCard.stockChanged'

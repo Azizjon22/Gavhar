@@ -248,6 +248,15 @@ export function FinancePage() {
                 {t('finance.events.debt', { amount: formatAmount(event.debt) })}
               </p>
             )}
+            {/* Telefonda sof foyda ustuni sig'maydi — shu yerda ko'rsatiladi. */}
+            <p
+              className={cn(
+                'text-xs sm:hidden',
+                Number(event.netProfit) < 0 ? 'text-destructive' : 'text-muted-foreground',
+              )}
+            >
+              {t('finance.events.profit')}: {formatAmount(event.netProfit)}
+            </p>
           </div>
         ),
       },
@@ -264,7 +273,7 @@ export function FinancePage() {
       {
         id: 'profit',
         header: t('finance.events.profit'),
-        className: 'text-right',
+        className: 'hidden text-right sm:table-cell',
         cell: (event) => (
           <span
             className={cn(
@@ -423,7 +432,7 @@ export function FinancePage() {
           </Button>
           <p
             aria-live="polite"
-            className="min-w-44 flex-1 text-center font-display text-lg font-semibold sm:flex-none"
+            className="min-w-0 flex-1 truncate text-center font-display text-lg font-semibold sm:min-w-44 sm:flex-none"
           >
             {periodLabel(period, anchor)}
           </p>
@@ -612,7 +621,7 @@ export function FinancePage() {
           </div>
 
           <Card className="overflow-hidden">
-            <CardHeader className="flex-row items-center justify-between gap-3">
+            <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
               <CardTitle>{t('finance.expensesTitle')}</CardTitle>
             </CardHeader>
             {expensesQuery.isError ? (

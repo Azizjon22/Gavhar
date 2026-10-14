@@ -83,6 +83,10 @@ Yagona `.env` monorepo ildizida turadi; backend, frontend (Vite) va docker-compo
 | `ENCRYPTION_KEY`                            | AES-256-GCM kaliti, 64 ta hex belgi                       |
 | `COOKIE_SECURE`                             | Cookie faqat HTTPS orqali                                 |
 | `SUPER_ADMIN_2FA_REQUIRED`                  | SUPER_ADMIN uchun 2FA majburiymi (standart `true`)        |
+| `DEV_LOGIN_ENABLED`                         | Parolsiz tezkor kirish (faqat ishlab chiqish)             |
+| `TELEGRAM_BOT_TOKEN`                        | Telegram bot tokeni; bo'sh bo'lsa bot o'chiq              |
+| `TELEGRAM_WEB_URL`                          | Bot tugmalari ochadigan sayt (bo'sh — `APP_URL`)          |
+| `TELEGRAM_REMINDER_TIMES`                   | Kunlik eslatmalar vaqti, standart `09:00,20:00`           |
 | `S3_*`, `MINIO_*`                           | MinIO / S3 ulanishi va bucket nomlari                     |
 | `SEED_SUPER_ADMIN_*`                        | Birinchi SUPER_ADMIN hisobi                               |
 
@@ -164,22 +168,20 @@ Yangi modul qo‘shish: `features/<nom>/` papkasi, `app/router/index.tsx` ga rou
 
 ## Bronlar: asosiy qoidalar
 
-| Mavzu         | Qoida                                                                                                                                                                          |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Summa         | `mehmonlar × 1 kishilik narx + qo'shimcha xizmatlar − chegirma`. Zal uchun alohida haq olinmaydi — u kishi boshiga narx ichida. Har doim serverda, `Decimal` bilan hisoblanadi |
-| Narxlar       | 1 kishilik narx va xizmat narxi bron paytidagi holatida saqlanadi — keyin paket yoki katalogda o'zgarsa ham eski bron summasi o'zgarmaydi                                      |
-| Xizmatlar     | Katalogdagi har bir xizmat "bir tadbir uchun" yoki "bir mehmon uchun" hisoblanadi                                                                                              |
-| Zal bandligi  | Bir zalda bir vaqtda ikki bron bo'lmasligi PostgreSQL `EXCLUDE` cheklovi bilan kafolatlanadi (parallel so'rovlarda ham). Bekor qilingan bron vaqtni bo'shatadi                 |
-| Stol va ovqat | Stol turi (10 yoki 12 kishilik) va kelin-kuyov tanlagan 1-/2-ovqat bronda saqlanadi; ovqatni faqat SUPER_ADMIN belgilaydi. Oshpaz bozorlikni shunga qarab yozadi               |
-| Holatlar      | So'rov → Tasdiqlangan → O'tkazildi → Yakunlandi; So'rov va Tasdiqlangan holatdan bekor qilish mumkin                                                                           |
-| Zaklad        | Tasdiqlash uchun minimal zaklad to'langan bo'lishi shart. Foiz Bronlar sahifasidagi sozlamada (standart 20%)                                                                   |
-| Yakunlash     | Faqat qarz to'liq yopilgach                                                                                                                                                    |
-| To'lovlar     | Naqd / karta / o'tkazma; so'm yoki dollar (kurs va so'mdagi qiymat har to'lovda saqlanadi). To'lov o'chirilmaydi — bekor qilinadi va tarixda qoladi                            |
-| Hujjatlar     | Shartnoma va to'lov kvitansiyasi PDF ko'rinishida serverda yaratiladi                                                                                                          |
+| Mavzu         | Qoida                                                                                                                                                                  |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Summa         | Menyu paketi — belgilangan mehmon soni uchun qat'iy narx (masalan «To'liq paket — 200 kishi»). Bron summasi paketdan olinadi va faqat paket almashtirilganda o'zgaradi |
+| Paket turi    | «To'liq» — taomlar, kortej, san'atkor, kamerachi; «Faqat taomlar» — to'yxona taomlari. Paket tanlash majburiy                                                          |
+| Sana          | O'tgan kunga bron ochilmaydi. Zal bandligi PostgreSQL `EXCLUDE` cheklovi bilan kafolatlanadi (parallel so'rovlarda ham). Bekor qilingan bron vaqtni bo'shatadi         |
+| Stol va ovqat | Stol turi (10 yoki 12 kishilik) va kelin-kuyov tanlagan 1-/2-ovqat bronda saqlanadi. Oshpaz bozorlikni shunga qarab yozadi                                             |
+| Holatlar      | Kutilmoqda → Tasdiqlangan → Yakunlangan; bekor qilish va qayta ochish mumkin. To'liq to'langan bron o'zi tasdiqlanadi. Yakunlash — faqat to'y kuni kelgach             |
+| To'lovlar     | Naqd / karta / o'tkazma, so'mda. To'lov qarzdan, qaytarish olingan puldan oshmaydi. To'lov o'chirilmaydi — bekor qilinadi va tarixda qoladi                            |
+| O'chirish     | Tasdiqlangan/yakunlangan, to'lov yoki xarajat yozilgan, ombordan mahsulot olingan bron o'chirilmaydi — bekor qilinadi                                                  |
+| Hujjatlar     | Shartnoma va to'lov kvitansiyasi PDF ko'rinishida serverda yaratiladi                                                                                                  |
 
 Bron ochadigan rolga `events:*` bilan birga `clients:read` va `halls:read`, to'lov qabul qiladigan rolga `finance:create` ruxsati kerak.
 
-**Pul faqat `finance:read` ruxsati borlarga ko'rinadi.** Bu ruxsati yo'q xodimga (standart Admin, Zavzal, Oshpaz) bron ro'yxati, bron sahifasi va bosh sahifada narx, summa, to'lov va qarz umuman yuborilmaydi (server javobidan olib tashlanadi); shartnoma va kvitansiya PDF'i ham ochilmaydi. Bunday xodim bron ochganda narxni qo'lda kirita olmaydi — menyu paketini tanlashi shart, 1 kishilik narx paketdan olinadi.
+**Pul faqat `finance:read` ruxsati borlarga ko'rinadi.** Bu ruxsati yo'q xodimga (standart Admin, Zavzal, Oshpaz) bron ro'yxati, bron sahifasi va bosh sahifada narx, summa, to'lov va qarz umuman yuborilmaydi (server javobidan olib tashlanadi); shartnoma va kvitansiya PDF'i ham ochilmaydi.
 
 ## Ishchilar
 
@@ -199,66 +201,89 @@ Bron ochadigan rolga `events:*` bilan birga `clients:read` va `halls:read`, to'l
 
 | Mavzu          | Qoida                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Menyu paketi   | Nom, 1 kishilik narx, ixtiyoriy belgi (masalan "VIP") va tarkib: qaysi bo'limdan necha xil, xohlasa aniq taom nomlari. Paketlar soni cheklanmagan (`/menu`)                                                                                                                                                                                                                                                                  |
-| Bo'limlar      | Barcha paketlar uchun umumiy ro'yxat (salatlar, suyuq taomlar…), ikki tilda nomlanadi, tartibi o'zgartiriladi                                                                                                                                                                                                                                                                                                                |
+| Menyu paketi   | Nom, mehmonlar soni va shu son uchun qat'iy narx, turi (to'liq / faqat taomlar), ixtiyoriy belgi (masalan "VIP") va tarkib: qaysi bo'limdan necha xil, xohlasa aniq taom nomlari (`/menu`)                                                                                                                                                                                                                                   |
+| Bo'limlar      | Barcha paketlar uchun umumiy ro'yxat (salatlar, suyuq taomlar…), ikki tilda nomlanadi, tartibi o'zgartiriladi. Har bo'limga oshxona bosqichi (salat / 1-ovqat / 2-ovqat / boshqa) beriladi                                                                                                                                                                                                                                   |
 | Narx tarixi    | Paket narxi o'zgarganda eski narx tarixda qoladi (`menu_package_prices`)                                                                                                                                                                                                                                                                                                                                                     |
-| Bron bilan     | Bronda paket tanlansa 1 kishilik narx avtomatik qo'yiladi (qo'lda o'zgartirsa bo'ladi). Bronda paket nomi va narxi o'sha paytdagi holatida saqlanadi                                                                                                                                                                                                                                                                         |
+| Bron bilan     | Bron summasi paket narxidan olinadi; bronda paket nomi va narxi o'sha paytdagi holatida saqlanadi                                                                                                                                                                                                                                                                                                                            |
 | Galereya       | Albomlar (umumiy zal, stol bezatilishi, kortej…) ichida rasm va video (`/gallery`). Rasm WebP'ga o'giriladi, EXIF olib tashlanadi. Albomlar taqdimotda paket sahifasi ichida ko'rinadi: albom bitta paketga biriktirilsa — faqat o'sha paketda, biriktirilmasa — hamma paketda. Paket o'chirilsa, uning albomlari umumiy bo'lib qoladi                                                                                       |
 | Taomlar        | Paketlarda yozilgan har bir taomga rasm va qisqa tavsif beriladi (Menyu → «Taomlar»). Rasmlar taqdimotda paket ostida ko'rinadi; taom nomi katta-kichik harfga qaramaydi                                                                                                                                                                                                                                                     |
 | Video          | Brauzer faylni to'g'ridan-to'g'ri saqlash joyiga yuklaydi (2 GB gacha, MP4/MOV/WebM); server fayl mazmunini tekshiradi, `ffmpeg` bilan muqova va davomiylikni oladi                                                                                                                                                                                                                                                          |
 | Video sifati   | Yuklangan video fonda, navbat bilan tayyorlanadi: ideal bo'lsa tegilmaydi, indeksi oxirida bo'lsa qayta o'raladi, boshqa kodek / 1080p dan katta / juda og'ir bo'lsa H.264+AAC MP4 (1080p, 8 Mbit/s gacha) ga o'giriladi. Shu paytda ham asl fayl o'ynaydi. Muvaffaqiyatsiz bo'lsa fayl yuklangan holicha qoladi va galereyada «qayta urinish» tugmasi chiqadi; server o'chib-yonsa chala ishlar qaytadan navbatga qo'yiladi |
 | Brend          | To'yxona nomi va logotipi (Profil → «Brend», faqat SUPER_ADMIN): kirish sahifasi, yon menyu va taqdimotda ko'rinadi. Logotip bo'lmasa aylanayotgan gavhar turadi                                                                                                                                                                                                                                                             |
 | Taqdimot       | `/showcase` — mijozga ko'rsatiladigan to'liq ekranli sahifa: faol zallar va menyu paketlari. Boshqaruv tugmalari yo'q, tilni o'zgartirish mumkin; televizor va katta monitorda hamma narsa ekranga mos kattalashadi                                                                                                                                                                                                          |
-| Paket kartasi  | Taqdimotda har bir paket — muqova rasmli baland karta: nom, 1 kishilik narx va tanlangan mehmonlar soni uchun jami summa. Mehmonlar soni tepada bir marta o'zgartiriladi (− / +, 200–500 tez tanlash) va hamma joyda shunga qarab hisoblanadi                                                                                                                                                                                |
+| Paket kartasi  | Taqdimotda har bir paket — muqova rasmli baland karta: nom, turi, necha kishi uchunligi va narxi                                                                                                                                                                                                                                                                                                                             |
 | Paket sahifasi | Kartani bosganda `/showcase/menu/:id` ochiladi: to'liq ekranli muqova va narx, restoran menyusi ko'rinishidagi varaq (bo'limlar, taom rasmi va tavsifi), taomlar rasmlari, galereya va boshqa paketlar                                                                                                                                                                                                                       |
 | Muqova         | Paket muqovasi Menyu → «Paketlar»da kartaning tepasida yuklanadi (`menu:update`). Muqova bo'lmasa paketdagi birinchi rasmli taom, u ham bo'lmasa zumrad fon va gavhar ko'rsatiladi                                                                                                                                                                                                                                           |
-| Boshlang'ich   | `pnpm db:seed` bo'sh bazaga 11 ta bo'lim, 3 ta paket (160 / 200 / 280 ming) va 5 ta albom qo'shadi; mavjud ma'lumotga tegmaydi                                                                                                                                                                                                                                                                                               |
+| Boshlang'ich   | `pnpm db:seed` bo'sh bazaga 11 ta bo'lim, 6 ta paket (to'liq va faqat taomlar — 100 / 150 / 200 kishi) va 5 ta albom qo'shadi; mavjud ma'lumotga tegmaydi                                                                                                                                                                                                                                                                    |
 | Ruxsatlar      | Menyu — `menu:read/create/update/delete`; galereya — `media:read/upload/delete`. Taqdimot shu ruxsatlardan (va `halls:read`) borlarini ko'rsatadi                                                                                                                                                                                                                                                                            |
 
 Serverda `ffmpeg` va `ffprobe` o'rnatilgan bo'lishi kerak — bo'lmasa videolar qayta ishlanmay, yuklangan holicha saqlanadi. Video yuklash uchun MinIO'da CORS `APP_URL` ga ochiq bo'lishi kerak (`docker-compose.yml` dagi `MINIO_API_CORS_ALLOW_ORIGIN`). Frontend manzili o'zgarsa, MinIO'ni qayta ishga tushiring.
 
 ## Hisob-kitob va ombor
 
-| Mavzu              | Qoida                                                                                                                                                                                                                  |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Asosiy qoida       | Faqat bo'lib o'tgan narsa hisoblanadi. Kelajakdagi bron bekor bo'lishi mumkin, shuning uchun uning zakladi tushumga qo'shilmaydi                                                                                       |
-| Tushum             | Kuni kelgan tadbirlar uchun olingan pul; tadbir kuniga yoziladi. Kalendar kuni bo'yicha: bugun kechqurungi to'y bugun boshlanishi bilan hisobga kiradi. Zaklad oldinroq olingan bo'lsa ham, to'y kuni tushumga kiradi  |
-| Bekor qilingan     | Bekor qilingan to'ydan qaytarilmay qolgan zaklad ham haqiqiy pul — u o'sha to'y kuniga yoziladi (kuni kelgach)                                                                                                         |
-| Xarajat            | Tur, summa, sana va izoh. Kelajak sanasi qabul qilinmaydi. Turlarni faqat `finance:manage-categories` ruxsati bor foydalanuvchi boshqaradi. Bozorlik faqat SUPER_ADMIN tasdiqlagach xarajatga aylanadi                 |
-| To'y xarajati      | Xarajat to'yga bog'lanishi mumkin (kamerachi, san'atkor, kortej, oshpazga to'lov, bozorlik…). U to'y kuniga yoziladi, to'y ko'chsa birga ko'chadi va shu to'yning sof foydasidan ayiriladi (`GET /finance/events/:id`) |
-| Sof foyda          | Tushum − xarajatlar. Qarzdorlik (o'tgan to'ylardan olinmagan pul) alohida ko'rsatiladi                                                                                                                                 |
-| Davr               | Hafta (dushanba–yakshanba), oy yoki yil; hafta va oy — kunlar, yil — oylar bo'yicha grafik. Hisob Toshkent vaqti bo'yicha, davr kelajakda tugasa ham shu lahzada to'xtaydi                                             |
-| Kelajakdagilar     | Hali bo'lmagan to'ylar soni, shartnoma summasi va olingan zaklad alohida blokda — ma'lumot uchun                                                                                                                       |
-| Ombor              | Ikki bo'lim: idish-tovoq va oziq-ovqat. Qoldiq faqat kirim/chiqim orqali o'zgaradi; harakatlar o'zgartirilmaydi va o'chirilmaydi (xato teskari harakat bilan tuzatiladi)                                               |
-| Chiqim             | Qoldiqdan ko'p chiqarib bo'lmaydi — qator qulflanadi, bir vaqtda kelgan so'rovlarda ham. Donalab sanaladigan birlikda kasr qabul qilinmaydi                                                                            |
-| Xarid summasi      | Kirimda summa kiritilsa, u faqat ombor tarixida saqlanadi — ombor xaridlari hisob-kitobga qo'shilmaydi                                                                                                                 |
-| Kam qoldi          | Mahsulotga chegara qo'yilsa, qoldiq shu miqdorga tushganda belgilanadi va bosh sahifada ko'rinadi                                                                                                                      |
-| Mahsulot turi      | Oziq-ovqat mahsulotiga tur (sabzavot, go'sht, don…) va har qanday mahsulotga rasm qo'yiladi. Qoldiq nol bo'lmaguncha o'lchov birligini o'zgartirib bo'lmaydi                                                           |
-| Inventarizatsiya   | Sanab chiqilgan haqiqiy miqdor kiritiladi — farq (ortiqcha yoki kamomad) avtomatik kirim/chiqim bo'lib tarixga yoziladi                                                                                                |
-| So'nggi harakatlar | Butun ombor bo'yicha oxirgi kirim-chiqimlar bitta ro'yxatda. Oziq-ovqat bo'limi oshpazga bozorlik yozishda mahsulot nomi taklifi sifatida chiqadi                                                                      |
+| Mavzu              | Qoida                                                                                                                                                                                                                                                            |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Asosiy qoida       | Faqat bo'lib o'tgan narsa hisoblanadi. Kelajakdagi bron bekor bo'lishi mumkin, shuning uchun uning zakladi tushumga qo'shilmaydi                                                                                                                                 |
+| Tushum             | Kuni kelgan tadbirlar uchun olingan pul; tadbir kuniga yoziladi. Kalendar kuni bo'yicha: bugun kechqurungi to'y bugun boshlanishi bilan hisobga kiradi. Zaklad oldinroq olingan bo'lsa ham, to'y kuni tushumga kiradi                                            |
+| Bekor qilingan     | Bekor qilingan to'ydan qaytarilmay qolgan zaklad ham haqiqiy pul — u o'sha to'y kuniga yoziladi (kuni kelgach)                                                                                                                                                   |
+| Xarajat            | Tur, summa, sana va izoh. Kelajak sanasi qabul qilinmaydi. Turlarni faqat `finance:manage-categories` ruxsati bor foydalanuvchi boshqaradi. Bozorlik faqat SUPER_ADMIN tasdiqlagach xarajatga aylanadi                                                           |
+| To'y xarajati      | Xarajat to'yga bog'lanishi mumkin (kamerachi, san'atkor, kortej, oshpazga to'lov, bozorlik…). U to'y kuniga yoziladi, to'y ko'chsa birga ko'chadi va shu to'yning sof foydasidan ayiriladi (`GET /finance/events/:id`)                                           |
+| Sof foyda          | Tushum − xarajatlar. Qarzdorlik (o'tgan to'ylardan olinmagan pul) alohida ko'rsatiladi                                                                                                                                                                           |
+| Davr               | Hafta (dushanba–yakshanba), oy yoki yil; hafta va oy — kunlar, yil — oylar bo'yicha grafik. Hisob Toshkent vaqti bo'yicha, davr kelajakda tugasa ham shu lahzada to'xtaydi                                                                                       |
+| Kelajakdagilar     | Hali bo'lmagan to'ylar soni, shartnoma summasi va olingan zaklad alohida blokda — ma'lumot uchun                                                                                                                                                                 |
+| Ombor              | Ikki bo'lim: idish-tovoq va oziq-ovqat. Qoldiq faqat kirim/chiqim orqali o'zgaradi; harakatlar o'zgartirilmaydi va o'chirilmaydi (xato teskari harakat bilan tuzatiladi)                                                                                         |
+| Chiqim             | Qoldiqdan ko'p chiqarib bo'lmaydi — qator qulflanadi, bir vaqtda kelgan so'rovlarda ham. Donalab sanaladigan birlikda kasr qabul qilinmaydi                                                                                                                      |
+| Partiyalar va narx | Har kirim o'z narxidagi partiya bo'ladi; chiqim eng eski partiyadan sarflanadi (FIFO). Narxni faqat SUPER_ADMIN kiritadi va ko'radi (Ombor → «Partiyalar va narx»); narxsiz kirgan partiyaga keyin narx qo'yiladi. Ombor xaridlari o'z-o'zidan xarajat bo'lmaydi |
+| Kam qoldi          | Mahsulotga chegara qo'yilsa, qoldiq shu miqdorga tushganda belgilanadi va bosh sahifada ko'rinadi                                                                                                                                                                |
+| Mahsulot turi      | Oziq-ovqat mahsulotiga tur (sabzavot, go'sht, don…) va har qanday mahsulotga rasm qo'yiladi. Qoldiq nol bo'lmaguncha o'lchov birligini o'zgartirib bo'lmaydi                                                                                                     |
+| Inventarizatsiya   | Sanab chiqilgan haqiqiy miqdor kiritiladi — farq (ortiqcha yoki kamomad) avtomatik kirim/chiqim bo'lib tarixga yoziladi                                                                                                                                          |
+| So'nggi harakatlar | Butun ombor bo'yicha oxirgi kirim-chiqimlar bitta ro'yxatda. Oziq-ovqat bo'limi oshpaz katalogi bo'lib xizmat qiladi                                                                                                                                             |
+| To'y uchun olish   | Oshpaz (`warehouse:take`) faqat bugungi yoki ertangi to'y uchun oziq-ovqat oladi; olingan mahsulot o'z partiyasi narxida hisoblanadi. Xato olinganini oshpaz shu kuni o'zi, SUPER_ADMIN istalgan vaqtda qaytaradi                                                |
+| To'y xarajatiga    | To'y sahifasida «Ombordan olinganlar» kartasi; SUPER_ADMIN qiymatni bir tugma bilan «Ombor mahsulotlari» xarajatiga yozadi (mahsulot qaytarilsa, summa tenglashtiriladi)                                                                                         |
 
-Ruxsatlar: hisob-kitob — `finance:read/create/update/delete`, ombor — `warehouse:read/create/update/delete` (kirim/chiqim — `warehouse:update`).
+Ruxsatlar: hisob-kitob — `finance:read/create/update/delete`, ombor — `warehouse:read/create/update/delete` (kirim/chiqim — `warehouse:update`, to'y uchun olish — `warehouse:take`).
 
 ## Bozorlik
 
-To'y kuni qilinadigan xarid. Oqim to'rt qadamdan iborat va har bir qadamni o'z roli bajaradi:
+Oqim (har bir qadamni o'z roli bajaradi):
 
-| Qadam | Kim                         | Nima qiladi                                                                                                    | Holat            |
-| ----- | --------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------- |
-| 1     | Oshpaz (`shopping:create`)  | To'yni tanlaydi, menyu tarkibiga qarab mahsulot, miqdor va birlikni yozadi                                     | Tekshiruvda      |
-| 2     | SUPER_ADMIN                 | Ro'yxatni ko'radi: kamaytiradi, qo'shadi, olib tashlaydi (oshpaz so'ragan miqdor saqlanib, farqi ko'rsatiladi) | Xarid kutilmoqda |
-| 3     | Admin (`shopping:purchase`) | Sotib oladi, har bir qatorga to'langan summani kiritadi yoki "olinmadi" deb belgilaydi. Oraliq saqlash mumkin  | Sotib olingan    |
-| 4     | SUPER_ADMIN                 | Tasdiqlaydi — shundan keyingina summa «Bozorlik» turidagi xarajatga yoziladi va sof foydadan ayiriladi         | Tasdiqlangan     |
+| Qadam | Kim                         | Nima qiladi                                                                                                                           | Holat              |
+| ----- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| 1     | Oshpaz (`shopping:create`)  | To'yni tanlaydi, taom bo'yicha mahsulot va miqdor yozadi                                                                              | Yangi              |
+| 2     | SUPER_ADMIN                 | Bozorlik sahifasini ochadi (ro'yxat «ko'rildi»), kamaytiradi, qo'shadi, olib tashlaydi va adminga yuboradi — yoki o'zi xarid qiladi   | Ko'rib chiqilmoqda |
+| 3     | Admin (`shopping:purchase`) | Har mahsulotni alohida «olindi» (miqdor va narx — jami yoki 1 birlik) yoki «topilmadi» deb belgilaydi; hammasi tugagach — o'zi o'tadi | Xarid qilinmoqda   |
+| 4     | SUPER_ADMIN                 | Tasdiqlaydi — shundan keyingina summa «Bozorlik» turidagi xarajatga yoziladi va sof foydadan ayiriladi                                | Tasdiqlangan       |
 
-- Ro'yxatni yozilishi bilan faqat SUPER_ADMIN ko'radi; oshpaz o'zinikini, xaridchi (admin) esa SUPER_ADMIN yuborganlarini ko'radi.
-- Bir xil mahsulot ikki marta yozilsa, bitta qatorga qo'shiladi. Bozorlik qilib bo'lingan to'yga yangi ro'yxat yozilmaydi.
-- Narxlar to'y kunidan oldin kiritilmaydi (bozorlik shu kuni qilinadi); xarajat to'y kuniga yoziladi.
-- Tasdiqlangan bozorlik xarajati «Hisob-kitob»da o'zgartirilmaydi: SUPER_ADMIN Bozorlik bo'limida tasdiqni bekor qiladi, narxni tuzatadi va qayta tasdiqlaydi.
-- Tasdiqlanmagan (sotib olingan) bozorlik summasi «Hisob-kitob» sahifasida alohida ogohlantirish bo'lib turadi.
-- Oshpaz — tizim roli (`COOK`): faqat Bozorlik bo'limini ko'radi. Tadbirlar unga pulsiz va mijoz telefonisiz ko'rsatiladi; bronlar, moliya, ombor va boshqa bo'limlarga kira olmaydi. Hisobni SUPER_ADMIN «Foydalanuvchilar» bo'limida «Oshpaz» roli bilan ochadi.
-- Har bir ro'yxat PDF qilib yuklab olinadi (bozorga olib borish yoki hisobot uchun).
-- «Umumiy» bo'limida to'yga bog'lanmagan ro'yxat yoziladi (tuz, salfetka, yuvish vositalari…); u ham xuddi shu to'rt qadamdan o'tadi va tasdiqlangach umumiy xarajatga yoziladi.
-- Har bir qatorga izoh yozish mumkin («qizil va yirik bo'lsin»). Narx jami summa yoki 1 birlik narxi ko'rinishida kiritiladi — ikkinchisida jami avtomatik hisoblanadi.
+- Ro'yxatni yozilishi bilan faqat SUPER_ADMIN ko'radi; oshpaz o'zinikini, xaridchi (admin) esa SUPER_ADMIN yuborganlarini ko'radi. Qo'ng'iroqchadagi son — hali ochilmagan yangi ro'yxatlar.
+- Oshpaz ro'yxatini SUPER_ADMIN ko'rmaguncha tuzatadi, adminga yuborilmaguncha bekor qiladi.
+- SUPER_ADMIN xarid tugaguncha ro'yxatni tuzatadi; sotib olingan qatorlar qulflangan. Oshpaz so'ragan miqdor saqlanib, farqi ko'rsatiladi.
+- Xato belgi bekor qilinadi; narx tasdiqlanguncha tuzatiladi. Tasdiqlangan bozorlikni o'zgartirish uchun SUPER_ADMIN tasdiqni bekor qiladi.
+- Bir to'yga bir nechta ro'yxat yozish mumkin (masalan, yetmay qolganlar). Bozorlik istalgan kuni qilinadi; xarajat to'y kuniga yoziladi.
+- «Umumiy» bo'limida to'yga bog'lanmagan ro'yxat yoziladi (tuz, salfetka…); tasdiqlangach umumiy xarajatga yoziladi.
+- Har bir ro'yxat PDF qilib yuklab olinadi.
+
+## Oshpaz ilovasi
+
+Oshpaz (`COOK` roli) tizimga kirganda o'z ilovasiga tushadi (`/kitchen`): telefonda pastki tablar, kompyuterda yuqori menyu.
+
+| Bo'lim      | Nima bor                                                                                                                                                                                     |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bosh sahifa | Salomlashish, shu haftadagi to'ylar va bozorligi yozilmaganlari, keyingi to'y kartasi (menyu, 1-/2-ovqat), ro'yxatlar qayerga yetgani                                                        |
+| To'ylar     | Haftalar bo'yicha ro'yxat yoki oy kalendari; «faqat bozorlik yozilmaganlar» filtri. Pul va mijoz telefoni ko'rsatilmaydi                                                                     |
+| Bozorlik    | Taom bo'yicha yozish: Salat → 1-ovqat → 2-ovqat → Boshqa; mahsulot turlari rasmli muqovalar, kg yoki gramm, katalogda yo'q mahsulot qo'lda. Oldingi ro'yxatdan nusxa mehmon soniga moslanadi |
+| Ombor       | Bugungi yoki ertangi to'y uchun ombordan olish (qoldiq ko'rinadi, narx — yo'q); bugun olganini qaytarish                                                                                     |
+
+Super admin uchun taom bo'yicha bo'linish ko'rinmaydi — unga har mahsulotning jami miqdori boradi.
+
+## Telegram bot
+
+`.env` da `TELEGRAM_BOT_TOKEN` bo'lsa, bot API ichida ishga tushadi (long polling — webhook va ochiq port kerak emas).
+
+- **Ulash:** foydalanuvchi Profil → «Telegram'ni ulash» ni bosadi; bir martalik havola (15 daqiqa) botni ochadi, «Start» bosilgach hisob ulanadi. Bir chat — bitta hisob. Profil'dan yoki `/chiqish` bilan uziladi.
+- **Bildirishnomalar:** yangi ro'yxat va uning tahriri/bekor qilinishi — SUPER_ADMIN'ga; yuborilgan ro'yxat — xaridchilarga; xarid hisoboti (narxlar bilan, narx tuzatilsa xabar tahrirlanadi) va ombordan olingan/qaytarilgan mahsulot (qiymati bilan) — SUPER_ADMIN'ga.
+- **Eslatmalar** (`TELEGRAM_REMINDER_TIMES`): oshpazlarga — ertangi to'yning yozilmagan bozorligi, SUPER_ADMIN'ga — ko'rilmagan ro'yxatlar. `/tekshir` — hozir tekshirish.
+- **Buyruqlar** (ruxsatga qarab): `/toylar`, `/ombor` (kam qolganlar), `/hisobot` (shu oy), `/tekshir`, `/chiqish`.
+- **Mini App:** `TELEGRAM_WEB_URL` (yoki `APP_URL`) https bo'lsa, bot tugmalari tizimni Telegram ichida ochadi va ulangan hisob bilan parolsiz kiritadi (`/tg`, Telegram imzosi serverda tekshiriladi). http da tugmalar oddiy havola bo'ladi.
 
 ## Xavfsizlik
 

@@ -24,7 +24,7 @@ export function StockUsageList({ usages, showEvent, canReturn, onReturn, returni
       {usages.map((usage) => (
         <li key={usage.id} className="rounded-xl border p-3">
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-            <div className="flex min-w-0 items-start gap-2.5">
+            <div className="flex min-w-0 flex-1 items-start gap-2.5">
               <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-gold/14 text-gold-dark dark:text-gold-light">
                 <PackageOpen className="size-4" />
               </span>

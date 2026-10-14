@@ -469,8 +469,19 @@ describe('Bozorlik (e2e)', () => {
       name: 'Mol go‘shti',
       unit: 'KG',
       productCategory: 'MEAT',
-      photo: null,
+      // O'z rasmi yuklanmagan — nomiga mos standart rasm.
+      photo: {
+        url: '/kitchen/products/mol-goshti.webp',
+        thumbUrl: '/kitchen/products/mol-goshti.webp',
+      },
     });
+    // Standart to'y oshxonasi ro'yxati ham bor (omborda bo'lmasa ham), takrorsiz.
+    expect(catalog.filter((row: { name: string }) => row.name === 'Mol go‘shti')).toHaveLength(1);
+    expect(catalog).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Guruch', productCategory: 'GRAIN', unit: 'KG' }),
+      ]),
+    );
     expect(catalog.map((row: { name: string }) => row.name)).toEqual(
       expect.arrayContaining(['Kartoshka', 'Bodring', 'Aysberg salat']),
     );

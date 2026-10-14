@@ -22,6 +22,8 @@ export function applyTestEnv(): void {
     SUPER_ADMIN_2FA_REQUIRED: 'true',
     // Testlar ishlab chiquvchining mahalliy sozlamasiga bog'liq bo'lmasin.
     DEV_LOGIN_ENABLED: 'false',
+    // Testlar haqiqiy Telegram'ga ulanmaydi (bot testi o'z soxta API'sini beradi).
+    TELEGRAM_BOT_TOKEN: '',
     DATABASE_URL: database.toString(),
     REDIS_URL: redis.toString(),
     S3_BUCKET_ORIGINALS: 'gavhar-originals-test',

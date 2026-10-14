@@ -402,7 +402,8 @@
       "expense": "Xarajatlar",
       "warehouse": "Ombor",
       "shopping": "Bozorlik",
-      "worker": "Ishchilar"
+      "worker": "Ishchilar",
+      "telegram": "Telegram bot"
     },
     "detail": {
       "empty": "Ma’lumot yo‘q",
@@ -425,7 +426,8 @@
         "2fa_disabled": "2FA ni o‘chirdi",
         "2fa_backup_codes_regenerated": "Zaxira kodlarni yangiladi",
         "token_reuse": "Token o‘g‘irligi aniqlandi",
-        "dev_login": "Tezkor kirish (parolsiz, sinov rejimi)"
+        "dev_login": "Tezkor kirish (parolsiz, sinov rejimi)",
+        "telegram_login": "Telegram orqali kirdi"
       },
       "user": {
         "create": "Foydalanuvchi yaratdi",
@@ -533,6 +535,10 @@
         "delete": "Ishchini o‘chirdi",
         "assign": "Ishchini to‘yga biriktirdi",
         "unassign": "Ishchini to‘ydan olib tashladi"
+      },
+      "telegram": {
+        "link": "Telegram botni ulandi",
+        "unlink": "Telegram botni uzdi"
       }
     }
   },
@@ -719,7 +725,10 @@
       "STOCK_COST_EMPTY": "Bu to‘yga ombordan narxi ma’lum mahsulot olinmagan.",
       "STOCK_EXPENSE_EXISTS": "Ombor mahsulotlari xarajati allaqachon yozilgan.",
       "WAREHOUSE_LOT_NOT_FOUND": "Partiya topilmadi — sahifani yangilang.",
-      "EVENT_HAS_STOCK": "Bu to‘yga ombordan mahsulot olingan — uni o‘chirib bo‘lmaydi, kerak bo‘lsa bekor qiling."
+      "EVENT_HAS_STOCK": "Bu to‘yga ombordan mahsulot olingan — uni o‘chirib bo‘lmaydi, kerak bo‘lsa bekor qiling.",
+      "TELEGRAM_DISABLED": "Telegram bot sozlanmagan.",
+      "TELEGRAM_AUTH_INVALID": "Telegram ma’lumotlari tasdiqlanmadi.",
+      "TELEGRAM_NOT_LINKED": "Bu Telegram hisobi tizimga ulanmagan — avval Profil sahifasidan ulang."
     }
   },
   "validation": {
@@ -1202,7 +1211,7 @@
     "menu": {
       "eyebrow": "Dasturxon",
       "title": "To‘y menyusi",
-      "text": "Paketni tanlang — ichida nimalar borligini ko‘rasiz. Narxlar bir kishi uchun, so‘mda.",
+      "text": "Paketni tanlang — ichida nimalar borligini ko‘rasiz. Narx — ko‘rsatilgan mehmonlar soni uchun butun paket narxi, so‘mda.",
       "dishCount_one": "{{count}} xil taom",
       "dishCount_other": "{{count}} xil taom",
       "view": "Menyuni ko‘rish",
@@ -1923,5 +1932,48 @@
     },
     "listWritten_one": "Bozorlik yozilgan",
     "listWritten_other": "Bozorlik yozilgan ({{count}})"
+  },
+  "telegram": {
+    "title": "Telegram bot",
+    "linked": "Ulangan",
+    "description": "Bozorlik, ombor va to‘ylar haqidagi xabarlar Telegram’ga keladi; bot tugmasi tizimni Telegram ichida ochadi.",
+    "disabled": "Telegram bot hali sozlanmagan. Administrator serverda TELEGRAM_BOT_TOKEN ni kiritishi kerak.",
+    "linkedSince": "{{date}} dan beri ulangan.",
+    "features": {
+      "notify": "Sizga tegishli bozorlik va ombor voqealari darhol keladi.",
+      "remind": "Kunlik eslatmalar: ertangi to‘y, ko‘rilmagan ro‘yxatlar.",
+      "miniApp": "Bot tugmasi tizimni parolsiz, Telegram ichida ochadi."
+    },
+    "openBot": "@{{name}} ni ochish",
+    "unlink": "Uzish",
+    "unlinkTitle": "Botni uzasizmi?",
+    "unlinkText": "Telegram’ga xabarlar kelishi to‘xtaydi. Keyin istalgan vaqtda qayta ulashingiz mumkin.",
+    "steps": {
+      "one": "«Telegram’ni ulash» tugmasini bosing — @{{name}} ochiladi.",
+      "two": "Telegram’da «Start» (Boshlash) tugmasini bosing.",
+      "three": "Shu sahifa ulanganingizni o‘zi ko‘rsatadi."
+    },
+    "link": "Telegram’ni ulash",
+    "waiting": "Telegram’da «Start» ni bosing…",
+    "openAgain": "Qayta ochish",
+    "toast": {
+      "linked": "Telegram bot ulandi",
+      "unlinked": "Telegram bot uzildi"
+    },
+    "app": {
+      "login": "Parol bilan kirish",
+      "outside": {
+        "title": "Telegram ichida oching",
+        "text": "Bu sahifa Gavhar botidagi tugma orqali Telegram ichida ochiladi."
+      },
+      "notLinked": {
+        "title": "Hisob ulanmagan",
+        "text": "Avval tizimga parol bilan kiring va Profil sahifasida «Telegram’ni ulash» ni bosing."
+      },
+      "failed": {
+        "title": "Kirib bo‘lmadi",
+        "text": "Telegram ma’lumotlari tasdiqlanmadi. Botdagi tugmani qayta bosing yoki parol bilan kiring."
+      }
+    }
   }
 }

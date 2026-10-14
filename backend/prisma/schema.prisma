@@ -81,6 +81,10 @@ model User {
   lastLoginAt DateTime? @map("last_login_at") @db.Timestamptz(3)
   lastLoginIp String?   @map("last_login_ip")
 
+  /// Ulangan Telegram chat (shaxsiy chatda — Telegram foydalanuvchi id'si). Bir chat — bitta hisob.
+  telegramChatId   String?   @unique @map("telegram_chat_id")
+  telegramLinkedAt DateTime? @map("telegram_linked_at") @db.Timestamptz(3)
+
   createdById String?   @map("created_by_id") @db.Uuid
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)

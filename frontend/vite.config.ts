@@ -10,6 +10,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, envDir, '');
   const webPort = Number(env.WEB_PORT ?? 5180);
   const apiTarget = `http://localhost:${env.API_PORT ?? 4100}`;
+  // Telegram Mini App uchun https tunnel manzili (TELEGRAM_WEB_URL) — Vite uni tanishi kerak.
+  const tunnelHost = env.TELEGRAM_WEB_URL ? new URL(env.TELEGRAM_WEB_URL).hostname : undefined;
 
   return {
     envDir,
@@ -25,6 +27,7 @@ export default defineConfig(({ mode }) => {
       host: true,
       port: webPort,
       strictPort: true,
+      allowedHosts: tunnelHost ? [tunnelHost] : [],
       // Dev'da API bilan bir xil origin: refresh cookie (SameSite=Strict) muammosiz ishlaydi.
       proxy: {
         '/api': { target: apiTarget, changeOrigin: false },

@@ -168,7 +168,23 @@
     border-color: var(--border);
   }
 
+  /*
+   * Grid ustuni ichidagi element o'z mazmunining eng uzun qatoridan torayolmaydi
+   * (min-width: auto) — tor telefonda sahifa yon tomonga toshadi. Grid bolalari
+   * ustun kengligiga bo'ysunadi; uzun so'zlar o'raladi yoki kesiladi.
+   */
+  :where(.grid) > * {
+    min-width: 0;
+  }
+
   html {
+    /* Katta monitorda (2K/4K) butun interfeys mutanosib kattalashadi — hammasi rem'da. */
+    @media (min-width: 2200px) {
+      font-size: 112.5%;
+    }
+    @media (min-width: 3000px) {
+      font-size: 137.5%;
+    }
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;

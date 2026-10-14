@@ -2,13 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { EventStatus, Prisma } from '@prisma/client';
 import { SYSTEM_ROLES } from '@/common/permissions/permission-catalog';
 import { AuthUser } from '@/common/types/auth-user';
-import { addDays, localDate, startOfLocalDay, toDbDate } from '@/common/utils/app-date.util';
+import { addDays, localDate, startOfLocalDay } from '@/common/utils/app-date.util';
 import { ZERO, moneyString } from '@/common/utils/money.util';
 import { quantityString } from '@/common/utils/quantity.util';
 import { AppConfigService } from '@/config/app-config.service';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import { PhotoService } from '@/infrastructure/storage/photo.service';
 import { canSeeMoney } from '@/modules/events/event-money.interceptor';
+import { monthBounds, monthlyFinancials as loadMonthlyFinancials } from './monthly-financials';
 import { ShoppingService } from '@/modules/shopping/shopping.service';
 
 const WEEK_DAYS = 7;
@@ -39,10 +40,7 @@ export class DashboardService {
     const timeZone = this.config.app.timezone;
     const today = localDate(new Date(), timeZone);
     const dayStart = (offset: number) => startOfLocalDay(addDays(today, offset), timeZone);
-    const monthFirst = `${today.slice(0, 7)}-01`;
-    const nextMonthFirst = addDays(monthFirst, 32).slice(0, 7) + '-01';
-    const monthStart = startOfLocalDay(monthFirst, timeZone);
-    const monthEnd = startOfLocalDay(nextMonthFirst, timeZone);
+    const { monthStart, monthEnd } = monthBounds(today, timeZone);
 
     const live = { deletedAt: null, status: { not: EventStatus.CANCELLED } } as const;
     const has = (permission: string) =>
@@ -102,7 +100,7 @@ export class DashboardService {
         Promise.all(onDay(1).map(card)),
         has('warehouse:read') ? this.lowStock() : null,
         has('shopping:read') ? this.shopping.pending(actor) : null,
-        showMoney ? this.monthlyFinancials(monthStart, monthEnd, monthFirst, nextMonthFirst) : null,
+        showMoney ? loadMonthlyFinancials(this.prisma, timeZone) : null,
       ]);
 
     return {
@@ -149,44 +147,5 @@ export class DashboardService {
         quantity: quantityString(item.quantity),
         minQuantity: quantityString(item.minQuantity),
       }));
-  }
-
-  /**
-   * Joriy oy: shu oydagi to'ylar bo'yicha kutilayotgan summa, olingan pul va qarz;
-   * xarajatlar va sof foyda. Bekor qilingan to'y kutilayotgan summaga kirmaydi, lekin
-   * undan qolgan zaklad — haqiqatda olingan pul.
-   */
-  private async monthlyFinancials(
-    monthStart: Date,
-    monthEnd: Date,
-    monthFirst: string,
-    nextMonthFirst: string,
-  ) {
-    const [events, expenses] = await Promise.all([
-      this.prisma.event.findMany({
-        where: { deletedAt: null, startAt: { gte: monthStart, lt: monthEnd } },
-        select: { status: true, totalAmount: true, paidAmount: true },
-      }),
-      this.prisma.expense.aggregate({
-        where: {
-          deletedAt: null,
-          spentOn: { gte: toDbDate(monthFirst), lt: toDbDate(nextMonthFirst) },
-        },
-        _sum: { amount: true },
-      }),
-    ]);
-    const liveEvents = events.filter((event) => event.status !== EventStatus.CANCELLED);
-    const expected = liveEvents.reduce((sum, event) => sum.add(event.totalAmount), ZERO);
-    const liveCollected = liveEvents.reduce((sum, event) => sum.add(event.paidAmount), ZERO);
-    const collected = events.reduce((sum, event) => sum.add(event.paidAmount), ZERO);
-    const spent = expenses._sum.amount ?? ZERO;
-    return {
-      eventCount: liveEvents.length,
-      totalExpected: moneyString(expected),
-      totalCollected: moneyString(collected),
-      totalOutstanding: moneyString(expected.sub(liveCollected)),
-      totalExpenses: moneyString(spent),
-      netProfit: moneyString(collected.sub(spent)),
-    };
   }
 }

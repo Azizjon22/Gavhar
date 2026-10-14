@@ -230,10 +230,12 @@ export function ListEditorDialog({ target, onClose }: Props) {
                 return (
                   <li
                     key={row.key}
-                    className="grid grid-cols-[minmax(0,1fr)_76px_92px_32px_32px] gap-x-2 gap-y-1.5"
+                    // Telefonda nom alohida qatorda, ostida miqdor va birlik.
+                    className="grid grid-cols-[minmax(0,1fr)_88px_32px_32px] gap-x-2 gap-y-1.5 max-sm:border-b max-sm:pb-2.5 max-sm:last:border-0 sm:grid-cols-[minmax(0,1fr)_76px_92px_32px_32px]"
                   >
                     <Input
                       value={row.name}
+                      className="col-span-full sm:col-span-1"
                       disabled={row.locked}
                       title={row.locked ? t('shopping.editor.locked') : undefined}
                       maxLength={80}

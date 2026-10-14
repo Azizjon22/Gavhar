@@ -128,8 +128,12 @@ export function ShoppingListBlock({ event, list, viewer, onAction }: Props) {
         {list.items.map((item) => {
           const unit = t(`warehouse.unit.${item.unit}`);
           return (
-            <li key={item.id} className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0">
+            <li
+              key={item.id}
+              className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5"
+            >
+              {/* Tor ekranda miqdor va narx nom ostiga tushadi — ustma-ust chiqmaydi. */}
+              <span className="min-w-0 flex-1 basis-36">
                 <span className={cn(item.skipped && 'text-muted-foreground line-through')}>
                   {item.name}
                 </span>
@@ -137,7 +141,7 @@ export function ShoppingListBlock({ event, list, viewer, onAction }: Props) {
                   <span className="ml-2 text-xs text-muted-foreground">{item.note}</span>
                 )}
               </span>
-              <span className="tabular flex shrink-0 items-baseline gap-3 whitespace-nowrap">
+              <span className="tabular ml-auto flex shrink-0 items-baseline gap-3 whitespace-nowrap">
                 <span className="text-muted-foreground">
                   {item.requestedQuantity && (
                     <>
@@ -153,12 +157,14 @@ export function ShoppingListBlock({ event, list, viewer, onAction }: Props) {
                   <span className="min-w-24 text-right text-xs text-muted-foreground">
                     {t('shopping.skipped')}
                   </span>
+                ) : item.price ? (
+                  <span className="min-w-24 text-right font-semibold">
+                    {formatAmount(item.price)} {t('common.currency')}
+                  </span>
                 ) : (
-                  item.price && (
-                    <span className="min-w-24 text-right font-semibold">
-                      {formatAmount(item.price)} {t('common.currency')}
-                    </span>
-                  )
+                  // Xarid boshlangan ro'yxatda narxsiz qator ham shu joyni egallaydi —
+                  // miqdorlar bir ustunda turadi.
+                  started && <span aria-hidden className="min-w-24" />
                 )}
               </span>
             </li>

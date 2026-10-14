@@ -336,7 +336,7 @@ export function EventDetailPage() {
 
           {showMoney && (
             <Card>
-              <CardHeader className="flex-row items-center justify-between gap-3">
+              <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
                 <CardTitle>{t('payments.title')}</CardTitle>
                 {canPay && (
                   <Button size="sm" onClick={() => setDialog('payment')}>

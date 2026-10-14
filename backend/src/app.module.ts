@@ -26,6 +26,7 @@ import { MenuModule } from '@/modules/menu/menu.module';
 import { RolesModule } from '@/modules/roles/roles.module';
 import { SettingsModule } from '@/modules/settings/settings.module';
 import { ShoppingModule } from '@/modules/shopping/shopping.module';
+import { TelegramModule } from '@/modules/telegram/telegram.module';
 import { UsersModule } from '@/modules/users/users.module';
 import { WarehouseModule } from '@/modules/warehouse/warehouse.module';
 import { WorkersModule } from '@/modules/workers/workers.module';
@@ -87,6 +88,7 @@ const REQUEST_ID_PATTERN = /^[a-zA-Z0-9-]{8,64}$/;
     GalleryModule,
     FinanceModule,
     WarehouseModule,
+    TelegramModule,
     ShoppingModule,
     WorkersModule,
     DashboardModule,

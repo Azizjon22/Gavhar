@@ -79,7 +79,7 @@ export function EventWorkersCard({ eventId, locked = false }: Props) {
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between gap-3">
+      <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
         <CardTitle>
           {t('workers.eventCard.title')}
           {query.data && query.data.length > 0 && (

@@ -175,7 +175,8 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
 
   return (
     <Dialog open={open} onOpenChange={(next) => !mutation.isPending && onOpenChange(next)}>
-      <DialogContent size="lg" className="flex flex-col overflow-hidden">
+      {/* Telefonda butun oyna skroll bo'ladi; kattada — faqat tarkib ro'yxati. */}
+      <DialogContent size="lg" className="flex flex-col max-sm:overflow-y-auto sm:overflow-hidden">
         <DialogHeader className="shrink-0">
           <DialogTitle>
             {t(isEdit ? 'menu.packageForm.editTitle' : 'menu.packageForm.createTitle')}
@@ -196,7 +197,7 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
           }}
         />
         <form
-          className="flex min-h-0 flex-1 flex-col gap-5"
+          className="flex flex-col gap-5 sm:min-h-0 sm:flex-1"
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
@@ -301,9 +302,9 @@ export function PackageFormDialog({ open, onOpenChange, categories, pkg }: Props
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-2">
+          <div className="flex flex-col gap-2 sm:min-h-0 sm:flex-1">
             <p className="shrink-0 text-sm font-medium">{t('menu.packageForm.sections')}</p>
-            <ul className="grid max-h-[calc(100dvh-32rem)] min-h-0 flex-1 gap-1 overflow-y-auto rounded-xl border p-1.5">
+            <ul className="grid max-h-80 gap-1 overflow-y-auto rounded-xl border p-1.5 sm:max-h-[calc(100dvh-32rem)] sm:min-h-0 sm:flex-1">
               {categories.map((category) => {
                 const draft = sections[category.id];
                 const label = localizedName(category, language);

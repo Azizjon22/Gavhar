@@ -504,7 +504,7 @@ export function ShowcasePackagePage() {
                   <div className="absolute inset-0 bg-gradient-to-r from-[#03110d] via-[#03110d]/80 to-[#03110d]/30" />
                   <div className="relative flex w-full items-end justify-between gap-4">
                     <p className="min-w-0">
-                      <span className="block truncate font-display text-2xl font-semibold text-white">
+                      <span className="line-clamp-2 block font-display text-2xl leading-tight font-semibold text-white">
                         {item.name}
                       </span>
                       <span className="text-gilded tabular mt-1 block font-display text-3xl leading-none font-semibold">

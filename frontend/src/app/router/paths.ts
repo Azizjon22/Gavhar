@@ -1,6 +1,8 @@
 export const ROUTES = {
   home: '/',
   login: '/login',
+  /** Telegram Mini App kirish nuqtasi. */
+  telegramApp: '/tg',
   setupPassword: '/setup/password',
   setupTwoFactor: '/setup/two-factor',
   profile: '/profile',
